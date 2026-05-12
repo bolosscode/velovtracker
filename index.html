@@ -1,120 +1,149 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vélo'v — OBS</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-  <style>
-    :root {
-      --bg:#090d12;--surface:#111820;--surface2:#18232e;
-      --border:#1e2d3d;--border2:#2a3f52;
-      --accent:#f0a500;--accent-d:rgba(240,165,0,.12);
-      --text:#cdd9e5;--muted:#4e6478;
-      --green:#3fb97a;--red:#e04f4f;--yellow:#d4a035;
-    }
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;font-size:14px;line-height:1.5;min-height:100vh}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vélo'v — OBS</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.0.1/leaflet-heat.js"></script>
+<style>
+:root{
+  --bg:#090d12;--surface:#111820;--surface2:#18232e;
+  --border:#1e2d3d;--border2:#2a3f52;
+  --accent:#f0a500;--text:#cdd9e5;--muted:#4e6478;
+  --green:#3fb97a;--red:#e04f4f;--yellow:#d4a035;--blue:#4ea8e0;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;font-size:14px;line-height:1.5;min-height:100vh}
 
-    header{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
-    .hd-left{display:flex;align-items:center;gap:16px}
-    .logo{font-family:'DM Mono',monospace;font-size:17px;letter-spacing:.1em;color:var(--accent)}
-    .logo em{color:var(--muted);font-style:normal}
-    .dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:blink 2.5s infinite}
-    @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
-    .live-label{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px}
-    .clock{font-family:'DM Mono',monospace;font-size:13px;color:var(--muted)}
+/* ── header ── */
+header{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200}
+.hd-left{display:flex;align-items:center;gap:14px}
+.logo{font-family:'DM Mono',monospace;font-size:16px;letter-spacing:.1em;color:var(--accent)}
+.logo em{color:var(--muted);font-style:normal}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 2.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.live-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.source-tag{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);padding:2px 8px;border-radius:2px}
+.clock{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted)}
 
-    nav{display:flex;padding:0 28px;background:var(--surface);border-bottom:1px solid var(--border)}
-    .tab-btn{padding:11px 18px;font-size:12px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:color .18s,border-color .18s;user-select:none}
-    .tab-btn:hover{color:var(--text)}
-    .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+/* ── type toggle ── */
+.type-bar{display:flex;gap:1px;background:var(--border);border-radius:3px;overflow:hidden}
+.type-btn{padding:5px 12px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border:none;background:var(--surface);color:var(--muted);transition:background .15s,color .15s}
+.type-btn.active-all{background:#2a3f52;color:var(--text)}
+.type-btn.active-elec{background:rgba(63,185,122,.18);color:var(--green)}
+.type-btn.active-meca{background:rgba(78,168,224,.15);color:var(--blue)}
 
-    main{padding:24px 28px;max-width:1280px;margin:0 auto}
-    .tab-panel{display:none}
-    .tab-panel.active{display:block;animation:fadein .2s}
-    @keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+/* ── nav ── */
+nav{display:flex;padding:0 24px;background:var(--surface);border-bottom:1px solid var(--border)}
+.tab-btn{padding:10px 16px;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;user-select:none}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
 
-    .summary{display:flex;align-items:center;gap:32px;flex-wrap:wrap;padding:14px 20px;background:var(--surface);border:1px solid var(--border);border-radius:3px;margin-bottom:20px}
-    .sum-item{display:flex;flex-direction:column}
-    .sum-val{font-family:'DM Mono',monospace;font-size:26px;font-weight:500;color:var(--accent);line-height:1}
-    .sum-lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:3px}
-    .sum-right{margin-left:auto;display:flex;align-items:center;gap:12px}
-    .ts{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
+/* ── layout ── */
+main{padding:20px 24px;max-width:1400px;margin:0 auto}
+.tab-panel{display:none}
+.tab-panel.active{display:block;animation:fadein .18s}
+@keyframes fadein{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
 
-    button{background:var(--accent);border:none;border-radius:2px;color:#000;cursor:pointer;font-family:'Barlow',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:8px 16px;transition:opacity .15s}
-    button:hover{opacity:.82}
-    button.sec{background:transparent;border:1px solid var(--border2);color:var(--text)}
-    button.sec:hover{border-color:var(--accent);color:var(--accent)}
+/* ── summary ── */
+.summary{display:flex;align-items:center;gap:24px;flex-wrap:wrap;padding:12px 18px;background:var(--surface);border:1px solid var(--border);border-radius:3px;margin-bottom:18px}
+.sum-item{display:flex;flex-direction:column}
+.sum-val{font-family:'DM Mono',monospace;font-size:24px;font-weight:500;color:var(--accent);line-height:1}
+.sum-val.v-elec{color:var(--green)}
+.sum-val.v-meca{color:var(--blue)}
+.sum-lbl{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+.sum-right{margin-left:auto;display:flex;align-items:center;gap:10px}
 
-    select,input[type=date],input[type=text],input[type=time]{background:var(--surface);border:1px solid var(--border2);border-radius:2px;color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;padding:7px 11px;outline:none;transition:border-color .15s}
-    select:focus,input:focus{border-color:var(--accent)}
+/* ── buttons ── */
+button{background:var(--accent);border:none;border-radius:2px;color:#000;cursor:pointer;font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:7px 14px;transition:opacity .15s}
+button:hover{opacity:.82}
+button.sec{background:transparent;border:1px solid var(--border2);color:var(--text)}
+button.sec:hover{border-color:var(--accent);color:var(--accent)}
 
-    .station-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin-bottom:24px}
-    .scard{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:16px;cursor:pointer;position:relative;overflow:hidden;transition:border-color .18s,background .18s}
-    .scard::after{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--accent);transform:scaleY(0);transform-origin:bottom;transition:transform .2s}
-    .scard:hover{border-color:var(--border2);background:var(--surface2)}
-    .scard:hover::after{transform:scaleY(1)}
-    .scard-name{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .scard-big{display:flex;align-items:baseline;gap:5px;margin-bottom:6px}
-    .scard-num{font-family:'DM Mono',monospace;font-size:44px;font-weight:500;line-height:1;transition:color .3s}
-    .scard-num.ok{color:var(--green)}
-    .scard-num.low{color:var(--yellow)}
-    .scard-num.empty{color:var(--red)}
-    .scard-unit{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
-    .scard-bar-bg{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:8px}
-    .scard-bar{height:100%;border-radius:2px;transition:width .5s ease}
-    .scard-bar.ok{background:var(--green)}
-    .scard-bar.low{background:var(--yellow)}
-    .scard-bar.empty{background:var(--red)}
-    .scard-foot{display:flex;justify-content:space-between;align-items:center}
-    .scard-stands{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted)}
-    .badge{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:2px 6px;border-radius:2px}
-    .badge.open{background:rgba(63,185,122,.12);color:var(--green)}
-    .badge.closed{background:rgba(224,79,79,.12);color:var(--red)}
+/* ── inputs ── */
+select,input[type=date],input[type=text],input[type=time]{background:var(--surface);border:1px solid var(--border2);border-radius:2px;color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;padding:6px 10px;outline:none;transition:border-color .15s}
+select:focus,input:focus{border-color:var(--accent)}
 
-    .chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:20px;margin-bottom:16px}
-    .chart-title{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+/* ── station cards ── */
+.station-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-bottom:20px}
+.scard{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:14px;position:relative;overflow:hidden;transition:border-color .18s,background .18s}
+.scard::after{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--accent);transform:scaleY(0);transform-origin:bottom;transition:transform .2s}
+.scard:hover{border-color:var(--border2);background:var(--surface2)}
+.scard:hover::after{transform:scaleY(1)}
+.scard-name{font-size:9px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scard-big{display:flex;align-items:baseline;gap:4px;margin-bottom:4px}
+.scard-num{font-family:'DM Mono',monospace;font-size:40px;font-weight:500;line-height:1;transition:color .3s}
+.scard-num.ok{color:var(--green)} .scard-num.low{color:var(--yellow)} .scard-num.empty{color:var(--red)}
+.scard-unit{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.scard-split{display:flex;gap:10px;margin-bottom:6px;min-height:16px}
+.scard-elec{font-family:'DM Mono',monospace;font-size:11px;color:var(--green)}
+.scard-meca{font-family:'DM Mono',monospace;font-size:11px;color:var(--blue)}
+.scard-bar-bg{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:7px}
+.scard-bar{height:100%;border-radius:2px;transition:width .5s ease}
+.scard-bar.ok{background:var(--green)} .scard-bar.low{background:var(--yellow)} .scard-bar.empty{background:var(--red)}
+.scard-foot{display:flex;justify-content:space-between;align-items:center}
+.scard-stands{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
+.badge{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:2px 5px;border-radius:2px}
+.badge.open{background:rgba(63,185,122,.12);color:var(--green)}
+.badge.closed{background:rgba(224,79,79,.12);color:var(--red)}
 
-    .ctrl{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+/* ── chart ── */
+.chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:18px;margin-bottom:14px}
+.chart-title{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
 
-    .hmap-grid{display:grid;grid-template-columns:44px repeat(24,1fr);gap:2px}
-    .hmap-h{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);height:24px;display:flex;align-items:center;justify-content:center}
-    .hmap-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);height:24px;display:flex;align-items:center}
-    .hmap-cell{height:24px;border-radius:2px;cursor:default;transition:opacity .1s}
-    .hmap-cell:hover{outline:1px solid var(--accent);opacity:.85}
-    .hmap-legend{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:11px;color:var(--muted)}
-    .hmap-legend-bar{flex:1;max-width:200px;height:7px;border-radius:2px;background:linear-gradient(to right,rgb(224,79,79),rgb(63,185,122))}
+/* ── controls ── */
+.ctrl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
 
-    .track-form{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:22px;margin-bottom:16px}
-    .track-intro{font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6}
-    .form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;margin-bottom:18px}
-    .fg{display:flex;flex-direction:column;gap:5px}
-    .fg label{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
-    .fg input,.fg select{width:100%}
-    .track-result{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:20px}
-    .res-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)}
-    .res-row:last-child{border-bottom:none}
-    .res-name{font-weight:500}
-    .res-delta{font-family:'DM Mono',monospace;font-size:13px;color:var(--green)}
-    .res-time{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
+/* ── multi-select checkboxes ── */
+.st-checks{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.st-check{display:flex;align-items:center;gap:5px;padding:4px 10px;background:var(--surface);border:1px solid var(--border2);border-radius:2px;cursor:pointer;font-size:12px;transition:border-color .15s,background .15s}
+.st-check.sel{border-color:var(--accent);background:rgba(240,165,0,.08)}
+.st-check input{accent-color:var(--accent);cursor:pointer}
 
-    .set-sec{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:22px;margin-bottom:14px}
-    .set-title{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
-    .set-f{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
-    .set-f label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-    .set-f input{max-width:420px;width:100%}
-    .set-hint{font-size:11px;color:var(--muted);margin-top:3px}
-    code{color:var(--accent);font-family:'DM Mono',monospace;font-size:12px}
+/* ── heatmap ── */
+.hmap-grid{display:grid;grid-template-columns:70px repeat(24,1fr);gap:2px}
+.hmap-h{font-family:'DM Mono',monospace;font-size:8px;color:var(--muted);height:22px;display:flex;align-items:center;justify-content:center}
+.hmap-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);height:22px;display:flex;align-items:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:4px}
+.hmap-cell{height:22px;border-radius:1px;cursor:default}
+.hmap-cell:hover{outline:1px solid var(--accent)}
+.hmap-legend{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:10px;color:var(--muted)}
+.hmap-legend-bar{flex:1;max-width:160px;height:6px;border-radius:2px;background:linear-gradient(to right,rgb(224,79,79),rgb(63,185,122))}
 
-    .loader{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--muted);font-family:'DM Mono',monospace;font-size:12px}
-    .no-data{text-align:center;padding:40px;color:var(--muted);font-size:13px}
-    .err{background:rgba(224,79,79,.08);border:1px solid rgba(224,79,79,.3);border-radius:3px;padding:14px 16px;color:var(--red);font-size:13px;line-height:1.6}
-    .ok-flash{color:var(--green);font-size:12px;font-family:'DM Mono',monospace}
+/* ── map ── */
+#map{height:520px;border-radius:3px;border:1px solid var(--border)}
+.leaflet-container{background:#0d1520}
 
-    .source-tag{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);padding:3px 8px;border-radius:2px}
-  </style>
+/* ── tracking ── */
+.track-form{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:20px;margin-bottom:14px}
+.track-intro{font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg label{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.fg input,.fg select{width:100%}
+.track-result{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:18px}
+.res-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.res-row:last-child{border-bottom:none}
+.res-delta{font-family:'DM Mono',monospace;font-size:12px;color:var(--green)}
+.res-time{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)}
+
+/* ── settings ── */
+.set-sec{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:20px;margin-bottom:12px}
+.set-title{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+.set-f{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.set-f label{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.set-f input{max-width:400px;width:100%}
+.set-hint{font-size:11px;color:var(--muted);margin-top:3px}
+code{color:var(--accent);font-family:'DM Mono',monospace;font-size:11px}
+
+.loader{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--muted);font-family:'DM Mono',monospace;font-size:12px}
+.no-data{text-align:center;padding:40px;color:var(--muted);font-size:13px}
+.err{background:rgba(224,79,79,.08);border:1px solid rgba(224,79,79,.3);border-radius:3px;padding:12px 14px;color:var(--red);font-size:13px;line-height:1.6}
+.ok-flash{color:var(--green);font-size:11px;font-family:'DM Mono',monospace}
+</style>
 </head>
 <body>
 
@@ -122,474 +151,655 @@
   <div class="hd-left">
     <div class="logo">VÉLO<em>'</em>V<em style="color:var(--border2)">::</em>OBS</div>
     <div class="live-label"><div class="dot"></div>LIVE</div>
-    <span class="source-tag">Grand Lyon Open Data · collecte ≤ 10 min</span>
+    <span class="source-tag" id="src-tag">Grand Lyon</span>
   </div>
-  <div class="clock" id="clock">--:--:--</div>
+  <div class="hd-left" style="gap:12px">
+    <div class="type-bar">
+      <button class="type-btn active-all" onclick="setType('all')">Tous</button>
+      <button class="type-btn" onclick="setType('elec')">⚡ Élec</button>
+      <button class="type-btn" onclick="setType('meca')">🔧 Méca</button>
+    </div>
+    <div class="clock" id="clock">--:--:--</div>
+  </div>
 </header>
 
 <nav>
   <div class="tab-btn active" data-tab="live">Live</div>
-  <div class="tab-btn" data-tab="history">Historique</div>
+  <div class="tab-btn" data-tab="history">Courbes</div>
   <div class="tab-btn" data-tab="heatmap">Heatmap</div>
+  <div class="tab-btn" data-tab="carte">Carte</div>
   <div class="tab-btn" data-tab="tracking">Tracking</div>
   <div class="tab-btn" data-tab="settings">Config</div>
 </nav>
 
 <main>
 
-  <!-- ══ LIVE ══ -->
-  <div class="tab-panel active" id="tab-live">
-    <div class="summary">
-      <div class="sum-item"><span class="sum-val" id="s-bikes">—</span><span class="sum-lbl">Vélos dispo</span></div>
-      <div class="sum-item"><span class="sum-val" id="s-stands">—</span><span class="sum-lbl">Places libres</span></div>
-      <div class="sum-item"><span class="sum-val" id="s-open">—</span><span class="sum-lbl">Stations ouvertes</span></div>
-      <div class="sum-item"><span class="sum-val" id="s-elec" style="color:var(--green)">—</span><span class="sum-lbl">⚡ Électriques</span></div>
-      <div class="sum-item"><span class="sum-val" id="s-meca">—</span><span class="sum-lbl">🔧 Mécaniques</span></div>
-      <div class="sum-right">
-        <span class="ts" id="last-update"></span>
-        <button class="sec" onclick="refreshLive()">↻ Actualiser</button>
-      </div>
-    </div>
-    <div class="station-grid" id="station-grid"><div class="loader">Chargement…</div></div>
-  </div>
-
-  <!-- ══ HISTORIQUE ══ -->
-  <div class="tab-panel" id="tab-history">
-    <div class="ctrl">
-      <select id="hist-station"><option value="">— Station —</option></select>
-      <input type="date" id="hist-date">
-      <button onclick="loadHistory()">Afficher</button>
-    </div>
-    <div class="chart-wrap">
-      <div class="chart-title">Disponibilité — vélos / places libres</div>
-      <canvas id="chart-hist" height="90"></canvas>
-    </div>
-    <div class="chart-wrap">
-      <div class="chart-title">Flux net estimé (Δ vélos / intervalle)</div>
-      <canvas id="chart-flux" height="60"></canvas>
+<!-- ══ LIVE ══ -->
+<div class="tab-panel active" id="tab-live">
+  <div class="summary">
+    <div class="sum-item"><span class="sum-val" id="s-total">—</span><span class="sum-lbl" id="s-total-lbl">Vélos dispo</span></div>
+    <div class="sum-item"><span class="sum-val v-elec" id="s-elec">—</span><span class="sum-lbl">⚡ Électriques</span></div>
+    <div class="sum-item"><span class="sum-val v-meca" id="s-meca">—</span><span class="sum-lbl">🔧 Mécaniques</span></div>
+    <div class="sum-item"><span class="sum-val" id="s-open">—</span><span class="sum-lbl">Stations ouvertes</span></div>
+    <div class="sum-right">
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)" id="last-upd"></span>
+      <button class="sec" onclick="refreshLive()">↻</button>
     </div>
   </div>
+  <div class="station-grid" id="station-grid"><div class="loader">Chargement…</div></div>
+</div>
 
-  <!-- ══ HEATMAP ══ -->
-  <div class="tab-panel" id="tab-heatmap">
-    <div class="ctrl">
-      <select id="heat-station"><option value="">— Station —</option></select>
-      <button onclick="loadHeatmap()">Calculer</button>
+<!-- ══ COURBES ══ -->
+<div class="tab-panel" id="tab-history">
+  <div class="ctrl">
+    <input type="date" id="hist-date">
+    <button onclick="loadHistory()">Afficher</button>
+  </div>
+  <div id="st-checks-hist" class="st-checks"></div>
+  <div class="chart-wrap">
+    <div class="chart-title" id="hist-title">Disponibilité par station</div>
+    <canvas id="chart-hist" height="80"></canvas>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-title">Flux net (Δ vélos / intervalle)</div>
+    <canvas id="chart-flux" height="50"></canvas>
+  </div>
+</div>
+
+<!-- ══ HEATMAP ══ -->
+<div class="tab-panel" id="tab-heatmap">
+  <div class="ctrl">
+    <select id="heat-station"><option value="">— Heatmap station unique —</option></select>
+    <button onclick="loadHeatmap()">Calculer</button>
+    <button class="sec" onclick="loadHeatmapMulti()" style="margin-left:8px">Comparer toutes les stations</button>
+  </div>
+  <div class="chart-wrap" id="hmap-wrap-single">
+    <div class="chart-title" id="hmap-title-single">Heatmap — sélectionnez une station</div>
+    <div id="heatmap-single"><div class="no-data">Sélectionnez une station ci-dessus.</div></div>
+  </div>
+  <div class="chart-wrap" id="hmap-wrap-multi" style="display:none">
+    <div class="chart-title">Comparaison toutes stations — % vélos par heure (moy. 30j)</div>
+    <div id="heatmap-multi"></div>
+  </div>
+</div>
+
+<!-- ══ CARTE ══ -->
+<div class="tab-panel" id="tab-carte">
+  <div class="ctrl" style="margin-bottom:12px">
+    <button class="sec" onclick="toggleHeatLayer()" id="heat-toggle">🌡 Heatmap activité</button>
+    <span style="font-size:11px;color:var(--muted);margin-left:4px">Aura = variation de vélos sur 24h</span>
+  </div>
+  <div id="map"></div>
+</div>
+
+<!-- ══ TRACKING ══ -->
+<div class="tab-panel" id="tab-tracking">
+  <div class="track-form">
+    <div class="set-title">Tracker un vélo par numéro de cadre</div>
+    <p class="track-intro">
+      Les numéros visibles dans l'appli Vélo'v ou sur les bornes sont des <strong style="color:var(--text)">IDs internes JCDecaux</strong> — ils n'apparaissent dans aucune API publique (ni Grand Lyon ni JCDecaux). Le tracking reste donc probabiliste : on corrèle la disparition d'un vélo à une station avec l'apparition ailleurs dans les 2h suivantes.<br><br>
+      Renseignez le numéro pour mémo, choisissez la station de départ et l'heure.
+    </p>
+    <div class="form-grid">
+      <div class="fg"><label>N° vélo (mémo)</label><input type="text" id="t-bike" placeholder="ex. 42183"></div>
+      <div class="fg"><label>Station départ</label><select id="t-station"><option value="">— Station —</option></select></div>
+      <div class="fg"><label>Date</label><input type="date" id="t-date"></div>
+      <div class="fg"><label>Heure départ</label><input type="time" id="t-time"></div>
     </div>
-    <div class="chart-wrap">
-      <div class="chart-title">% vélos disponibles — heure × jour de semaine (30 derniers jours)</div>
-      <div id="heatmap-wrap"><div class="no-data">Sélectionnez une station et cliquez sur Calculer.</div></div>
+    <button onclick="runTracking()">Analyser</button>
+  </div>
+  <div class="track-result" id="track-result" style="display:none">
+    <div class="chart-title">Stations d'arrivée probables</div>
+    <div id="track-content"></div>
+  </div>
+</div>
+
+<!-- ══ CONFIG ══ -->
+<div class="tab-panel" id="tab-settings">
+  <div class="set-sec">
+    <div class="set-title">Stations à suivre</div>
+    <div class="set-f">
+      <label>IDs de stations (virgule-séparés)</label>
+      <input type="text" id="cfg-ids" placeholder="10002, 10007, 10015, ... (vide = toutes)">
+      <span class="set-hint">Trouvez les IDs via l'<a href="https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov/all.json?maxfeatures=-1&start=1" target="_blank" style="color:var(--accent)">API Grand Lyon ↗</a> champ <code>number</code>.</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button onclick="saveSettings()">Sauvegarder</button>
+      <span class="ok-flash" id="cfg-saved" style="display:none">✓ Sauvegardé</span>
     </div>
   </div>
-
-  <!-- ══ TRACKING ══ -->
-  <div class="tab-panel" id="tab-tracking">
-    <div class="track-form">
-      <div class="set-title">Tracker un vélo</div>
-      <p class="track-intro">
-        Notez le numéro gravé sur le cadre au départ. L'algorithme détecte
-        les stations où le comptage a augmenté dans les 2h suivantes.
-      </p>
-      <div class="form-grid">
-        <div class="fg"><label>N° vélo (cadre)</label><input type="text" id="t-bike" placeholder="ex. 42183"></div>
-        <div class="fg"><label>Station de départ</label><select id="t-station"><option value="">— Station —</option></select></div>
-        <div class="fg"><label>Date</label><input type="date" id="t-date"></div>
-        <div class="fg"><label>Heure de départ</label><input type="time" id="t-time"></div>
-      </div>
-      <button onclick="runTracking()">Analyser le trajet</button>
-    </div>
-    <div class="track-result" id="track-result" style="display:none">
-      <div class="chart-title">Stations d'arrivée probables</div>
-      <div id="track-content"></div>
-    </div>
+  <div class="set-sec">
+    <div class="set-title">Architecture</div>
+    <p style="font-size:12px;color:var(--muted);line-height:1.8">
+      Source : <code>download.data.grandlyon.com</code> (open data, sans clé, côté serveur).<br>
+      Collecte : GitHub Actions <code>collect.py</code> toutes les 10 min via cron-job.org.<br>
+      Stockage : <code>data/latest.json</code> + <code>data/history/YYYY-MM-DD.json</code>.<br>
+      Hébergement : GitHub Pages, branche <code>main</code>.
+    </p>
   </div>
-
-  <!-- ══ CONFIG ══ -->
-  <div class="tab-panel" id="tab-settings">
-    <div class="set-sec">
-      <div class="set-title">Source de données</div>
-      <p style="font-size:13px;color:var(--muted);line-height:1.75;margin-bottom:12px">
-        L'app utilise le <strong style="color:var(--text)">WFS Open Data Grand Lyon</strong> — aucune clé API nécessaire.<br>
-        Toutes les vues (Live, Historique, Heatmap) lisent les fichiers JSON collectés par GitHub Actions toutes les 10 minutes.<br>
-        <em>Note technique : le WFS Grand Lyon bloque les appels directs depuis le navigateur (CORS), d'où la collecte côté serveur.</em>
-      </p>
-      <a href="https://data.grandlyon.com/portail/fr/jeux-de-donnees/stations-velo-v-metropole-lyon-disponibilites-temps-reel/info"
-         target="_blank"
-         style="font-size:12px;color:var(--accent);font-family:'DM Mono',monospace">
-        → data.grandlyon.com — jeu de données Vélo'v ↗
-      </a>
-    </div>
-
-    <div class="set-sec">
-      <div class="set-title">Stations à afficher</div>
-      <div class="set-f">
-        <label>IDs de stations (virgule-séparés)</label>
-        <input type="text" id="cfg-ids" placeholder="10002, 10007, 10015, ... (vide = toutes)">
-        <span class="set-hint">
-          Laissez vide pour afficher <strong>toutes les stations Lyon</strong>.
-          Pour ne suivre que certaines, entrez leurs numéros séparés par des virgules.<br>
-          Trouvez les IDs en appelant directement l'API :
-          <a href="https://data.grandlyon.com/geoserver/wfs?SERVICE=WFS&REQUEST=GetFeature&VERSION=1.1.0&TYPENAME=jcd_jcdecaux.jcdvelov&outputformat=geojson"
-             target="_blank" style="color:var(--accent)">URL WFS complète ↗</a>
-        </span>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
-        <button onclick="saveSettings()">Sauvegarder</button>
-        <span class="ok-flash" id="cfg-saved" style="display:none">✓ Sauvegardé</span>
-      </div>
-    </div>
-
-    <div class="set-sec">
-      <div class="set-title">Architecture</div>
-      <p style="font-size:13px;color:var(--muted);line-height:1.75">
-        Collecte : <code>collect.py</code> via GitHub Actions toutes les 10 min → appel WFS Grand Lyon.<br>
-        Stockage : <code>data/latest.json</code> (snapshot courant) + <code>data/history/YYYY-MM-DD.json</code> (tableau de snapshots par jour).<br>
-        Hébergement : GitHub Pages depuis la racine de la branche <code>main</code>.
-      </p>
-    </div>
-  </div>
+</div>
 
 </main>
 
 <script>
-// ─── CONFIG ───────────────────────────────────────────────────────────────────
-// Note : le WFS Grand Lyon ne supporte pas les appels cross-origin depuis le navigateur (CORS).
-// La collecte se fait côté serveur via GitHub Actions (collect.py) → data/latest.json
-// Le "Live" ici = dernier snapshot collecté (délai ≤ 10 min).
-
-let cfg = {
-  ids: JSON.parse(localStorage.getItem('vv_ids') || 'null') || [],
-};
-
+// ══════════════════════════════════════════════════════════
+// CONFIG & STATE
+// ══════════════════════════════════════════════════════════
+let cfg = { ids: JSON.parse(localStorage.getItem('vv_ids') || 'null') || [] };
+let bikeType = 'all'; // 'all' | 'elec' | 'meca'
 let liveStations = [];
+let mapInstance = null, heatLayer = null, markerLayer = null, heatLayerOn = false;
 let chartHist = null, chartFlux = null;
 
-// ─── CLOCK ────────────────────────────────────────────────────────────────────
-setInterval(() => { document.getElementById('clock').textContent = new Date().toLocaleTimeString('fr-FR'); }, 1000);
+const PALETTE = [
+  '#f0a500','#3fb97a','#4ea8e0','#e04f4f','#a56eff',
+  '#ff7e5a','#5adfff','#ffcf5a','#b0ff5a','#ff5ab0'
+];
 
-// ─── TABS ─────────────────────────────────────────────────────────────────────
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const t = btn.dataset.tab;
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById(`tab-${t}`).classList.add('active');
-    if (t === 'settings') loadSettings();
-  });
-});
+// ══════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════
+const cleanName = n => n.replace(/^\d+\s*[-–]\s*/,'').trim();
+const todayStr  = () => new Date().toISOString().slice(0,10);
+const cls       = (v,t) => !t?'empty':v===0?'empty':v/t<=.25?'low':'ok';
 
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
-const cls      = (v, total) => !total ? 'empty' : v === 0 ? 'empty' : v / total <= .25 ? 'low' : 'ok';
-const cleanName = n => n.replace(/^\d+\s*[-–]\s*/, '').trim();
-const todayStr  = () => new Date().toISOString().slice(0, 10);
+function getBikes(st) {
+  if (bikeType === 'elec') return st.electrical_bikes ?? 0;
+  if (bikeType === 'meca') return st.mechanical_bikes ?? 0;
+  return st.available_bikes ?? 0;
+}
+
+function heatCell(pct) {
+  const t = pct/100;
+  return `rgba(${Math.round(224-t*(224-63))},${Math.round(79+t*(185-79))},${Math.round(79+t*(122-79))},.75)`;
+}
+
 const chartDefs = () => ({
-  responsive: true,
-  plugins: { legend: { labels: { color: '#4e6478', font: { family: 'DM Mono', size: 11 } } } },
-  scales: {
-    x: { ticks: { color: '#4e6478', font: { family: 'DM Mono', size: 10 }, maxTicksLimit: 14 }, grid: { color: '#1e2d3d' } },
-    y: { ticks: { color: '#4e6478', font: { family: 'DM Mono', size: 11 } }, grid: { color: '#1e2d3d' }, min: 0 },
+  responsive:true,
+  plugins:{legend:{labels:{color:'#4e6478',font:{family:'DM Mono',size:11}}}},
+  scales:{
+    x:{ticks:{color:'#4e6478',font:{family:'DM Mono',size:9},maxTicksLimit:16},grid:{color:'#1e2d3d'}},
+    y:{ticks:{color:'#4e6478',font:{family:'DM Mono',size:10}},grid:{color:'#1e2d3d'},min:0},
   },
 });
 
-// ─── DATA LAYER ───────────────────────────────────────────────────────────────
-const LIVE_API = 'https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov/all.json?maxfeatures=-1&start=1';
+// ══════════════════════════════════════════════════════════
+// CLOCK & TABS
+// ══════════════════════════════════════════════════════════
+setInterval(()=>{ document.getElementById('clock').textContent=new Date().toLocaleTimeString('fr-FR'); },1000);
 
-function parseAvail(raw) {
-  if (!raw) return { elec: null, meca: null };
-  try {
-    // Le champ utilise des guillemets simples Python — on normalise
-    const str = typeof raw === 'string'
-      ? raw.replace(/'/g, '"').replace(/True/g, 'true').replace(/False/g, 'false')
-      : JSON.stringify(raw);
-    const d = JSON.parse(str);
-    const av = d.availabilities || {};
-    return { elec: av.electricalBikes ?? null, meca: av.mechanicalBikes ?? null };
-  } catch { return { elec: null, meca: null }; }
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const t = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(`tab-${t}`).classList.add('active');
+    if(t==='settings') loadSettings();
+    if(t==='carte') initMap();
+  });
+});
+
+// ══════════════════════════════════════════════════════════
+// TYPE TOGGLE
+// ══════════════════════════════════════════════════════════
+function setType(t) {
+  bikeType = t;
+  document.querySelectorAll('.type-btn').forEach((b,i)=>{
+    b.className = 'type-btn';
+    if((i===0&&t==='all')||(i===1&&t==='elec')||(i===2&&t==='meca'))
+      b.className = `type-btn active-${t}`;
+  });
+  if(liveStations.length) renderLive(liveStations);
 }
 
-function rowToStation(r) {
-  const { elec, meca } = parseAvail(r.main_stands || r.overflow_stands);
-  const total = r.available_bikes || 0;
-  return {
-    number:                r.number,
-    name:                  r.name || '',
-    available_bikes:       total,
-    available_bike_stands: r.available_bike_stands || 0,
-    bike_stands:           r.bike_stands || 0,
-    electrical_bikes:      elec ?? 0,
-    mechanical_bikes:      meca ?? total,
-    status:                r.status || 'OPEN',
-  };
-}
-
-async function fetchFromAPI() {
-  const r = await fetch(LIVE_API, { signal: AbortSignal.timeout(8000) });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  const data = await r.json();
-  let rows = data.values || data.features || [];
-  if (cfg.ids.length) rows = rows.filter(r => cfg.ids.includes(r.number));
-  return rows.map(rowToStation);
-}
-
-async function fetchFromCache() {
-  const r = await fetch('data/latest.json?_=' + Date.now());
-  if (!r.ok) throw new Error('data/latest.json introuvable — lancez Actions → Run workflow une première fois.');
-  const snap = await r.json();
-  let stations = snap.stations || [];
-  if (cfg.ids.length) stations = stations.filter(s => cfg.ids.includes(s.number));
-  return stations;
-}
-
+// ══════════════════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════════════════
 async function fetchLive() {
   try {
-    const stations = await fetchFromAPI();
-    setSourceLabel('⚡ Temps réel');
-    return stations;
-  } catch (e) {
-    console.warn('API directe inaccessible (CORS ?), fallback cache :', e.message);
-    const stations = await fetchFromCache();
-    setSourceLabel('📦 Cache GitHub Actions');
-    return stations;
+    const API = 'https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov/all.json?maxfeatures=-1&start=1';
+    const r = await fetch(API, {signal:AbortSignal.timeout(8000)});
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    let rows = data.values || [];
+    if(cfg.ids.length) rows = rows.filter(r=>cfg.ids.includes(r.number));
+    document.getElementById('src-tag').textContent = 'Grand Lyon · ⚡ Temps réel';
+    return rows.map(rowToStation);
+  } catch(e) {
+    console.warn('API directe bloquée (CORS), fallback cache:', e.message);
+    const r = await fetch('data/latest.json?_='+Date.now());
+    if(!r.ok) throw new Error('data/latest.json introuvable — lancez Actions → Run workflow.');
+    const snap = await r.json();
+    let st = snap.stations || [];
+    if(cfg.ids.length) st = st.filter(s=>cfg.ids.includes(s.number));
+    document.getElementById('src-tag').textContent = 'Grand Lyon · 📦 Cache';
+    return st;
   }
 }
 
-function setSourceLabel(txt) {
-  const el = document.querySelector('.source-tag');
-  if (el) el.textContent = `Grand Lyon · ${txt}`;
+function rowToStation(r) {
+  let elec=null, meca=null;
+  try {
+    const raw = r.main_stands||r.overflow_stands||'';
+    if(raw){
+      const s = (typeof raw==='string' ? raw : JSON.stringify(raw))
+        .replace(/'/g,'"').replace(/\bTrue\b/g,'true').replace(/\bFalse\b/g,'false');
+      const d = JSON.parse(s);
+      elec = d?.availabilities?.electricalBikes ?? null;
+      meca = d?.availabilities?.mechanicalBikes ?? null;
+    }
+  } catch {}
+  const total = r.available_bikes||0;
+  return {
+    number: r.number, name: r.name||'',
+    available_bikes: total,
+    available_bike_stands: r.available_bike_stands||0,
+    bike_stands: r.bike_stands||0,
+    electrical_bikes: elec??0,
+    mechanical_bikes: meca??total,
+    status: r.status||'OPEN',
+    lat: r.lat, lng: r.lng,
+  };
 }
 
 async function fetchDay(date) {
-  const r = await fetch(`data/history/${date}.json?_=` + Date.now());
-  if (!r.ok) return null;
+  const r = await fetch(`data/history/${date}.json?_=`+Date.now());
+  if(!r.ok) return null;
   return r.json();
 }
 
-// ─── LIVE ─────────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+// LIVE
+// ══════════════════════════════════════════════════════════
 async function refreshLive() {
-  const grid = document.getElementById('station-grid');
-  grid.innerHTML = '<div class="loader">Chargement…</div>';
+  document.getElementById('station-grid').innerHTML='<div class="loader">Chargement…</div>';
   try {
     liveStations = await fetchLive();
     renderLive(liveStations);
-  } catch (e) {
-    grid.innerHTML = `<div class="err">⚠ ${e.message}</div>`;
+  } catch(e) {
+    document.getElementById('station-grid').innerHTML=`<div class="err">⚠ ${e.message}</div>`;
   }
 }
 
 function renderLive(stations) {
-  document.getElementById('s-bikes').textContent  = stations.reduce((s, x) => s + (x.available_bikes || 0), 0);
-  document.getElementById('s-stands').textContent = stations.reduce((s, x) => s + (x.available_bike_stands || 0), 0);
-  document.getElementById('s-open').textContent   = `${stations.filter(x => x.status === 'OPEN').length}/${stations.length}`;
-  const totalElec = stations.reduce((s, x) => s + (x.electrical_bikes || 0), 0);
-  const totalMeca = stations.reduce((s, x) => s + (x.mechanical_bikes || 0), 0);
-  document.getElementById('s-elec').textContent = totalElec;
-  document.getElementById('s-meca').textContent = totalMeca;
-  document.getElementById('last-update').textContent = 'MàJ ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  const totalBikes = stations.reduce((s,x)=>s+getBikes(x),0);
+  const totalElec  = stations.reduce((s,x)=>s+(x.electrical_bikes||0),0);
+  const totalMeca  = stations.reduce((s,x)=>s+(x.mechanical_bikes||0),0);
+  document.getElementById('s-total').textContent = totalBikes;
+  document.getElementById('s-total-lbl').textContent = bikeType==='elec'?'⚡ Élec dispo':bikeType==='meca'?'🔧 Méca dispo':'Vélos dispo';
+  document.getElementById('s-elec').textContent  = totalElec;
+  document.getElementById('s-meca').textContent  = totalMeca;
+  document.getElementById('s-open').textContent  = `${stations.filter(x=>x.status==='OPEN').length}/${stations.length}`;
+  document.getElementById('last-upd').textContent = 'MàJ '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
 
   const grid = document.getElementById('station-grid');
-  grid.innerHTML = '';
-  if (!stations.length) { grid.innerHTML = '<div class="no-data">Aucune station. Vérifiez les IDs dans Config.</div>'; return; }
-
-  stations.forEach(st => {
-    const c   = cls(st.available_bikes, st.bike_stands);
-    const pct = st.bike_stands ? Math.round(st.available_bikes / st.bike_stands * 100) : 0;
-    const el  = document.createElement('div');
-    el.className = 'scard';
-    const elec = st.electrical_bikes ?? null;
-    const meca = st.mechanical_bikes ?? null;
-    const bikeDetail = (elec !== null)
-      ? `<span style="color:var(--green);font-size:12px;font-family:'DM Mono',monospace">⚡${elec}</span>
-         <span style="color:var(--muted);font-size:12px;margin:0 4px">/</span>
-         <span style="font-size:12px;font-family:'DM Mono',monospace">🔧${meca}</span>`
-      : '';
-    el.innerHTML = `
+  grid.innerHTML='';
+  stations.forEach(st=>{
+    const v = getBikes(st);
+    const c = cls(v, st.bike_stands);
+    const pct = st.bike_stands ? Math.round(v/st.bike_stands*100):0;
+    const el = document.createElement('div');
+    el.className='scard';
+    el.innerHTML=`
       <div class="scard-name">${cleanName(st.name)}</div>
-      <div class="scard-big"><span class="scard-num ${c}">${st.available_bikes}</span><span class="scard-unit">vélos</span></div>
-      <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;min-height:18px">${bikeDetail}</div>
+      <div class="scard-big"><span class="scard-num ${c}">${v}</span><span class="scard-unit">${bikeType==='elec'?'élec':bikeType==='meca'?'méca':'vélos'}</span></div>
+      <div class="scard-split">
+        <span class="scard-elec">⚡${st.electrical_bikes}</span>
+        <span class="scard-meca">🔧${st.mechanical_bikes}</span>
+      </div>
       <div class="scard-bar-bg"><div class="scard-bar ${c}" style="width:${pct}%"></div></div>
       <div class="scard-foot">
         <span class="scard-stands">${st.available_bike_stands} pl.</span>
-        <span class="badge ${st.status === 'OPEN' ? 'open' : 'closed'}">${st.status === 'OPEN' ? 'Ouverte' : 'Fermée'}</span>
+        <span class="badge ${st.status==='OPEN'?'open':'closed'}">${st.status==='OPEN'?'Ouverte':'Fermée'}</span>
       </div>`;
     grid.appendChild(el);
   });
 
   fillSelects(stations);
+  fillStChecks(stations);
 }
 
 function fillSelects(stations) {
-  ['hist-station', 'heat-station', 't-station'].forEach(id => {
-    const sel = document.getElementById(id);
-    const cur = sel.value;
-    sel.innerHTML = '<option value="">— Station —</option>';
-    stations.forEach(s => {
-      const o = document.createElement('option');
-      o.value = s.number; o.textContent = cleanName(s.name);
+  ['heat-station','t-station'].forEach(id=>{
+    const sel=document.getElementById(id); const cur=sel.value;
+    sel.innerHTML='<option value="">— Station —</option>';
+    stations.forEach(s=>{
+      const o=document.createElement('option');
+      o.value=s.number; o.textContent=cleanName(s.name);
       sel.appendChild(o);
     });
-    if (cur) sel.value = cur;
+    if(cur) sel.value=cur;
   });
 }
 
-// ─── HISTORIQUE ───────────────────────────────────────────────────────────────
+function fillStChecks(stations) {
+  ['st-checks-hist'].forEach(id=>{
+    const wrap=document.getElementById(id);
+    if(!wrap) return;
+    const prevSel = [...wrap.querySelectorAll('input:checked')].map(i=>parseInt(i.value));
+    wrap.innerHTML='';
+    stations.forEach((s,i)=>{
+      const div=document.createElement('div');
+      div.className='st-check'+(prevSel.includes(s.number)||(!prevSel.length&&i<3)?' sel':'');
+      const cb=document.createElement('input');
+      cb.type='checkbox'; cb.value=s.number;
+      cb.checked=(prevSel.includes(s.number)||(!prevSel.length&&i<3));
+      cb.onchange=()=>{ div.classList.toggle('sel',cb.checked); };
+      const lbl=document.createElement('span');
+      lbl.textContent=cleanName(s.name);
+      lbl.style.color=PALETTE[i%PALETTE.length];
+      div.appendChild(cb); div.appendChild(lbl);
+      wrap.appendChild(div);
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+// COURBES (multi-station, droites)
+// ══════════════════════════════════════════════════════════
 document.getElementById('hist-date').value = todayStr();
-document.getElementById('t-date').value    = todayStr();
 
 async function loadHistory() {
-  const id   = parseInt(document.getElementById('hist-station').value);
   const date = document.getElementById('hist-date').value;
-  if (!id || !date) return;
+  if(!date) return;
+
+  const sel = [...document.querySelectorAll('#st-checks-hist input:checked')].map(i=>parseInt(i.value));
+  if(!sel.length){ alert('Sélectionnez au moins une station.'); return; }
+
   const snaps = await fetchDay(date);
-  if (!snaps?.length) { alert('Aucune donnée pour cette date.'); return; }
+  if(!snaps?.length){ alert('Aucune donnée pour cette date.'); return; }
 
-  const labels = [], bikes = [], stands = [], flux = [];
-  snaps.forEach((snap, i) => {
-    const st = snap.stations?.find(s => s.number === id);
-    if (!st) return;
-    const t = new Date(snap.timestamp);
-    labels.push(t.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
-    bikes.push(st.available_bikes);
-    stands.push(st.available_bike_stands);
-    if (i > 0) { const prev = snaps[i-1].stations?.find(s => s.number === id); flux.push(prev ? st.available_bikes - prev.available_bikes : 0); }
-    else flux.push(0);
+  const typeLabel = bikeType==='elec'?'⚡ Élec':bikeType==='meca'?'🔧 Méca':'Vélos';
+  document.getElementById('hist-title').textContent = `${typeLabel} disponibles — ${date}`;
+
+  const labels = snaps.map(s=>{
+    const t=new Date(s.timestamp);
+    return t.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
   });
 
-  if (chartHist) chartHist.destroy();
-  chartHist = new Chart(document.getElementById('chart-hist'), {
-    type: 'line',
-    data: { labels, datasets: [
-      { label: 'Vélos dispo',   data: bikes,  borderColor: '#3fb97a', backgroundColor: 'rgba(63,185,122,.08)',  tension: .35, borderWidth: 2, pointRadius: 0 },
-      { label: 'Places libres', data: stands, borderColor: '#f0a500', backgroundColor: 'rgba(240,165,0,.08)',   tension: .35, borderWidth: 2, pointRadius: 0 },
-    ]},
-    options: chartDefs(),
+  // Datasets par station — tension:0 = droites
+  const datasets = sel.map((id,i)=>{
+    const color = PALETTE[liveStations.findIndex(s=>s.number===id)%PALETTE.length] || PALETTE[i];
+    const name  = cleanName(liveStations.find(s=>s.number===id)?.name || `#${id}`);
+    const data  = snaps.map(snap=>{
+      const st = snap.stations?.find(s=>s.number===id);
+      if(!st) return null;
+      if(bikeType==='elec') return st.electrical_bikes??null;
+      if(bikeType==='meca') return st.mechanical_bikes??null;
+      return st.available_bikes??null;
+    });
+    return { label:name, data, borderColor:color, backgroundColor:'transparent',
+             tension:0, borderWidth:1.5, pointRadius:0, spanGaps:true };
   });
 
-  if (chartFlux) chartFlux.destroy();
-  chartFlux = new Chart(document.getElementById('chart-flux'), {
-    type: 'bar',
-    data: { labels, datasets: [{
-      label: 'Δ vélos', data: flux,
-      backgroundColor: flux.map(v => v > 0 ? 'rgba(63,185,122,.55)' : v < 0 ? 'rgba(224,79,79,.55)' : 'rgba(78,100,120,.3)'),
-      borderColor:     flux.map(v => v > 0 ? '#3fb97a' : v < 0 ? '#e04f4f' : '#4e6478'),
-      borderWidth: 1,
-    }]},
-    options: chartDefs(),
+  if(chartHist) chartHist.destroy();
+  chartHist = new Chart(document.getElementById('chart-hist'),{
+    type:'line', data:{labels,datasets}, options:{...chartDefs(), spanGaps:true},
   });
-}
 
-// ─── HEATMAP ──────────────────────────────────────────────────────────────────
-async function loadHeatmap() {
-  const id   = parseInt(document.getElementById('heat-station').value);
-  const wrap = document.getElementById('heatmap-wrap');
-  if (!id) return;
-  wrap.innerHTML = '<div class="loader">Analyse des 30 derniers jours…</div>';
+  // Flux net — seulement si 1 station sélectionnée
+  const fluxDs = sel.length===1 ? (() => {
+    const id=sel[0];
+    const flux = snaps.map((snap,i)=>{
+      if(i===0) return 0;
+      const prev=snaps[i-1].stations?.find(s=>s.number===id);
+      const curr=snap.stations?.find(s=>s.number===id);
+      if(!prev||!curr) return 0;
+      if(bikeType==='elec') return (curr.electrical_bikes??0)-(prev.electrical_bikes??0);
+      if(bikeType==='meca') return (curr.mechanical_bikes??0)-(prev.mechanical_bikes??0);
+      return curr.available_bikes-prev.available_bikes;
+    });
+    return flux;
+  })() : null;
 
-  const allSnaps = [];
-  const today    = new Date();
-  for (let i = 0; i < 30; i++) {
-    const d  = new Date(today); d.setDate(d.getDate() - i);
-    const ds = d.toISOString().slice(0, 10);
-    try { const snaps = await fetchDay(ds); if (snaps) allSnaps.push(...snaps); } catch {}
+  if(chartFlux) chartFlux.destroy();
+  if(fluxDs){
+    chartFlux = new Chart(document.getElementById('chart-flux'),{
+      type:'bar',
+      data:{labels,datasets:[{
+        label:'Δ vélos',data:fluxDs,
+        backgroundColor:fluxDs.map(v=>v>0?'rgba(63,185,122,.55)':v<0?'rgba(224,79,79,.55)':'rgba(78,100,120,.3)'),
+        borderWidth:0,
+      }]},
+      options:chartDefs(),
+    });
+  } else {
+    const ctx=document.getElementById('chart-flux').getContext('2d');
+    ctx.clearRect(0,0,9999,9999);
+    chartFlux=null;
+    document.getElementById('chart-flux').parentElement.querySelector('.chart-title').textContent='Flux net — sélectionnez 1 seule station';
   }
-  if (!allSnaps.length) { wrap.innerHTML = '<div class="no-data">Aucune donnée historique.</div>'; return; }
+}
 
-  const buckets = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => []));
-  allSnaps.forEach(snap => {
-    const st = snap.stations?.find(s => s.number === id);
-    if (!st || !st.bike_stands) return;
-    const t    = new Date(snap.timestamp);
-    const hour = (t.getUTCHours() + 2) % 24;
-    buckets[t.getDay()][hour].push(st.available_bikes / st.bike_stands * 100);
-  });
+// ══════════════════════════════════════════════════════════
+// HEATMAP SINGLE
+// ══════════════════════════════════════════════════════════
+async function loadHeatmap() {
+  const id = parseInt(document.getElementById('heat-station').value);
+  const wrap = document.getElementById('heatmap-single');
+  if(!id){ wrap.innerHTML='<div class="no-data">Sélectionnez une station.</div>'; return; }
+  wrap.innerHTML='<div class="loader">Analyse 30 jours…</div>';
+  document.getElementById('hmap-wrap-multi').style.display='none';
 
-  const DAYS  = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
-  const ORDER = [1, 2, 3, 4, 5, 6, 0];
-  let html = '<div class="hmap-grid"><div class="hmap-h"></div>';
-  for (let h = 0; h < 24; h++) html += `<div class="hmap-h">${String(h).padStart(2,'0')}</div>`;
-  ORDER.forEach(d => {
-    html += `<div class="hmap-label">${DAYS[d]}</div>`;
-    for (let h = 0; h < 24; h++) {
-      const vals = buckets[d][h];
-      if (!vals.length) { html += `<div class="hmap-cell" style="background:#111820" title="${DAYS[d]} ${h}h — pas de données"></div>`; }
-      else {
-        const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-        const t   = avg / 100;
-        const r   = Math.round(224 - t * (224 - 63));
-        const g   = Math.round(79  + t * (185 - 79));
-        const bv  = Math.round(79  + t * (122 - 79));
-        html += `<div class="hmap-cell" style="background:rgba(${r},${g},${bv},.75)" title="${DAYS[d]} ${h}h — ${Math.round(avg)}%"></div>`;
+  const buckets = await buildBuckets([id], 30);
+  const name = cleanName(liveStations.find(s=>s.number===id)?.name||`#${id}`);
+  document.getElementById('hmap-title-single').textContent=`Heatmap — ${name} — 30 derniers jours`;
+  wrap.innerHTML = renderHmapGrid([{id,buckets:buckets[id]}], false);
+}
+
+// ══════════════════════════════════════════════════════════
+// HEATMAP MULTI
+// ══════════════════════════════════════════════════════════
+async function loadHeatmapMulti() {
+  const wrap = document.getElementById('heatmap-multi');
+  document.getElementById('hmap-wrap-multi').style.display='block';
+  wrap.innerHTML='<div class="loader">Analyse 30 jours pour toutes les stations…</div>';
+
+  const ids = liveStations.map(s=>s.number);
+  const buckets = await buildBuckets(ids, 30);
+  const rows = ids.map(id=>({id, buckets:buckets[id]||Array.from({length:7},()=>Array.from({length:24},()=>[]))}));
+  wrap.innerHTML = renderHmapGrid(rows, true);
+}
+
+async function buildBuckets(ids, days) {
+  const buckets = {};
+  ids.forEach(id=>{ buckets[id]=Array.from({length:7},()=>Array.from({length:24},()=>[])); });
+  const today=new Date();
+  for(let i=0;i<days;i++){
+    const d=new Date(today); d.setDate(d.getDate()-i);
+    const ds=d.toISOString().slice(0,10);
+    try {
+      const snaps=await fetchDay(ds);
+      if(!snaps) continue;
+      snaps.forEach(snap=>{
+        const t=new Date(snap.timestamp);
+        const hour=(t.getUTCHours()+2)%24;
+        const dow=t.getDay();
+        snap.stations?.forEach(st=>{
+          if(!ids.includes(st.number)||!st.bike_stands) return;
+          let v;
+          if(bikeType==='elec') v=st.electrical_bikes??null;
+          else if(bikeType==='meca') v=st.mechanical_bikes??null;
+          else v=st.available_bikes;
+          if(v===null||v===undefined) return;
+          buckets[st.number][dow][hour].push(v/st.bike_stands*100);
+        });
+      });
+    } catch {}
+  }
+  return buckets;
+}
+
+function renderHmapGrid(rows, multi) {
+  const DAYS=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  const ORDER=[1,2,3,4,5,6,0];
+  let html='';
+  rows.forEach(({id,buckets})=>{
+    const name=cleanName(liveStations.find(s=>s.number===id)?.name||`#${id}`);
+    if(multi) html+=`<div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin:12px 0 4px">${name}</div>`;
+    html+=`<div class="hmap-grid"><div class="hmap-h"></div>`;
+    for(let h=0;h<24;h++) html+=`<div class="hmap-h">${String(h).padStart(2,'0')}</div>`;
+    ORDER.forEach(d=>{
+      html+=`<div class="hmap-label">${DAYS[d]}</div>`;
+      for(let h=0;h<24;h++){
+        const vals=buckets[d][h];
+        if(!vals.length){ html+=`<div class="hmap-cell" style="background:#111820" title="${DAYS[d]} ${h}h — no data"></div>`; }
+        else {
+          const avg=vals.reduce((a,b)=>a+b,0)/vals.length;
+          html+=`<div class="hmap-cell" style="background:${heatCell(avg)}" title="${DAYS[d]} ${h}h — ${Math.round(avg)}%"></div>`;
+        }
       }
-    }
+    });
+    html+=`</div>`;
   });
-  html += `</div><div class="hmap-legend"><span>0 %</span><div class="hmap-legend-bar"></div><span>100 %</span><span style="margin-left:16px">= % vélos dispo · survolez pour la valeur</span></div>`;
-  wrap.innerHTML = html;
+  html+=`<div class="hmap-legend"><span>0%</span><div class="hmap-legend-bar"></div><span>100%</span><span style="margin-left:12px">% ${bikeType==='elec'?'élec':bikeType==='meca'?'méca':'vélos'} dispo · survol = valeur</span></div>`;
+  return html;
 }
 
-// ─── TRACKING ─────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+// CARTE LEAFLET
+// ══════════════════════════════════════════════════════════
+function initMap() {
+  if(mapInstance) { mapInstance.invalidateSize(); return; }
+  mapInstance = L.map('map',{zoomControl:true}).setView([45.757,4.832],13);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+    attribution:'© OpenStreetMap, © CARTO',maxZoom:19,
+  }).addTo(mapInstance);
+  renderMapStations();
+}
+
+function renderMapStations() {
+  if(!mapInstance||!liveStations.length) return;
+  if(markerLayer) markerLayer.clearLayers();
+  markerLayer = L.layerGroup().addTo(mapInstance);
+
+  liveStations.forEach(st=>{
+    if(!st.lat||!st.lng) return;
+    const v   = getBikes(st);
+    const pct = st.bike_stands ? v/st.bike_stands : 0;
+    const col = pct<=0?'#e04f4f':pct<=.25?'#d4a035':'#3fb97a';
+
+    const marker = L.circleMarker([st.lat,st.lng],{
+      radius:8, fillColor:col, color:col,
+      fillOpacity:.85, weight:1, opacity:.9,
+    });
+
+    marker.bindPopup(`
+      <div style="font-family:monospace;font-size:12px;line-height:1.8">
+        <strong>${cleanName(st.name)}</strong><br>
+        Vélos : ${st.available_bikes} (⚡${st.electrical_bikes} / 🔧${st.mechanical_bikes})<br>
+        Places : ${st.available_bike_stands}<br>
+        ${st.status==='OPEN'?'<span style="color:#3fb97a">● Ouverte</span>':'<span style="color:#e04f4f">● Fermée</span>'}
+      </div>`);
+
+    markerLayer.addLayer(marker);
+  });
+
+  buildHeatLayer();
+}
+
+function buildHeatLayer() {
+  if(!mapInstance) return;
+  if(heatLayer) mapInstance.removeLayer(heatLayer);
+
+  // Points heatmap = activité (variation absolue sur toutes stations, normalisée)
+  const pts = liveStations
+    .filter(s=>s.lat&&s.lng&&s.bike_stands)
+    .map(s=>{
+      const intensity = getBikes(s)/s.bike_stands;
+      return [s.lat, s.lng, intensity];
+    });
+
+  heatLayer = L.heatLayer(pts,{
+    radius:35, blur:25, maxZoom:15,
+    gradient:{0:'#e04f4f',0.5:'#d4a035',1:'#3fb97a'},
+  });
+
+  if(heatLayerOn) heatLayer.addTo(mapInstance);
+}
+
+function toggleHeatLayer() {
+  if(!mapInstance) return;
+  heatLayerOn = !heatLayerOn;
+  const btn = document.getElementById('heat-toggle');
+  if(heatLayerOn){
+    heatLayer?.addTo(mapInstance);
+    btn.style.borderColor='var(--accent)';
+    btn.style.color='var(--accent)';
+  } else {
+    if(heatLayer) mapInstance.removeLayer(heatLayer);
+    btn.style.borderColor='';
+    btn.style.color='';
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// TRACKING
+// ══════════════════════════════════════════════════════════
+document.getElementById('t-date').value = todayStr();
+
 async function runTracking() {
-  const bikeNum = document.getElementById('t-bike').value.trim();
-  const stId    = parseInt(document.getElementById('t-station').value);
-  const date    = document.getElementById('t-date').value;
-  const time    = document.getElementById('t-time').value;
-  if (!stId || !date || !time) { alert('Renseignez la station, la date et l\'heure.'); return; }
+  const stId  = parseInt(document.getElementById('t-station').value);
+  const date  = document.getElementById('t-date').value;
+  const time  = document.getElementById('t-time').value;
+  const bike  = document.getElementById('t-bike').value.trim();
+  if(!stId||!date||!time){ alert('Station, date et heure requis.'); return; }
 
-  const res = document.getElementById('track-result');
-  const cnt = document.getElementById('track-content');
-  res.style.display = 'block';
-  cnt.innerHTML = '<div class="loader">Analyse…</div>';
+  const res=document.getElementById('track-result');
+  const cnt=document.getElementById('track-content');
+  res.style.display='block';
+  cnt.innerHTML='<div class="loader">Analyse…</div>';
 
-  const snaps = await fetchDay(date);
-  if (!snaps?.length) { cnt.innerHTML = '<div class="no-data">Aucune donnée pour cette date.</div>'; return; }
+  const snaps=await fetchDay(date);
+  if(!snaps?.length){ cnt.innerHTML='<div class="no-data">Aucune donnée.</div>'; return; }
 
-  const depMs  = new Date(`${date}T${time}:00+02:00`).getTime();
-  const endMs  = depMs + 2 * 3600e3;
-  const window_ = snaps.filter(s => { const ms = new Date(s.timestamp).getTime(); return ms >= depMs && ms <= endMs; });
-  if (!window_.length) { cnt.innerHTML = '<div class="no-data">Aucun snapshot dans la fenêtre de 2h.</div>'; return; }
+  const depMs=new Date(`${date}T${time}:00+02:00`).getTime();
+  const window_=snaps.filter(s=>{ const ms=new Date(s.timestamp).getTime(); return ms>=depMs&&ms<=depMs+7200e3; });
+  if(!window_.length){ cnt.innerHTML='<div class="no-data">Aucun snapshot dans la fenêtre de 2h.</div>'; return; }
 
-  const candidates = [];
-  liveStations.forEach(liveSt => {
-    if (liveSt.number === stId) return;
-    let maxDelta = 0, bestTime = null;
-    for (let i = 1; i < window_.length; i++) {
-      const prev = window_[i-1].stations?.find(s => s.number === liveSt.number);
-      const curr = window_[i].stations?.find(s => s.number === liveSt.number);
-      if (!prev || !curr) continue;
-      const delta = curr.available_bikes - prev.available_bikes;
-      if (delta > maxDelta) { maxDelta = delta; bestTime = new Date(window_[i].timestamp); }
+  const cands=[];
+  liveStations.forEach(liveSt=>{
+    if(liveSt.number===stId) return;
+    let maxD=0,bestT=null;
+    for(let i=1;i<window_.length;i++){
+      const prev=window_[i-1].stations?.find(s=>s.number===liveSt.number);
+      const curr=window_[i].stations?.find(s=>s.number===liveSt.number);
+      if(!prev||!curr) continue;
+      const delta=curr.available_bikes-prev.available_bikes;
+      if(delta>maxD){ maxD=delta; bestT=new Date(window_[i].timestamp); }
     }
-    if (maxDelta > 0) candidates.push({ st: liveSt, delta: maxDelta, time: bestTime });
+    if(maxD>0) cands.push({st:liveSt,delta:maxD,time:bestT});
   });
-  candidates.sort((a, b) => b.delta - a.delta);
+  cands.sort((a,b)=>b.delta-a.delta);
 
-  if (!candidates.length) { cnt.innerHTML = `<div class="no-data">Aucune variation positive détectée dans la fenêtre de 2h.</div>`; return; }
-
-  const depName = liveStations.find(s => s.number === stId)?.name || `#${stId}`;
-  let html = `<p style="font-size:12px;color:var(--muted);margin-bottom:14px">${bikeNum ? `Vélo <strong style="color:var(--text)">#${bikeNum}</strong> · ` : ''}Départ : <strong style="color:var(--text)">${cleanName(depName)}</strong> à <strong style="color:var(--text)">${time}</strong></p>`;
-  candidates.slice(0, 6).forEach((c, i) => {
-    const tStr = c.time ? c.time.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '—';
-    html += `<div class="res-row"><span class="res-name">#${i+1} · ${cleanName(c.st.name)}</span><span class="res-delta">+${c.delta} vélo${c.delta>1?'s':''}</span><span class="res-time">${tStr}</span></div>`;
+  if(!cands.length){ cnt.innerHTML='<div class="no-data">Aucune variation positive détectée.</div>'; return; }
+  const depName=cleanName(liveStations.find(s=>s.number===stId)?.name||`#${stId}`);
+  let html=`<p style="font-size:11px;color:var(--muted);margin-bottom:12px">${bike?`Vélo #${bike} · `:''}Départ : <strong style="color:var(--text)">${depName}</strong> à ${time}</p>`;
+  cands.slice(0,6).forEach((c,i)=>{
+    const t=c.time?c.time.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'—';
+    html+=`<div class="res-row"><span style="font-weight:500">#${i+1} · ${cleanName(c.st.name)}</span><span class="res-delta">+${c.delta}</span><span class="res-time">${t}</span></div>`;
   });
-  cnt.innerHTML = html;
+  cnt.innerHTML=html;
 }
 
-// ─── SETTINGS ─────────────────────────────────────────────────────────────────
-function loadSettings() {
-  document.getElementById('cfg-ids').value = cfg.ids.join(', ');
-}
-function saveSettings() {
-  const raw = document.getElementById('cfg-ids').value.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
-  cfg.ids = raw;
-  localStorage.setItem('vv_ids', JSON.stringify(cfg.ids));
-  const el = document.getElementById('cfg-saved');
-  el.style.display = 'inline';
-  setTimeout(() => { el.style.display = 'none'; }, 2200);
+// ══════════════════════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════════════════════
+function loadSettings(){ document.getElementById('cfg-ids').value=cfg.ids.join(', '); }
+function saveSettings(){
+  cfg.ids=[...document.getElementById('cfg-ids').value.split(',').map(s=>parseInt(s.trim())).filter(n=>!isNaN(n))];
+  localStorage.setItem('vv_ids',JSON.stringify(cfg.ids));
+  const el=document.getElementById('cfg-saved');
+  el.style.display='inline';
+  setTimeout(()=>el.style.display='none',2000);
 }
 
-// ─── BOOT ─────────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════════════════════
 refreshLive();
-// Auto-refresh : 5 min si API directe disponible, sinon inutile de spammer le cache
-setInterval(refreshLive, 5 * 60 * 1000);
+setInterval(refreshLive, 5*60*1000);
 </script>
 </body>
 </html>
