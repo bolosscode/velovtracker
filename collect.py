@@ -33,18 +33,14 @@ WFS_PARAMS = {
 }
 
 def build_url():
-    params = dict(WFS_PARAMS)
-    if STATION_IDS:
-        ids_str = ", ".join(str(i) for i in STATION_IDS)
-        params["CQL_FILTER"] = f"number IN ({ids_str})"
-    return f"{WFS_BASE}?{urlencode(params)}"
+    return f"{WFS_BASE}?{urlencode(WFS_PARAMS)}"
 
 def main():
     url = build_url()
     print(f"Fetch : {url}")
 
     try:
-        resp = requests.get(url, timeout=20, headers={"Accept": "application/json"})
+        resp = requests.get(url, timeout=30)
         resp.raise_for_status()
         geojson = resp.json()
     except Exception as e:
@@ -54,6 +50,12 @@ def main():
     features = geojson.get("features", [])
     if not features:
         print("AVERTISSEMENT : aucune feature retournée.", file=sys.stderr)
+        sys.exit(1)
+
+    # Filtre en Python si des IDs sont configurés
+    if STATION_IDS:
+        features = [f for f in features if f.get("properties", {}).get("number") in STATION_IDS]
+        print(f"Filtre appliqué : {len(features)} station(s) sur {len(geojson.get('features', []))} totales")
 
     now      = datetime.now(timezone.utc)
     stations = []
