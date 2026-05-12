@@ -41,6 +41,8 @@ def main():
 
     try:
         resp = requests.get(url, timeout=30)
+        print(f"HTTP {resp.status_code} | Content-Type: {resp.headers.get('Content-Type','?')}")
+        print(f"Réponse (500 premiers chars) : {resp.text[:500]!r}")
         resp.raise_for_status()
         geojson = resp.json()
     except Exception as e:
