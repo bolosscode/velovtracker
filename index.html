@@ -1162,4 +1162,1132 @@ refreshLive();
 setInterval(refreshLive, 5*60*1000);
 </script>
 </body>
+</html>  font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Helvetica,Arial,sans-serif;
+  font-size:14px;line-height:1.5;min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── Header ───────────────────────────────────────────── */
+header{
+  background:rgba(255,255,255,.82);backdrop-filter:saturate(180%) blur(20px);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:1px solid var(--border-light);
+  position:sticky;top:0;z-index:200;
+  padding:0 24px;height:52px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.hd-brand{font-size:17px;font-weight:600;letter-spacing:-.3px;color:var(--ink)}
+.hd-brand em{color:var(--blue);font-style:normal}
+.hd-right{display:flex;align-items:center;gap:10px}
+
+/* live dot */
+.live-badge{
+  display:flex;align-items:center;gap:5px;
+  font-size:11px;font-weight:500;color:var(--secondary);
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:20px;padding:3px 10px;
+}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2.5s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.85)}}
+
+/* type toggle */
+.seg{
+  display:flex;background:var(--border-light);border-radius:8px;padding:2px;gap:1px;
+}
+.seg-btn{
+  padding:4px 12px;font-size:12px;font-weight:500;border:none;cursor:pointer;
+  border-radius:6px;background:transparent;color:var(--secondary);transition:all .15s;
+}
+.seg-btn.on{background:var(--paper);color:var(--ink);box-shadow:var(--shadow)}
+
+/* clock */
+.hd-clock{font-size:12px;color:var(--tertiary);font-variant-numeric:tabular-nums}
+
+/* ── Nav tabs ─────────────────────────────────────────── */
+nav{
+  background:rgba(255,255,255,.9);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border-light);
+  padding:0 24px;display:flex;gap:0;overflow-x:auto;
+}
+.tab{
+  padding:12px 16px;font-size:13px;font-weight:500;color:var(--secondary);
+  cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;
+  transition:color .15s,border-color .15s;user-select:none;
+}
+.tab:hover{color:var(--ink)}
+.tab.on{color:var(--blue);border-bottom-color:var(--blue)}
+
+/* ── Main layout ──────────────────────────────────────── */
+main{padding:20px 24px 60px;max-width:1320px;margin:0 auto}
+.panel{display:none}
+.panel.on{display:block;animation:fadein .18s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* ── Cards ────────────────────────────────────────────── */
+.card{
+  background:var(--paper);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:20px;margin-bottom:14px;
+}
+.card-title{
+  font-size:11px;font-weight:600;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--secondary);margin-bottom:14px;
+}
+
+/* ── Summary strip ────────────────────────────────────── */
+.summary{
+  display:flex;align-items:center;gap:0;
+  background:var(--paper);border-radius:var(--radius);
+  box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden;
+}
+.sum-item{
+  flex:1;padding:14px 18px;
+  border-right:1px solid var(--border-light);
+}
+.sum-item:last-child{border-right:none}
+.sum-val{font-size:28px;font-weight:700;letter-spacing:-.5px;line-height:1;color:var(--ink)}
+.sum-val.blue{color:var(--blue)}
+.sum-val.green{color:var(--green)}
+.sum-val.red{color:var(--red)}
+.sum-lbl{font-size:11px;color:var(--secondary);margin-top:2px}
+.sum-right{display:flex;align-items:center;gap:8px;padding:0 16px;margin-left:auto}
+
+/* ── Search ───────────────────────────────────────────── */
+.search-wrap{position:relative;margin-bottom:14px}
+.search-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--tertiary);pointer-events:none}
+#search{
+  width:100%;padding:9px 12px 9px 36px;
+  background:var(--paper);border:1px solid var(--border);
+  border-radius:10px;font-size:14px;color:var(--ink);outline:none;
+  box-shadow:var(--shadow);transition:border-color .15s,box-shadow .15s;
+}
+#search:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,113,227,.12)}
+#search::placeholder{color:var(--tertiary)}
+
+/* ── Station grid ─────────────────────────────────────── */
+.st-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px}
+.scard{
+  background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:16px;cursor:default;transition:box-shadow .18s,transform .18s;
+  border:1px solid transparent;
+}
+.scard:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.scard-name{font-size:11px;font-weight:600;color:var(--secondary);margin-bottom:10px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.01em}
+.scard-num{font-size:42px;font-weight:700;letter-spacing:-1px;line-height:1;margin-bottom:2px}
+.scard-num.ok{color:var(--green)}
+.scard-num.low{color:#ff9f0a}
+.scard-num.empty{color:var(--red)}
+.scard-unit{font-size:11px;color:var(--secondary)}
+.scard-pills{display:flex;gap:5px;margin:8px 0}
+.pill{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;
+}
+.pill-elec{background:var(--green-light);color:#1a7f2b}
+.pill-meca{background:var(--blue-light);color:#0052a5}
+.pill-mv{background:#f0f0f5;color:var(--secondary)}
+.scard-bar-bg{height:3px;background:var(--border-light);border-radius:2px;overflow:hidden;margin-bottom:10px}
+.scard-bar{height:100%;border-radius:2px;transition:width .5s}
+.scard-bar.ok{background:var(--green)}
+.scard-bar.low{background:#ff9f0a}
+.scard-bar.empty{background:var(--red)}
+.scard-foot{display:flex;justify-content:space-between;align-items:center}
+.scard-stands{font-size:11px;color:var(--tertiary)}
+.badge-open{font-size:10px;font-weight:600;color:var(--green);background:var(--green-light);padding:2px 7px;border-radius:20px}
+.badge-closed{font-size:10px;font-weight:600;color:var(--red);background:var(--red-light);padding:2px 7px;border-radius:20px}
+
+/* ── Controls ─────────────────────────────────────────── */
+.ctrl{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+
+/* period pills */
+.period-bar{display:flex;gap:4px;flex-wrap:wrap}
+.period-btn{
+  padding:5px 14px;font-size:12px;font-weight:500;border:1px solid var(--border);
+  border-radius:20px;background:var(--paper);color:var(--secondary);cursor:pointer;
+  transition:all .15s;
+}
+.period-btn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+/* station checkboxes for multi-compare */
+.st-checks{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.st-ck{
+  display:flex;align-items:center;gap:5px;padding:4px 10px;
+  background:var(--paper);border:1px solid var(--border);border-radius:20px;
+  cursor:pointer;font-size:12px;transition:border-color .15s,background .15s;
+}
+.st-ck.on{border-color:var(--blue);background:var(--blue-light)}
+.st-ck input{accent-color:var(--blue);cursor:pointer}
+.st-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* ── Buttons ──────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:7px 16px;font-size:13px;font-weight:500;
+  border:none;border-radius:var(--radius-xs);cursor:pointer;transition:opacity .15s;
+}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:hover{opacity:.85}
+.btn-sec{background:var(--paper);color:var(--ink);border:1px solid var(--border);box-shadow:var(--shadow)}
+.btn-sec:hover{background:var(--bg)}
+select{
+  padding:7px 10px;background:var(--paper);border:1px solid var(--border);
+  border-radius:var(--radius-xs);font-size:13px;color:var(--ink);outline:none;
+  box-shadow:var(--shadow);cursor:pointer;
+}
+select:focus{border-color:var(--blue)}
+input[type=date],input[type=text],input[type=time]{
+  padding:7px 10px;background:var(--paper);border:1px solid var(--border);
+  border-radius:var(--radius-xs);font-size:13px;color:var(--ink);outline:none;box-shadow:var(--shadow);
+}
+input[type=date]:focus,input[type=text]:focus,input[type=time]:focus{border-color:var(--blue)}
+
+/* ── Heatmap ──────────────────────────────────────────── */
+.hmap-wrap{overflow-x:auto}
+.hmap-grid{display:grid;grid-template-columns:90px repeat(24,1fr);gap:2px;min-width:600px}
+.hmap-h{font-size:8px;color:var(--tertiary);height:24px;display:flex;align-items:center;justify-content:center}
+.hmap-label{font-size:9px;color:var(--secondary);height:24px;display:flex;align-items:center;
+  font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:4px}
+.hmap-cell{height:24px;border-radius:2px;cursor:default;transition:opacity .1s}
+.hmap-cell:hover{outline:1.5px solid var(--blue)}
+.hmap-legend{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:11px;color:var(--secondary)}
+.hmap-legend-bar{flex:1;max-width:140px;height:6px;border-radius:3px;
+  background:linear-gradient(to right,#ff3b30,#ff9f0a,#28cd41)}
+
+/* ── Map ──────────────────────────────────────────────── */
+#map{height:500px;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-md)}
+.leaflet-popup-content-wrapper{border-radius:10px!important;box-shadow:var(--shadow-md)!important;padding:0!important}
+.leaflet-popup-content{margin:0!important}
+.map-popup{padding:12px 14px;font-family:-apple-system,sans-serif;min-width:160px}
+.map-popup strong{font-size:13px;display:block;margin-bottom:6px;color:var(--ink)}
+.map-popup .mp-row{display:flex;justify-content:space-between;font-size:12px;color:var(--secondary);padding:1px 0}
+
+/* movement bar on map popup */
+.mv-bar-bg{height:4px;background:var(--border-light);border-radius:2px;margin-top:8px;overflow:hidden}
+.mv-bar{height:100%;border-radius:2px;background:var(--blue)}
+
+/* ── Tracking ─────────────────────────────────────────── */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;margin-bottom:14px}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg label{font-size:11px;font-weight:600;color:var(--secondary);text-transform:uppercase;letter-spacing:.04em}
+.fg input,.fg select{width:100%}
+.res-row{display:flex;align-items:center;justify-content:space-between;
+  padding:9px 0;border-bottom:1px solid var(--border-light)}
+.res-row:last-child{border-bottom:none}
+.res-delta{font-size:13px;font-weight:600;color:var(--green);font-variant-numeric:tabular-nums}
+.res-time{font-size:11px;color:var(--tertiary);font-variant-numeric:tabular-nums}
+
+/* ── States ───────────────────────────────────────────── */
+.loader{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--tertiary);font-size:13px}
+.no-data{text-align:center;padding:40px;color:var(--tertiary);font-size:13px}
+.err{background:var(--red-light);border:1px solid rgba(255,59,48,.2);border-radius:var(--radius-sm);padding:12px 14px;color:var(--red);font-size:13px}
+.ok-flash{color:var(--green);font-size:12px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hd-brand">Vélo<em>'</em>v</div>
+  <div class="hd-right">
+    <div class="seg" id="type-seg">
+      <button class="seg-btn on" onclick="setType('all')">Tous</button>
+      <button class="seg-btn" onclick="setType('elec')">⚡ Élec</button>
+      <button class="seg-btn" onclick="setType('meca')">🔧 Méca</button>
+    </div>
+    <div class="live-badge"><div class="live-dot"></div><span id="src-tag">Grand Lyon</span></div>
+    <div class="hd-clock" id="clock"></div>
+  </div>
+</header>
+
+<nav>
+  <div class="tab on" data-tab="live">Live</div>
+  <div class="tab" data-tab="history">Courbes</div>
+  <div class="tab" data-tab="heatmap">Heatmap</div>
+  <div class="tab" data-tab="carte">Carte</div>
+  <div class="tab" data-tab="tracking">Tracking</div>
+  <div class="tab" data-tab="settings">Config</div>
+</nav>
+
+<main>
+
+<!-- ══ LIVE ══════════════════════════════════════════════ -->
+<div class="panel on" id="tab-live">
+  <div class="summary" id="summary">
+    <div class="sum-item"><div class="sum-val blue" id="s-total">—</div><div class="sum-lbl" id="s-total-lbl">Vélos dispo</div></div>
+    <div class="sum-item"><div class="sum-val green" id="s-elec">—</div><div class="sum-lbl">⚡ Électriques</div></div>
+    <div class="sum-item"><div class="sum-val" style="color:#0052a5" id="s-meca">—</div><div class="sum-lbl">🔧 Mécaniques</div></div>
+    <div class="sum-item"><div class="sum-val" id="s-open">—</div><div class="sum-lbl">Stations ouvertes</div></div>
+    <div class="sum-item"><div class="sum-val blue" id="s-mv">—</div><div class="sum-lbl">Mouvements aujourd'hui</div></div>
+    <div class="sum-right">
+      <span style="font-size:11px;color:var(--tertiary)" id="last-upd"></span>
+      <button class="btn btn-sec" onclick="refreshLive()">↻ Actualiser</button>
+    </div>
+  </div>
+
+  <div class="search-wrap">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+    <input id="search" type="text" placeholder="Rechercher une station…" oninput="filterCards()">
+  </div>
+
+  <div class="st-grid" id="station-grid"><div class="loader">Chargement…</div></div>
+</div>
+
+<!-- ══ COURBES ═══════════════════════════════════════════ -->
+<div class="panel" id="tab-history">
+  <div class="card">
+    <div class="card-title">Période</div>
+    <div class="period-bar" id="hist-periods">
+      <button class="period-btn on" data-period="1d">1 jour</button>
+      <button class="period-btn" data-period="1w">1 semaine</button>
+      <button class="period-btn" data-period="1m">1 mois</button>
+      <button class="period-btn" data-period="6m">6 mois</button>
+      <button class="period-btn" data-period="1y">1 an</button>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+    <div class="search-wrap" style="margin-bottom:0;flex:1">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <input id="search-hist" type="text" placeholder="Filtrer les stations…" oninput="filterStChecks()" style="width:100%">
+    </div>
+    <button class="btn btn-sec" onclick="resetStChecks()" title="Tout décocher">✕ Reset</button>
+    <button class="btn btn-sec" onclick="selectAllStChecks()" title="Tout cocher">✓ Tous</button>
+  </div>
+  <div id="st-checks-hist" class="st-checks"></div>
+  <div class="card">
+    <div class="card-title" id="hist-title">Disponibilité</div>
+    <canvas id="chart-hist" height="80"></canvas>
+  </div>
+  <div class="card">
+    <div class="card-title" id="flux-title">Flux net</div>
+    <canvas id="chart-flux" height="50"></canvas>
+  </div>
+  <div class="card" id="mv-card" style="display:none">
+    <div class="card-title">Mouvements cumulés par station</div>
+    <canvas id="chart-mv" height="50"></canvas>
+  </div>
+</div>
+
+<!-- ══ HEATMAP ═══════════════════════════════════════════ -->
+<div class="panel" id="tab-heatmap">
+  <div class="card">
+    <div class="card-title">Période & station</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <div class="period-bar" id="heat-periods">
+        <button class="period-btn on" data-period="1d">1 jour</button>
+        <button class="period-btn" data-period="1w">1 semaine</button>
+        <button class="period-btn" data-period="1m">1 mois</button>
+        <button class="period-btn" data-period="6m">6 mois</button>
+        <button class="period-btn" data-period="1y">1 an</button>
+      </div>
+      <select id="heat-station"><option value="">— Station unique —</option></select>
+      <button class="btn btn-primary" onclick="loadHeatmap()">Calculer</button>
+      <button class="btn btn-sec" onclick="loadHeatmapMulti()">Comparer toutes</button>
+    </div>
+  </div>
+  <div class="card" id="hmap-single-card">
+    <div class="card-title" id="hmap-title-single">Heatmap</div>
+    <div class="hmap-wrap"><div id="heatmap-single"><div class="no-data">Sélectionnez une station.</div></div></div>
+  </div>
+  <div class="card" id="hmap-multi-card" style="display:none">
+    <div class="card-title">Comparaison — toutes stations</div>
+    <div class="hmap-wrap"><div id="heatmap-multi"></div></div>
+  </div>
+</div>
+
+<!-- ══ CARTE ══════════════════════════════════════════════ -->
+<div class="panel" id="tab-carte">
+  <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+    <button class="btn btn-sec" onclick="toggleHeat()" id="heat-toggle">🌡 Heatmap</button>
+    <span style="font-size:12px;color:var(--secondary)">Aura = disponibilité actuelle</span>
+  </div>
+  <div id="map"></div>
+</div>
+
+<!-- ══ TRACKING ═══════════════════════════════════════════ -->
+<div class="panel" id="tab-tracking">
+  <div class="card">
+    <div class="card-title">Tracker un vélo</div>
+    <p style="font-size:13px;color:var(--secondary);margin-bottom:16px;line-height:1.6">
+      Les numéros dans l'app Vélo'v sont des identifiants internes JCDecaux non exposés via API publique. Le tracking reste probabiliste : corrélation entre la disparition d'un vélo à une station et l'apparition ailleurs dans les 2h.
+    </p>
+    <div class="form-grid">
+      <div class="fg"><label>N° vélo (mémo)</label><input type="text" id="t-bike" placeholder="42183"></div>
+      <div class="fg"><label>Station départ</label><select id="t-station"><option value="">— Station —</option></select></div>
+      <div class="fg"><label>Date</label><input type="date" id="t-date"></div>
+      <div class="fg"><label>Heure départ</label><input type="time" id="t-time"></div>
+    </div>
+    <button class="btn btn-primary" onclick="runTracking()">Analyser</button>
+  </div>
+  <div class="card" id="track-result" style="display:none">
+    <div class="card-title">Stations d'arrivée probables</div>
+    <div id="track-content"></div>
+  </div>
+</div>
+
+<!-- ══ CONFIG ═════════════════════════════════════════════ -->
+<div class="panel" id="tab-settings">
+  <div class="card">
+    <div class="card-title">Collecte GitHub — stations suivies</div>
+    <p style="font-size:13px;color:var(--secondary);margin-bottom:16px;line-height:1.6">
+      Modifie directement la variable <code style="color:var(--blue)">STATION_IDS</code> dans GitHub Actions sans passer par l'interface GitHub. Le token n'est jamais sauvegardé.
+    </p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:560px;margin-bottom:12px">
+      <div class="fg">
+        <label>Dépôt GitHub</label>
+        <input type="text" id="cfg-repo" placeholder="bolosscode/velov-tracker">
+      </div>
+      <div class="fg">
+        <label>Token GitHub (scope workflow)</label>
+        <input type="password" id="cfg-token" placeholder="ghp_…">
+      </div>
+    </div>
+    <div class="fg" style="max-width:560px;margin-bottom:16px">
+      <label>IDs de stations (virgules — vide = toutes)</label>
+      <input type="text" id="cfg-ids" placeholder="10002, 10007, 10015, ...">
+      <span style="font-size:11px;color:var(--secondary);margin-top:4px">
+        Trouvez les IDs via l'<a href="https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov/all.json?maxfeatures=-1&start=1" target="_blank" style="color:var(--blue)">API Grand Lyon ↗</a> champ <code style="color:var(--blue)">number</code>.
+      </span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="pushStationIds()">Appliquer sur GitHub</button>
+      <button class="btn btn-sec" onclick="clearStationIds()">Toutes les stations</button>
+      <span id="cfg-status" style="font-size:12px;display:none"></span>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Architecture</div>
+    <p style="font-size:13px;color:var(--secondary);line-height:1.8">
+      Source : <code style="color:var(--blue)">download.data.grandlyon.com</code> — open data, sans clé.<br>
+      Collecte : GitHub Actions + cron-job.org, toutes les 10 min.<br>
+      Stockage : <code style="color:var(--blue)">data/latest.json</code> + <code style="color:var(--blue)">data/history/YYYY-MM-DD.json</code>.<br>
+      Hébergement : GitHub Pages, branche <code style="color:var(--blue)">main</code>.
+    </p>
+  </div>
+</div>
+
+</main>
+
+<script>
+// ══════════════════════════════════════════════════
+// CONFIG & STATE
+// ══════════════════════════════════════════════════
+let cfg     = { ids: JSON.parse(localStorage.getItem('vv_ids')||'null')||[] };
+let bikeType  = 'all';
+let liveStations = [];
+let todayMovements = {}; // number → int
+let mapInstance=null, heatLayer=null, markerLayer=null, heatOn=false;
+let chartHist=null, chartFlux=null, chartMv=null;
+
+const PALETTE=['#0071e3','#28cd41','#ff6b35','#af52de','#ff3b30','#5ac8fa','#ff9f0a','#30b0c7','#34aadc','#90c0f5'];
+const DAYS=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+const ORDER=[1,2,3,4,5,6,0];
+
+// ══════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════
+const cleanName = n => n.replace(/^\d+\s*[-–]\s*/,'').trim();
+const todayStr  = () => new Date().toISOString().slice(0,10);
+const cls       = (v,t) => !t||v===0?'empty':v/t<=.25?'low':'ok';
+const getBikes  = st => bikeType==='elec'?(st.electrical_bikes??0):bikeType==='meca'?(st.mechanical_bikes??0):(st.available_bikes??0);
+
+function heatColor(pct) {
+  // red → orange → green
+  const t = Math.max(0,Math.min(1,pct/100));
+  if(t<.5) {
+    const r=255,g=Math.round(59+t*2*(159-59)),b=48;
+    return `rgba(${r},${g},${b},.72)`;
+  } else {
+    const r=Math.round(255-(t-.5)*2*(255-40)),g=Math.round(159+(t-.5)*2*(205-159)),b=Math.round(48+(t-.5)*2*(65-48));
+    return `rgba(${r},${g},${b},.72)`;
+  }
+}
+
+const chartBase = () => ({
+  responsive:true,
+  plugins:{legend:{labels:{color:'#6e6e73',font:{family:'-apple-system,Helvetica Neue,Arial,sans-serif',size:11}}}},
+  scales:{
+    x:{ticks:{color:'#aeaeb2',font:{size:10},maxTicksLimit:16},grid:{color:'#e5e5ea'}},
+    y:{ticks:{color:'#6e6e73',font:{size:11}},grid:{color:'#e5e5ea'},min:0},
+  },
+});
+
+// ══════════════════════════════════════════════════
+// CLOCK & TABS
+// ══════════════════════════════════════════════════
+setInterval(()=>{ document.getElementById('clock').textContent=new Date().toLocaleTimeString('fr-FR'); },1000);
+
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.onclick=()=>{
+    const t=tab.dataset.tab;
+    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+    tab.classList.add('on');
+    document.getElementById(`tab-${t}`).classList.add('on');
+    if(t==='settings') loadSettingsUI();
+    if(t==='carte') initMap();
+    if(t==='history') buildStChecks();
+  };
+});
+
+// Period buttons
+document.querySelectorAll('.period-bar').forEach(bar=>{
+  bar.querySelectorAll('.period-btn').forEach(btn=>{
+    btn.onclick=()=>{
+      bar.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('on'));
+      btn.classList.add('on');
+    };
+  });
+});
+
+// ══════════════════════════════════════════════════
+// TYPE TOGGLE
+// ══════════════════════════════════════════════════
+function setType(t) {
+  bikeType=t;
+  document.querySelectorAll('.seg-btn').forEach((b,i)=>{
+    b.classList.toggle('on',(i===0&&t==='all')||(i===1&&t==='elec')||(i===2&&t==='meca'));
+  });
+  if(liveStations.length) renderLive(liveStations);
+}
+
+// ══════════════════════════════════════════════════
+// DATA FETCH
+// ══════════════════════════════════════════════════
+function rowToStation(r) {
+  let elec=null,meca=null;
+  try {
+    const raw=r.main_stands||r.overflow_stands||'';
+    if(raw){
+      const s=(typeof raw==='string'?raw:JSON.stringify(raw))
+        .replace(/'/g,'"').replace(/\bTrue\b/g,'true').replace(/\bFalse\b/g,'false');
+      const d=JSON.parse(s);
+      elec=d?.availabilities?.electricalBikes??null;
+      meca=d?.availabilities?.mechanicalBikes??null;
+    }
+  } catch {}
+  const total=r.available_bikes||0;
+  return {
+    number:r.number, name:r.name||'',
+    available_bikes:total,
+    available_bike_stands:r.available_bike_stands||0,
+    bike_stands:r.bike_stands||0,
+    electrical_bikes:elec??0,
+    mechanical_bikes:meca??total,
+    status:r.status||'OPEN',
+    lat:r.lat, lng:r.lng,
+  };
+}
+
+async function fetchLive() {
+  try {
+    const API='https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov/all.json?maxfeatures=-1&start=1';
+    const r=await fetch(API,{signal:AbortSignal.timeout(8000)});
+    if(!r.ok) throw new Error();
+    const data=await r.json();
+    let rows=data.values||[];
+    if(cfg.ids.length) rows=rows.filter(r=>cfg.ids.includes(r.number));
+    document.getElementById('src-tag').textContent='⚡ Temps réel';
+    return rows.map(rowToStation);
+  } catch {
+    const r=await fetch('data/latest.json?_='+Date.now());
+    if(!r.ok) throw new Error('data/latest.json introuvable — lancez Actions → Run workflow.');
+    const snap=await r.json();
+    let st=snap.stations||[];
+    if(cfg.ids.length) st=st.filter(s=>cfg.ids.includes(s.number));
+    document.getElementById('src-tag').textContent='📦 Cache';
+    return st;
+  }
+}
+
+async function fetchDay(date) {
+  try {
+    const r=await fetch(`data/history/${date}.json?_=`+Date.now());
+    if(!r.ok) return null;
+    return r.json();
+  } catch { return null; }
+}
+
+// Load N days of snapshots, with smart sampling for long periods
+// Returns flat array of snapshots
+async function fetchPeriod(period) {
+  const days = {
+    '1d':1,'1w':7,'1m':30,'6m':180,'1y':365
+  }[period]||1;
+
+  // For long periods, sample every N days to avoid too many requests
+  const step = days<=7?1:days<=30?1:days<=180?6:14;
+  const today=new Date();
+  const allSnaps=[];
+  const promises=[];
+
+  for(let i=0;i<days;i+=step){
+    const d=new Date(today);
+    d.setDate(d.getDate()-i);
+    const ds=d.toISOString().slice(0,10);
+    promises.push(fetchDay(ds));
+  }
+  const results=await Promise.all(promises);
+  results.forEach(snaps=>{ if(snaps?.length) allSnaps.push(...snaps); });
+
+  // sort by timestamp ascending
+  allSnaps.sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
+  return allSnaps;
+}
+
+// ══════════════════════════════════════════════════
+// MOVEMENTS (today)
+// ══════════════════════════════════════════════════
+async function calcMovements() {
+  const snaps=await fetchDay(todayStr());
+  todayMovements={};
+  if(!snaps||snaps.length<2) return;
+  liveStations.forEach(st=>{ todayMovements[st.number]=0; });
+  for(let i=1;i<snaps.length;i++){
+    const prev=snaps[i-1],curr=snaps[i];
+    curr.stations?.forEach(cst=>{
+      const pst=prev.stations?.find(s=>s.number===cst.number);
+      if(!pst) return;
+      const delta=cst.available_bikes-pst.available_bikes;
+      if(delta<0) todayMovements[cst.number]=(todayMovements[cst.number]||0)+Math.abs(delta);
+    });
+  }
+  // Total movements in summary
+  const total=Object.values(todayMovements).reduce((a,b)=>a+b,0);
+  document.getElementById('s-mv').textContent=total||'—';
+}
+
+// ══════════════════════════════════════════════════
+// LIVE
+// ══════════════════════════════════════════════════
+async function refreshLive() {
+  document.getElementById('station-grid').innerHTML='<div class="loader">Chargement…</div>';
+  try {
+    liveStations=await fetchLive();
+    await calcMovements();
+    renderLive(liveStations);
+  } catch(e) {
+    document.getElementById('station-grid').innerHTML=`<div class="err">⚠ ${e.message}</div>`;
+  }
+}
+
+function renderLive(stations) {
+  const totalV=stations.reduce((s,x)=>s+getBikes(x),0);
+  document.getElementById('s-total').textContent=totalV;
+  document.getElementById('s-total-lbl').textContent=bikeType==='elec'?'⚡ Élec dispo':bikeType==='meca'?'🔧 Méca dispo':'Vélos dispo';
+  document.getElementById('s-elec').textContent=stations.reduce((s,x)=>s+(x.electrical_bikes||0),0);
+  document.getElementById('s-meca').textContent=stations.reduce((s,x)=>s+(x.mechanical_bikes||0),0);
+  document.getElementById('s-open').textContent=`${stations.filter(x=>x.status==='OPEN').length}/${stations.length}`;
+  document.getElementById('last-upd').textContent='MàJ '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+
+  const grid=document.getElementById('station-grid');
+  grid.innerHTML='';
+  stations.forEach(st=>{
+    const v=getBikes(st);
+    const c=cls(v,st.bike_stands);
+    const pct=st.bike_stands?Math.round(v/st.bike_stands*100):0;
+    const mv=todayMovements[st.number]||0;
+    const el=document.createElement('div');
+    el.className='scard';
+    el.dataset.name=cleanName(st.name).toLowerCase();
+    el.innerHTML=`
+      <div class="scard-name">${cleanName(st.name)}</div>
+      <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:2px">
+        <span class="scard-num ${c}">${v}</span>
+        <span class="scard-unit">${bikeType==='elec'?'élec':bikeType==='meca'?'méca':'vélos'}</span>
+      </div>
+      <div class="scard-pills">
+        <span class="pill pill-elec">⚡ ${st.electrical_bikes}</span>
+        <span class="pill pill-meca">🔧 ${st.mechanical_bikes}</span>
+        ${mv?`<span class="pill pill-mv">↕ ${mv}/j</span>`:''}
+      </div>
+      <div class="scard-bar-bg"><div class="scard-bar ${c}" style="width:${pct}%"></div></div>
+      <div class="scard-foot">
+        <span class="scard-stands">${st.available_bike_stands} places</span>
+        <span class="${st.status==='OPEN'?'badge-open':'badge-closed'}">${st.status==='OPEN'?'Ouverte':'Fermée'}</span>
+      </div>`;
+    grid.appendChild(el);
+  });
+
+  fillSelects(stations);
+  buildStChecks();
+}
+
+function filterCards() {
+  const q=document.getElementById('search').value.toLowerCase();
+  document.querySelectorAll('.scard').forEach(c=>{
+    c.style.display=(!q||c.dataset.name.includes(q))?'':'none';
+  });
+}
+
+function resetStChecks() {
+  document.querySelectorAll('#st-checks-hist input').forEach(cb => {
+    cb.checked = false;
+    cb.closest('.st-ck').classList.remove('on');
+  });
+}
+
+function selectAllStChecks() {
+  document.querySelectorAll('#st-checks-hist .st-ck').forEach(el => {
+    if(el.style.display === 'none') return; // respecte le filtre actif
+    const cb = el.querySelector('input');
+    cb.checked = true;
+    el.classList.add('on');
+  });
+}
+
+function filterStChecks() {
+  const q = document.getElementById('search-hist')?.value.toLowerCase() || '';
+  document.querySelectorAll('#st-checks-hist .st-ck').forEach(el => {
+    const name = el.querySelector('span:last-child')?.textContent.toLowerCase() || '';
+    el.style.display = (!q || name.includes(q)) ? '' : 'none';
+  });
+}
+
+function fillSelects(stations) {
+  ['heat-station','t-station'].forEach(id=>{
+    const sel=document.getElementById(id),cur=sel.value;
+    sel.innerHTML='<option value="">— Station —</option>';
+    stations.forEach(s=>{
+      const o=document.createElement('option');
+      o.value=s.number; o.textContent=cleanName(s.name);
+      sel.appendChild(o);
+    });
+    if(cur) sel.value=cur;
+  });
+}
+
+function buildStChecks() {
+  const wrap=document.getElementById('st-checks-hist');
+  if(!wrap||!liveStations.length) return;
+  const prevSel=[...wrap.querySelectorAll('input:checked')].map(i=>parseInt(i.value));
+  wrap.innerHTML='';
+  liveStations.forEach((s,i)=>{
+    const sel=prevSel.includes(s.number)||(prevSel.length===0&&i<4);
+    const div=document.createElement('div');
+    div.className='st-ck'+(sel?' on':'');
+    const cb=document.createElement('input');
+    cb.type='checkbox'; cb.value=s.number; cb.checked=sel;
+    cb.onchange=()=>div.classList.toggle('on',cb.checked);
+    const dot=document.createElement('span');
+    dot.className='st-dot';
+    dot.style.background=PALETTE[i%PALETTE.length];
+    const lbl=document.createElement('span');
+    lbl.textContent=cleanName(s.name);
+    lbl.style.color=PALETTE[i%PALETTE.length];
+    div.append(cb,dot,lbl);
+    wrap.appendChild(div);
+  });
+}
+
+// ══════════════════════════════════════════════════
+// COURBES
+// ══════════════════════════════════════════════════
+function getPeriodHist() {
+  return document.querySelector('#hist-periods .period-btn.on')?.dataset.period||'1d';
+}
+
+async function loadHistory() {
+  const period=getPeriodHist();
+  const sel=[...document.querySelectorAll('#st-checks-hist input:checked')].map(i=>parseInt(i.value));
+  if(!sel.length){ alert('Sélectionnez au moins une station.'); return; }
+
+  const allSnaps=await fetchPeriod(period);
+  if(!allSnaps.length){ alert('Aucune donnée disponible.'); return; }
+
+  // For long periods, aggregate by day (average)
+  let labels,snapGroups;
+  if(period==='1d'){
+    labels=allSnaps.map(s=>{
+      const t=new Date(s.timestamp);
+      return t.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    });
+    snapGroups=allSnaps;
+  } else {
+    // Group by date, take one point per date (noon or closest)
+    const byDate={};
+    allSnaps.forEach(snap=>{
+      const ds=snap.timestamp.slice(0,10);
+      if(!byDate[ds]) byDate[ds]=[];
+      byDate[ds].push(snap);
+    });
+    const dates=Object.keys(byDate).sort();
+    labels=dates.map(d=>new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}));
+    // For each date, pick the snapshot closest to 12:00 or average
+    snapGroups=dates.map(d=>{
+      const snaps=byDate[d];
+      // pick snapshot closest to 12:00 local
+      const noon=new Date(d+'T10:00:00Z').getTime();
+      return snaps.reduce((a,b)=>Math.abs(new Date(a.timestamp)-noon)<Math.abs(new Date(b.timestamp)-noon)?a:b);
+    });
+  }
+
+  const typeLabel=bikeType==='elec'?'⚡ Élec':bikeType==='meca'?'🔧 Méca':'Vélos';
+  document.getElementById('hist-title').textContent=`${typeLabel} — ${period==='1d'?'aujourd\'hui':period}`;
+
+  const datasets=sel.map((id,i)=>{
+    const color=PALETTE[liveStations.findIndex(s=>s.number===id)%PALETTE.length]||PALETTE[i];
+    const name=cleanName(liveStations.find(s=>s.number===id)?.name||`#${id}`);
+    const data=snapGroups.map(snap=>{
+      const st=snap.stations?.find(s=>s.number===id);
+      if(!st) return null;
+      return bikeType==='elec'?(st.electrical_bikes??null):bikeType==='meca'?(st.mechanical_bikes??null):(st.available_bikes??null);
+    });
+    return {label:name,data,borderColor:color,backgroundColor:'transparent',
+      tension:0,borderWidth:1.5,pointRadius:period==='1d'?0:2,spanGaps:true};
+  });
+
+  if(chartHist) chartHist.destroy();
+  chartHist=new Chart(document.getElementById('chart-hist'),{
+    type:'line',data:{labels,datasets},options:{...chartBase(),spanGaps:true},
+  });
+
+  // Flux net (1 station seulement, 1j seulement)
+  if(sel.length===1&&period==='1d'&&allSnaps.length>1){
+    document.getElementById('flux-title').textContent='Flux net (Δ vélos / intervalle)';
+    const id=sel[0];
+    const flux=allSnaps.map((snap,i)=>{
+      if(i===0) return 0;
+      const prev=allSnaps[i-1].stations?.find(s=>s.number===id);
+      const curr=snap.stations?.find(s=>s.number===id);
+      if(!prev||!curr) return 0;
+      return bikeType==='elec'?(curr.electrical_bikes??0)-(prev.electrical_bikes??0):
+             bikeType==='meca'?(curr.mechanical_bikes??0)-(prev.mechanical_bikes??0):
+             curr.available_bikes-prev.available_bikes;
+    });
+    if(chartFlux) chartFlux.destroy();
+    chartFlux=new Chart(document.getElementById('chart-flux'),{
+      type:'bar',
+      data:{labels,datasets:[{label:'Δ',data:flux,
+        backgroundColor:flux.map(v=>v>0?'rgba(40,205,65,.6)':v<0?'rgba(255,59,48,.6)':'rgba(174,174,178,.3)'),
+        borderWidth:0}]},
+      options:chartBase(),
+    });
+    document.querySelector('#chart-flux').closest('.card').style.display='';
+  } else {
+    document.querySelector('#chart-flux').closest('.card').style.display='none';
+  }
+
+  // Mouvements cumulés
+  if(period!=='1d'){
+    document.getElementById('mv-card').style.display='';
+    const mvDatasets=sel.map((id,i)=>{
+      const color=PALETTE[liveStations.findIndex(s=>s.number===id)%PALETTE.length]||PALETTE[i];
+      const name=cleanName(liveStations.find(s=>s.number===id)?.name||`#${id}`);
+      // We need per-day mvt — re-compute from allSnaps grouped by date
+      const byDate={};
+      allSnaps.forEach(snap=>{
+        const ds=snap.timestamp.slice(0,10);
+        if(!byDate[ds]) byDate[ds]=[];
+        byDate[ds].push(snap);
+      });
+      const dates=Object.keys(byDate).sort();
+      const mvData=dates.map(ds=>{
+        const dSnaps=byDate[ds];
+        let mv=0;
+        for(let i=1;i<dSnaps.length;i++){
+          const prev=dSnaps[i-1].stations?.find(s=>s.number===id);
+          const curr=dSnaps[i].stations?.find(s=>s.number===id);
+          if(!prev||!curr) continue;
+          const delta=curr.available_bikes-prev.available_bikes;
+          if(delta<0) mv+=Math.abs(delta);
+        }
+        return mv;
+      });
+      return {label:name,data:mvData,borderColor:color,backgroundColor:color+'22',
+        tension:0,borderWidth:1.5,pointRadius:2,spanGaps:true,fill:true};
+    });
+    if(chartMv) chartMv.destroy();
+    chartMv=new Chart(document.getElementById('chart-mv'),{
+      type:'line',
+      data:{labels:Object.keys({}).sort(), datasets:mvDatasets},
+      options:chartBase(),
+    });
+    // fix labels
+    const byDate={};
+    allSnaps.forEach(snap=>{const ds=snap.timestamp.slice(0,10);byDate[ds]=1;});
+    const mvLabels=Object.keys(byDate).sort().map(d=>new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}));
+    chartMv.data.labels=mvLabels;
+    chartMv.update();
+  } else {
+    document.getElementById('mv-card').style.display='none';
+  }
+}
+
+// Auto-load on period change
+document.querySelectorAll('#hist-periods .period-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>setTimeout(()=>{
+    if(document.querySelectorAll('#st-checks-hist input:checked').length) loadHistory();
+  },50));
+});
+
+// ══════════════════════════════════════════════════
+// HEATMAP
+// ══════════════════════════════════════════════════
+function getPeriodHeat() {
+  return document.querySelector('#heat-periods .period-btn.on')?.dataset.period||'1m';
+}
+
+async function buildBuckets(ids, period) {
+  const allSnaps=await fetchPeriod(period);
+  const bk={};
+  ids.forEach(id=>{ bk[id]=Array.from({length:7},()=>Array.from({length:24},()=>[])); });
+  allSnaps.forEach(snap=>{
+    const t=new Date(snap.timestamp);
+    const hour=(t.getUTCHours()+2)%24, dow=t.getDay();
+    snap.stations?.forEach(st=>{
+      if(!ids.includes(st.number)||!st.bike_stands) return;
+      const v=bikeType==='elec'?(st.electrical_bikes??null):bikeType==='meca'?(st.mechanical_bikes??null):st.available_bikes;
+      if(v==null) return;
+      bk[st.number][dow][hour].push(v/st.bike_stands*100);
+    });
+  });
+  return bk;
+}
+
+function hmapHtml(rows, multi) {
+  let html='';
+  rows.forEach(({id,bk})=>{
+    const name=cleanName(liveStations.find(s=>s.number===id)?.name||`#${id}`);
+    if(multi) html+=`<div style="font-size:11px;font-weight:600;color:var(--secondary);margin:14px 0 4px;letter-spacing:.02em">${name}</div>`;
+    html+=`<div class="hmap-grid"><div class="hmap-h"></div>`;
+    for(let h=0;h<24;h++) html+=`<div class="hmap-h">${String(h).padStart(2,'0')}</div>`;
+    ORDER.forEach(d=>{
+      html+=`<div class="hmap-label">${DAYS[d]}</div>`;
+      for(let h=0;h<24;h++){
+        const vals=bk[d][h];
+        if(!vals.length){ html+=`<div class="hmap-cell" style="background:#f5f5f7" title="—"></div>`; }
+        else {
+          const avg=vals.reduce((a,b)=>a+b,0)/vals.length;
+          html+=`<div class="hmap-cell" style="background:${heatColor(avg)}" title="${DAYS[d]} ${h}h — ${Math.round(avg)}%"></div>`;
+        }
+      }
+    });
+    html+=`</div>`;
+  });
+  html+=`<div class="hmap-legend"><span>0%</span><div class="hmap-legend-bar"></div><span>100%</span><span style="margin-left:10px">% ${bikeType==='elec'?'élec':bikeType==='meca'?'méca':'vélos'} dispo</span></div>`;
+  return html;
+}
+
+async function loadHeatmap() {
+  const id=parseInt(document.getElementById('heat-station').value);
+  const period=getPeriodHeat();
+  const wrap=document.getElementById('heatmap-single');
+  document.getElementById('hmap-multi-card').style.display='none';
+  if(!id){ wrap.innerHTML='<div class="no-data">Sélectionnez une station.</div>'; return; }
+  wrap.innerHTML='<div class="loader">Calcul en cours…</div>';
+  const bk=await buildBuckets([id],period);
+  const name=cleanName(liveStations.find(s=>s.number===id)?.name||`#${id}`);
+  document.getElementById('hmap-title-single').textContent=`${name} — ${period}`;
+  wrap.innerHTML=hmapHtml([{id,bk:bk[id]}],false);
+}
+
+async function loadHeatmapMulti() {
+  const period=getPeriodHeat();
+  const wrap=document.getElementById('heatmap-multi');
+  document.getElementById('hmap-multi-card').style.display='';
+  wrap.innerHTML='<div class="loader">Calcul pour toutes les stations…</div>';
+  const ids=liveStations.map(s=>s.number);
+  const bk=await buildBuckets(ids,period);
+  wrap.innerHTML=hmapHtml(ids.map(id=>({id,bk:bk[id]||Array.from({length:7},()=>Array.from({length:24},()=>[])) })),true);
+}
+
+document.querySelectorAll('#heat-periods .period-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>setTimeout(()=>{
+    if(parseInt(document.getElementById('heat-station').value)) loadHeatmap();
+  },50));
+});
+
+// ══════════════════════════════════════════════════
+// CARTE
+// ══════════════════════════════════════════════════
+function initMap() {
+  if(mapInstance){ mapInstance.invalidateSize(); return; }
+  mapInstance=L.map('map',{zoomControl:true}).setView([45.757,4.832],13);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
+    attribution:'© OpenStreetMap, © CARTO',maxZoom:19,
+  }).addTo(mapInstance);
+  renderMap();
+}
+
+function renderMap() {
+  if(!mapInstance||!liveStations.length) return;
+  if(markerLayer) markerLayer.clearLayers();
+  markerLayer=L.layerGroup().addTo(mapInstance);
+
+  const maxMv=Math.max(1,...Object.values(todayMovements));
+
+  liveStations.forEach(st=>{
+    if(!st.lat||!st.lng) return;
+    const v=getBikes(st);
+    const pct=st.bike_stands?v/st.bike_stands:0;
+    const col=pct===0?'#ff3b30':pct<=.25?'#ff9f0a':'#28cd41';
+    const mv=todayMovements[st.number]||0;
+    const mvPct=mv/maxMv;
+
+    const marker=L.circleMarker([st.lat,st.lng],{
+      radius:9,fillColor:col,color:'white',fillOpacity:.9,weight:1.5,opacity:1,
+    });
+
+    marker.bindPopup(`
+      <div class="map-popup">
+        <strong>${cleanName(st.name)}</strong>
+        <div class="mp-row"><span>⚡ Électriques</span><span>${st.electrical_bikes}</span></div>
+        <div class="mp-row"><span>🔧 Mécaniques</span><span>${st.mechanical_bikes}</span></div>
+        <div class="mp-row"><span>📍 Places libres</span><span>${st.available_bike_stands}</span></div>
+        <div class="mp-row"><span>↕ Mouvements/j</span><span><b>${mv}</b></span></div>
+        <div class="mv-bar-bg"><div class="mv-bar" style="width:${Math.round(mvPct*100)}%"></div></div>
+      </div>`, {maxWidth:220});
+
+    markerLayer.addLayer(marker);
+  });
+
+  buildHeatLayer();
+}
+
+function buildHeatLayer() {
+  if(!mapInstance) return;
+  if(heatLayer) mapInstance.removeLayer(heatLayer);
+  const pts=liveStations.filter(s=>s.lat&&s.lng&&s.bike_stands).map(s=>[
+    s.lat,s.lng, getBikes(s)/s.bike_stands
+  ]);
+  heatLayer=L.heatLayer(pts,{radius:32,blur:22,maxZoom:15,
+    gradient:{0:'#ff3b30',.4:'#ff9f0a',1:'#28cd41'}});
+  if(heatOn) heatLayer.addTo(mapInstance);
+}
+
+function toggleHeat() {
+  if(!mapInstance) return;
+  heatOn=!heatOn;
+  const btn=document.getElementById('heat-toggle');
+  if(heatOn){ heatLayer?.addTo(mapInstance); btn.style.background='var(--blue-light)'; btn.style.color='var(--blue)'; }
+  else { if(heatLayer) mapInstance.removeLayer(heatLayer); btn.style.background=''; btn.style.color=''; }
+}
+
+// ══════════════════════════════════════════════════
+// TRACKING
+// ══════════════════════════════════════════════════
+document.getElementById('t-date').value=todayStr();
+
+async function runTracking() {
+  const stId=parseInt(document.getElementById('t-station').value);
+  const date=document.getElementById('t-date').value;
+  const time=document.getElementById('t-time').value;
+  const bike=document.getElementById('t-bike').value.trim();
+  if(!stId||!date||!time){ alert('Station, date et heure requis.'); return; }
+
+  const res=document.getElementById('track-result');
+  const cnt=document.getElementById('track-content');
+  res.style.display='';
+  cnt.innerHTML='<div class="loader">Analyse…</div>';
+
+  const snaps=await fetchDay(date);
+  if(!snaps?.length){ cnt.innerHTML='<div class="no-data">Aucune donnée.</div>'; return; }
+
+  const depMs=new Date(`${date}T${time}:00+02:00`).getTime();
+  const win=snaps.filter(s=>{ const ms=new Date(s.timestamp).getTime(); return ms>=depMs&&ms<=depMs+7200e3; });
+  if(!win.length){ cnt.innerHTML='<div class="no-data">Aucun snapshot dans la fenêtre 2h.</div>'; return; }
+
+  const cands=[];
+  liveStations.forEach(liveSt=>{
+    if(liveSt.number===stId) return;
+    let maxD=0,bestT=null;
+    for(let i=1;i<win.length;i++){
+      const prev=win[i-1].stations?.find(s=>s.number===liveSt.number);
+      const curr=win[i].stations?.find(s=>s.number===liveSt.number);
+      if(!prev||!curr) continue;
+      const delta=curr.available_bikes-prev.available_bikes;
+      if(delta>maxD){ maxD=delta; bestT=new Date(win[i].timestamp); }
+    }
+    if(maxD>0) cands.push({st:liveSt,delta:maxD,time:bestT});
+  });
+  cands.sort((a,b)=>b.delta-a.delta);
+  if(!cands.length){ cnt.innerHTML='<div class="no-data">Aucune variation détectée.</div>'; return; }
+
+  const dep=cleanName(liveStations.find(s=>s.number===stId)?.name||`#${stId}`);
+  let html=`<p style="font-size:12px;color:var(--secondary);margin-bottom:12px">${bike?`Vélo #${bike} · `:''}Départ : <b style="color:var(--ink)">${dep}</b> à ${time}</p>`;
+  cands.slice(0,6).forEach((c,i)=>{
+    const t=c.time?c.time.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'—';
+    html+=`<div class="res-row"><span style="font-weight:500">#${i+1} · ${cleanName(c.st.name)}</span><span class="res-delta">+${c.delta}</span><span class="res-time">${t}</span></div>`;
+  });
+  cnt.innerHTML=html;
+}
+
+// ══════════════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════════════
+function loadSettingsUI() {
+  document.getElementById('cfg-ids').value = cfg.ids.join(', ');
+  document.getElementById('cfg-repo').value = localStorage.getItem('vv_repo') || '';
+  // ne pas pré-remplir le token pour la sécurité
+}
+
+async function pushStationIds() {
+  const repo  = document.getElementById('cfg-repo').value.trim();
+  const token = document.getElementById('cfg-token').value.trim();
+  const ids   = document.getElementById('cfg-ids').value.trim();
+  if (!repo || !token) { setStatus('Renseignez le dépôt et le token.', 'red'); return; }
+
+  localStorage.setItem('vv_repo', repo);
+  setStatus('Mise à jour…', 'var(--secondary)');
+
+  try {
+    // Vérifier si la variable existe déjà
+    const check = await fetch(`https://api.github.com/repos/${repo}/actions/variables/STATION_IDS`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }
+    });
+
+    const method = check.ok ? 'PATCH' : 'POST';
+    const url = check.ok
+      ? `https://api.github.com/repos/${repo}/actions/variables/STATION_IDS`
+      : `https://api.github.com/repos/${repo}/actions/variables`;
+
+    const r = await fetch(url, {
+      method,
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json',
+                 'Content-Type': 'application/json', 'X-GitHub-Api-Version': '2022-11-28' },
+      body: JSON.stringify({ name: 'STATION_IDS', value: ids }),
+    });
+
+    if (r.ok || r.status === 204) {
+      // Mettre à jour le filtre local aussi
+      cfg.ids = ids ? [...ids.split(',').map(s=>parseInt(s.trim())).filter(n=>!isNaN(n))] : [];
+      localStorage.setItem('vv_ids', JSON.stringify(cfg.ids));
+      setStatus('✓ STATION_IDS mis à jour sur GitHub', 'var(--green)');
+      refreshLive();
+    } else {
+      const err = await r.json();
+      setStatus(`Erreur ${r.status} : ${err.message}`, 'var(--red)');
+    }
+  } catch(e) {
+    setStatus(`Erreur réseau : ${e.message}`, 'var(--red)');
+  }
+}
+
+async function clearStationIds() {
+  document.getElementById('cfg-ids').value = '';
+  await pushStationIds();
+}
+
+function setStatus(msg, color) {
+  const el = document.getElementById('cfg-status');
+  el.textContent = msg;
+  el.style.color = color;
+  el.style.display = 'inline';
+  if (msg.startsWith('✓')) setTimeout(() => el.style.display = 'none', 3000);
+}
+
+// ══════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════
+// Wire up Load button in history tab by clicking period
+document.querySelector('#hist-periods').addEventListener('click', e=>{
+  if(e.target.classList.contains('period-btn')) setTimeout(loadHistory, 80);
+});
+
+// Default date
+document.querySelector('#hist-periods .period-btn.on') && null;
+
+refreshLive();
+setInterval(refreshLive, 5*60*1000);
+</script>
+</body>
 </html>
