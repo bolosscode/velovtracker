@@ -315,6 +315,14 @@ input[type=date]:focus,input[type=text]:focus,input[type=time]:focus{border-colo
       <button class="period-btn" data-period="1y">1 an</button>
     </div>
   </div>
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+    <div class="search-wrap" style="margin-bottom:0;flex:1">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <input id="search-hist" type="text" placeholder="Filtrer les stations…" oninput="filterStChecks()" style="width:100%">
+    </div>
+    <button class="btn btn-sec" onclick="resetStChecks()" title="Tout décocher">✕ Reset</button>
+    <button class="btn btn-sec" onclick="selectAllStChecks()" title="Tout cocher">✓ Tous</button>
+  </div>
   <div id="st-checks-hist" class="st-checks"></div>
   <div class="card">
     <div class="card-title" id="hist-title">Disponibilité</div>
@@ -665,6 +673,30 @@ function filterCards() {
   const q=document.getElementById('search').value.toLowerCase();
   document.querySelectorAll('.scard').forEach(c=>{
     c.style.display=(!q||c.dataset.name.includes(q))?'':'none';
+  });
+}
+
+function resetStChecks() {
+  document.querySelectorAll('#st-checks-hist input').forEach(cb => {
+    cb.checked = false;
+    cb.closest('.st-ck').classList.remove('on');
+  });
+}
+
+function selectAllStChecks() {
+  document.querySelectorAll('#st-checks-hist .st-ck').forEach(el => {
+    if(el.style.display === 'none') return; // respecte le filtre actif
+    const cb = el.querySelector('input');
+    cb.checked = true;
+    el.classList.add('on');
+  });
+}
+
+function filterStChecks() {
+  const q = document.getElementById('search-hist')?.value.toLowerCase() || '';
+  document.querySelectorAll('#st-checks-hist .st-ck').forEach(el => {
+    const name = el.querySelector('span:last-child')?.textContent.toLowerCase() || '';
+    el.style.display = (!q || name.includes(q)) ? '' : 'none';
   });
 }
 
