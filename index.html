@@ -1,10 +1,11 @@
+```html
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-<title>Vélo'v Lyon — Flux & Heatmap</title>
+<title>Vélo'v Lyon Analytics</title>
 
 <link
   rel="stylesheet"
@@ -47,7 +48,6 @@ body{
 }
 
 /* HEADER */
-
 header{
   position:sticky;
   top:0;
@@ -78,7 +78,6 @@ header{
 }
 
 /* NAV */
-
 nav{
   position:sticky;
   top:56px;
@@ -102,9 +101,8 @@ nav{
 }
 
 /* MAIN */
-
 main{
-  max-width:1600px;
+  max-width:1500px;
   margin:auto;
   padding:20px;
 }
@@ -135,15 +133,20 @@ main{
 }
 
 /* MAP */
-
 #map{
   height:calc(100vh - 140px);
   border-radius:var(--radius);
   overflow:hidden;
 }
 
-/* SEARCH */
+#usage-map{
+  height:calc(100vh - 240px);
+  min-height:650px;
+  border-radius:var(--radius);
+  overflow:hidden;
+}
 
+/* SEARCH */
 .search-wrap{
   position:relative;
   margin-bottom:16px;
@@ -187,7 +190,6 @@ main{
 }
 
 /* RANGE */
-
 .range{
   display:flex;
   flex-wrap:wrap;
@@ -218,40 +220,11 @@ main{
 }
 
 /* LOADER */
-
 .loader,
 .no-data{
   padding:40px;
   text-align:center;
   color:var(--dim);
-}
-
-/* LEGEND */
-
-.legend{
-  position:absolute;
-  bottom:18px;
-  left:18px;
-  z-index:500;
-  background:rgba(255,255,255,.95);
-  padding:12px 14px;
-  border-radius:12px;
-  box-shadow:var(--shadow);
-  font-size:12px;
-  line-height:1.5;
-}
-
-.legend-row{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  margin-bottom:5px;
-}
-
-.legend-dot{
-  width:10px;
-  height:10px;
-  border-radius:50%;
 }
 </style>
 </head>
@@ -260,34 +233,57 @@ main{
 
 <header>
   <div class="brand">
-    Vélo<em>'</em>v Lyon — Flux
+    Vélo<em>'</em>v Lyon Analytics
   </div>
 
   <div class="clock" id="clock"></div>
 </header>
 
 <nav>
-
   <div class="tab on" data-tab="map">
-    🗺 Carte & Heatmap
+    🗺 Stations
   </div>
 
   <div class="tab" data-tab="courbes">
-    📈 Courbes
+    📈 Utilisation
   </div>
 
+  <div class="tab" data-tab="heatmap">
+    🔥 Heatmap Lyon
+  </div>
 </nav>
 
 <main>
 
 <!-- MAP -->
-
 <div class="panel on" id="tab-map">
+  <div id="map"></div>
+</div>
+
+<!-- COURBES -->
+<div class="panel" id="tab-courbes">
 
   <div class="card">
 
     <div class="card-title">
-      Flux départs + arrivées
+      Station & période
+    </div>
+
+    <div class="search-wrap">
+
+      <input
+        id="station-search"
+        class="search"
+        type="text"
+        placeholder="Chercher une station..."
+        autocomplete="off"
+      />
+
+      <div
+        class="dropdown"
+        id="station-dd"
+      ></div>
+
     </div>
 
     <div class="range">
@@ -318,84 +314,26 @@ main{
 
   </div>
 
-  <div style="position:relative">
+  <div id="courbes-content">
 
-    <div id="map"></div>
-
-    <div class="legend">
-
-      <div class="legend-row">
-        <div
-          class="legend-dot"
-          style="background:#28cd41"
-        ></div>
-
-        Station disponible
-      </div>
-
-      <div class="legend-row">
-        <div
-          class="legend-dot"
-          style="background:#ff9f0a"
-        ></div>
-
-        Peu de vélos
-      </div>
-
-      <div class="legend-row">
-        <div
-          class="legend-dot"
-          style="background:#ff3b30"
-        ></div>
-
-        Station vide
-      </div>
-
-      <hr style="margin:8px 0">
-
-      🔥 Heatmap = flux total<br>
-      ↕ Flux popup = départs + arrivées
-
+    <div class="no-data">
+      Sélectionnez une station.
     </div>
 
   </div>
 
 </div>
 
-<!-- COURBES -->
-
-<div class="panel" id="tab-courbes">
+<!-- HEATMAP -->
+<div class="panel" id="tab-heatmap">
 
   <div class="card">
 
     <div class="card-title">
-      Station & période
+      Heatmap des usages journaliers
     </div>
 
-    <div class="search-wrap">
-
-      <input
-        id="station-search"
-        class="search"
-        type="text"
-        placeholder="Chercher une station..."
-        autocomplete="off"
-      />
-
-      <div
-        class="dropdown"
-        id="station-dd"
-      ></div>
-
-    </div>
-
-  </div>
-
-  <div id="courbes-content">
-
-    <div class="no-data">
-      Sélectionnez une station.
-    </div>
+    <div id="usage-map"></div>
 
   </div>
 
@@ -413,18 +351,18 @@ main{
 let allStations = [];
 
 let map = null;
+let usageMap = null;
 
 let markers = null;
-
-let heatLayer = null;
+let usageHeatLayer = null;
 
 let selectedStation = null;
 
-let chartFlux = null;
+let chartUsage = null;
 let chartElec = null;
 let chartMeca = null;
 
-let stationFlows = {};
+let todayMv = {};
 
 const fmt =
   d => d.toISOString().slice(0,16);
@@ -470,6 +408,8 @@ document.querySelectorAll('.tab')
       setTimeout(() => {
 
         map?.invalidateSize();
+
+        usageMap?.invalidateSize();
 
       },120);
 
@@ -733,24 +673,20 @@ async function fetchRange(startMs,endMs){
 }
 
 /* =========================================================
-   FLOW COMPUTATION
+   MOVEMENTS
 ========================================================= */
 
-async function computeFlows(){
+async function computeMovements(){
 
-  stationFlows = {};
+  todayMv = {};
 
-  const range = getRange();
-
-  if(!range){
-    return;
-  }
+  const today =
+    new Date()
+      .toISOString()
+      .slice(0,10);
 
   const snaps =
-    await fetchRange(
-      range.startMs,
-      range.endMs
-    );
+    await fetchDay(today);
 
   if(!snaps || snaps.length < 2){
     return;
@@ -780,27 +716,16 @@ async function computeFlows(){
       }
 
       const delta =
-        curr.available_bikes
-        - prev.available_bikes;
+        prev.available_bikes
+        - curr.available_bikes;
 
-      const flux =
-        Math.abs(delta);
+      if(delta > 0){
 
-      if(!stationFlows[curr.number]){
-
-        stationFlows[curr.number] = {
-
-          flow:0,
-
-          lat:curr.lat,
-          lng:curr.lng
-
-        };
+        todayMv[curr.number] =
+          (todayMv[curr.number] || 0)
+          + delta;
 
       }
-
-      stationFlows[curr.number]
-        .flow += flux;
 
     });
 
@@ -818,11 +743,25 @@ function initMap(){
     .setView([45.757,4.832],13);
 
   L.tileLayer(
-    'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
     {
       attribution:'© OpenStreetMap © CARTO'
     }
   ).addTo(map);
+
+  usageMap = L.map(
+    'usage-map',
+    {
+      preferCanvas:true
+    }
+  ).setView([45.757,4.832],13);
+
+  L.tileLayer(
+    'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    {
+      attribution:'© OpenStreetMap © CARTO'
+    }
+  ).addTo(usageMap);
 
 }
 
@@ -841,8 +780,8 @@ function renderStations(){
       return;
     }
 
-    const flow =
-      stationFlows[st.number]?.flow || 0;
+    const mv =
+      todayMv[st.number] || 0;
 
     const marker =
       L.circleMarker(
@@ -853,12 +792,12 @@ function renderStations(){
             stationColor(st),
           color:'#fff',
           weight:1.5,
-          fillOpacity:.95
+          fillOpacity:.9
         }
       );
 
     marker.bindPopup(`
-      <div style="min-width:230px">
+      <div style="min-width:220px">
 
         <div style="
           font-weight:700;
@@ -880,8 +819,8 @@ function renderStations(){
         🅿️ Places :
         <b>${st.available_bike_stands}</b><br><br>
 
-        ↕ Flux total :
-        <b>${flow}</b>
+        ↕ Départs aujourd'hui :
+        <b>${mv}</b>
 
       </div>
     `);
@@ -889,64 +828,6 @@ function renderStations(){
     markers.addLayer(marker);
 
   });
-
-}
-
-/* =========================================================
-   HEATMAP
-========================================================= */
-
-function renderHeatmap(){
-
-  if(heatLayer){
-
-    map.removeLayer(heatLayer);
-
-  }
-
-  const arr =
-    Object.values(stationFlows);
-
-  if(!arr.length){
-    return;
-  }
-
-  const max =
-    Math.max(
-      ...arr.map(
-        x => x.flow
-      )
-    );
-
-  const heatData =
-    arr.map(x => [
-
-      x.lat,
-      x.lng,
-
-      x.flow / max
-
-    ]);
-
-  heatLayer =
-    L.heatLayer(
-      heatData,
-      {
-        radius:40,
-        blur:30,
-        maxZoom:17,
-        minOpacity:.35,
-
-        gradient:{
-          0.1:'#2c7bb6',
-          0.3:'#00a6ca',
-          0.5:'#00ccbc',
-          0.7:'#90eb9d',
-          0.85:'#f9d057',
-          1:'#ff3b30'
-        }
-      }
-    ).addTo(map);
 
 }
 
@@ -1057,7 +938,7 @@ function getRange(){
 
 }
 
-async function shortcut(hours){
+function shortcut(hours){
 
   const now = new Date();
 
@@ -1072,7 +953,11 @@ async function shortcut(hours){
   document.getElementById('end')
     .value = fmt(now);
 
-  await refreshFlows();
+  if(selectedStation){
+    renderCourbes();
+  }
+
+  renderUsageHeatmap();
 
 }
 
@@ -1134,7 +1019,7 @@ async function renderCourbes(){
 
   const labels = [];
 
-  const fluxData = [];
+  const usage = [];
   const elec = [];
   const meca = [];
 
@@ -1170,7 +1055,7 @@ async function renderCourbes(){
 
     if(i === 0){
 
-      fluxData.push(0);
+      usage.push(0);
 
     }else{
 
@@ -1186,13 +1071,15 @@ async function renderCourbes(){
 
       const delta =
         prev
-        ? Math.abs(
-            st.available_bikes
-            - prev.available_bikes
-          )
+        ? prev.available_bikes
+          - st.available_bikes
         : 0;
 
-      fluxData.push(delta);
+      usage.push(
+        delta > 0
+          ? delta
+          : 0
+      );
 
     }
 
@@ -1201,9 +1088,9 @@ async function renderCourbes(){
   content.innerHTML = `
     <div class="card">
       <div class="card-title">
-        Flux total
+        Usage journalier
       </div>
-      <canvas id="flux-chart"></canvas>
+      <canvas id="usage-chart"></canvas>
     </div>
 
     <div class="card">
@@ -1221,22 +1108,22 @@ async function renderCourbes(){
     </div>
   `;
 
-  chartFlux?.destroy();
+  chartUsage?.destroy();
   chartElec?.destroy();
   chartMeca?.destroy();
 
-  chartFlux =
+  chartUsage =
     new Chart(
       document.getElementById(
-        'flux-chart'
+        'usage-chart'
       ),
       {
         type:'line',
         data:{
           labels,
           datasets:[{
-            label:'Flux',
-            data:fluxData,
+            label:'Départs estimés',
+            data:usage,
             borderWidth:2,
             tension:.15
           }]
@@ -1288,16 +1175,134 @@ async function renderCourbes(){
 }
 
 /* =========================================================
-   REFRESH
+   HEATMAP
 ========================================================= */
 
-async function refreshFlows(){
+async function renderUsageHeatmap(){
 
-  await computeFlows();
+  const range = getRange();
 
-  renderStations();
+  if(!range){
+    return;
+  }
 
-  renderHeatmap();
+  const snaps =
+    await fetchRange(
+      range.startMs,
+      range.endMs
+    );
+
+  if(!snaps || snaps.length < 2){
+    return;
+  }
+
+  const usage = {};
+
+  for(let i=1;i<snaps.length;i++){
+
+    const prevStations =
+      getStationsFromSnapshot(
+        snaps[i-1]
+      );
+
+    const currStations =
+      getStationsFromSnapshot(
+        snaps[i]
+      );
+
+    currStations.forEach(curr => {
+
+      const prev =
+        prevStations.find(
+          s => s.number === curr.number
+        );
+
+      if(!prev){
+        return;
+      }
+
+      if(!curr.lat || !curr.lng){
+        return;
+      }
+
+      const delta =
+        prev.available_bikes
+        - curr.available_bikes;
+
+      if(delta <= 0){
+        return;
+      }
+
+      if(!usage[curr.number]){
+
+        usage[curr.number] = {
+
+          lat:curr.lat,
+          lng:curr.lng,
+
+          count:0
+
+        };
+
+      }
+
+      usage[curr.number]
+        .count += delta;
+
+    });
+
+  }
+
+  const arr =
+    Object.values(usage);
+
+  if(!arr.length){
+    return;
+  }
+
+  const max =
+    Math.max(
+      ...arr.map(
+        x => x.count
+      )
+    );
+
+  const heatData =
+    arr.map(x => [
+
+      x.lat,
+      x.lng,
+
+      x.count / max
+
+    ]);
+
+  if(usageHeatLayer){
+
+    usageMap.removeLayer(
+      usageHeatLayer
+    );
+
+  }
+
+  usageHeatLayer =
+    L.heatLayer(
+      heatData,
+      {
+        radius:35,
+        blur:28,
+        maxZoom:17,
+        minOpacity:.4,
+        gradient:{
+          0.1:'#2c7bb6',
+          0.3:'#00a6ca',
+          0.5:'#00ccbc',
+          0.7:'#90eb9d',
+          0.85:'#f9d057',
+          1:'#d7191c'
+        }
+      }
+    ).addTo(usageMap);
 
 }
 
@@ -1312,11 +1317,15 @@ async function boot(){
   allStations =
     await loadLatest();
 
+  await computeMovements();
+
   initMap();
+
+  renderStations();
 
   buildSearch();
 
-  await refreshFlows();
+  await renderUsageHeatmap();
 
 }
 
@@ -1331,10 +1340,15 @@ setInterval(async () => {
   allStations =
     await loadLatest();
 
-  await refreshFlows();
+  await computeMovements();
+
+  renderStations();
+
+  await renderUsageHeatmap();
 
 }, 5 * 60 * 1000);
 </script>
 
 </body>
 </html>
+```
