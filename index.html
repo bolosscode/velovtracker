@@ -799,14 +799,13 @@ function setRangeShortcut(which, hours) {
 }
 
 function initRanges() {
-  const now   = new Date();
-  const fmt   = d => d.toISOString().slice(0, 16);
-  // Courbes : dernières 24h par défaut
-  document.getElementById('range-courbes-start').value = fmt(new Date(now - 24*3600e3));
-  document.getElementById('range-courbes-end').value   = fmt(now);
-  // Heatmap : dernier mois par défaut
-  document.getElementById('range-heatmap-start').value = fmt(new Date(now - 30*24*3600e3));
-  document.getElementById('range-heatmap-end').value   = fmt(now);
+  const now = new Date();
+  const fmt = d => d.toISOString().slice(0, 16);
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+  set('range-courbes-start', fmt(new Date(now - 24*3600e3)));
+  set('range-courbes-end',   fmt(now));
+  set('range-heatmap-start', fmt(new Date(now - 30*24*3600e3)));
+  set('range-heatmap-end',   fmt(now));
 }
 
 async function boot() {
