@@ -201,6 +201,62 @@ main { padding: 20px 24px 60px; max-width: 1400px; margin: 0 auto; }
   letter-spacing: .03em; margin-bottom: 8px;
 }
 
+/* ── Period select ───────────────────────────────────── */
+.period-select {
+  padding: 7px 32px 7px 12px; font-size: 13px; font-weight: 500;
+  background: var(--paper); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--ink); outline: none;
+  box-shadow: var(--sh); cursor: pointer; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23aeaeb2' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+}
+.period-select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,113,227,.12); }
+
+/* ── Favori star ─────────────────────────────────────── */
+.fav-star {
+  cursor: pointer; font-size: 16px; line-height: 1;
+  color: var(--dim); transition: color .15s, transform .15s;
+  user-select: none; flex-shrink: 0;
+}
+.fav-star:hover { transform: scale(1.2); }
+.fav-star.on { color: #ff9f0a; }
+.fav-filter {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 12px; font-size: 12px; font-weight: 500;
+  border: 1px solid var(--border); border-radius: 20px;
+  background: var(--paper); color: var(--sub); cursor: pointer;
+  box-shadow: var(--sh); transition: all .15s;
+}
+.fav-filter.on { background: #fff8e8; border-color: #ff9f0a; color: #b36800; }
+
+/* ── Range picker ───────────────────────────────────── */
+.range-picker {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.range-picker label {
+  font-size: 11px; font-weight: 600; color: var(--sub);
+  text-transform: uppercase; letter-spacing: .04em;
+}
+.range-picker input[type=datetime-local] {
+  padding: 7px 10px; font-size: 13px;
+  background: var(--paper); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--ink); outline: none;
+  box-shadow: var(--sh); cursor: pointer;
+  transition: border-color .15s, box-shadow .15s;
+}
+.range-picker input[type=datetime-local]:focus {
+  border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,113,227,.12);
+}
+.range-sep { font-size: 13px; color: var(--dim); }
+.range-shortcuts { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; }
+.range-sc {
+  padding: 4px 10px; font-size: 11px; font-weight: 500;
+  border: 1px solid var(--border); border-radius: 20px;
+  background: var(--paper); color: var(--sub); cursor: pointer;
+  transition: all .15s;
+}
+.range-sc:hover { border-color: var(--blue); color: var(--blue); }
+
 /* ── Misc ────────────────────────────────────────────── */
 .loader { display: flex; align-items: center; justify-content: center; padding: 56px; color: var(--dim); font-size: 13px; }
 .no-data { text-align: center; padding: 48px; color: var(--dim); font-size: 13px; }
@@ -230,6 +286,10 @@ main { padding: 20px 24px 60px; max-width: 1400px; margin: 0 auto; }
      ONGLET 1 — CARTE
 ═════════════════════════════════════════════════════ -->
 <div class="panel on" id="tab-carte">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+    <button class="fav-filter" id="fav-filter-btn" onclick="toggleFavFilter()">⭐ Favoris seulement</button>
+    <span style="font-size:12px;color:var(--dim)" id="fav-count"></span>
+  </div>
   <div class="map-rel">
     <div id="map"></div>
     <div class="map-legend">
@@ -254,16 +314,20 @@ main { padding: 20px 24px 60px; max-width: 1400px; margin: 0 auto; }
       <input class="st-search" id="search-courbes" type="text" placeholder="Chercher une station…" autocomplete="off">
       <div class="st-dropdown" id="dd-courbes"></div>
     </div>
-    <div class="period-bar" id="periods-courbes">
-      <button class="period-btn on" data-p="1d">1 jour</button>
-      <button class="period-btn" data-p="3d">3 jours</button>
-      <button class="period-btn" data-p="1w">1 semaine</button>
-      <button class="period-btn" data-p="2w">2 semaines</button>
-      <button class="period-btn" data-p="1m">1 mois</button>
-      <button class="period-btn" data-p="3m">3 mois</button>
-      <button class="period-btn" data-p="6m">6 mois</button>
-      <button class="period-btn" data-p="1y">1 an</button>
-    </div>
+    <select id="periods-courbes" onchange="if(selCourbes) renderCourbes()" style="width:180px">
+      <option value="1h">1 heure</option>
+      <option value="3h">3 heures</option>
+      <option value="6h">6 heures</option>
+      <option value="12h">12 heures</option>
+      <option value="1d" selected>1 jour</option>
+      <option value="3d">3 jours</option>
+      <option value="1w">1 semaine</option>
+      <option value="2w">2 semaines</option>
+      <option value="1m">1 mois</option>
+      <option value="3m">3 mois</option>
+      <option value="6m">6 mois</option>
+      <option value="1y">1 an</option>
+    </select>
   </div>
 
   <div id="courbes-content">
@@ -285,14 +349,14 @@ main { padding: 20px 24px 60px; max-width: 1400px; margin: 0 auto; }
       <input class="st-search" id="search-heatmap" type="text" placeholder="Chercher une station…" autocomplete="off">
       <div class="st-dropdown" id="dd-heatmap"></div>
     </div>
-    <div class="period-bar" id="periods-heatmap">
-      <button class="period-btn on" data-p="1w">1 semaine</button>
-      <button class="period-btn" data-p="2w">2 semaines</button>
-      <button class="period-btn" data-p="1m">1 mois</button>
-      <button class="period-btn" data-p="3m">3 mois</button>
-      <button class="period-btn" data-p="6m">6 mois</button>
-      <button class="period-btn" data-p="1y">1 an</button>
-    </div>
+    <select id="periods-heatmap" onchange="if(selHeatmap) renderHeatmap()" style="width:180px">
+      <option value="1w" selected>1 semaine</option>
+      <option value="2w">2 semaines</option>
+      <option value="1m">1 mois</option>
+      <option value="3m">3 mois</option>
+      <option value="6m">6 mois</option>
+      <option value="1y">1 an</option>
+    </select>
   </div>
 
   <div id="heatmap-content">
@@ -309,6 +373,27 @@ main { padding: 20px 24px 60px; max-width: 1400px; margin: 0 auto; }
 // STATE
 // ═══════════════════════════════════════════════════════
 let allStations  = [];   // dernier snapshot live
+let favs         = new Set(JSON.parse(localStorage.getItem('vv_favs')||'[]'));
+let favFilterOn  = false;
+
+function toggleFav(number, starEl) {
+  if (favs.has(number)) { favs.delete(number); starEl.textContent='☆'; starEl.classList.remove('on'); }
+  else                  { favs.add(number);    starEl.textContent='⭐'; starEl.classList.add('on'); }
+  localStorage.setItem('vv_favs', JSON.stringify([...favs]));
+  updateFavCount();
+}
+
+function toggleFavFilter() {
+  favFilterOn = !favFilterOn;
+  const btn = document.getElementById('fav-filter-btn');
+  btn.classList.toggle('on', favFilterOn);
+  renderMapMarkers();
+}
+
+function updateFavCount() {
+  const el = document.getElementById('fav-count');
+  if (el) el.textContent = favs.size ? `${favs.size} favori${favs.size>1?'s':''}` : '';
+}
 let todayMv      = {};   // { number: departs }
 let mapInst      = null;
 let markerLayer  = null;
@@ -420,24 +505,6 @@ async function fetchDay(date) {
   } catch { return null; }
 }
 
-// Retourne un tableau plat de snapshots sur N jours
-async function fetchPeriod(periodKey) {
-  const days = { '1d':1,'3d':3,'1w':7,'2w':14,'1m':30,'3m':90,'6m':180,'1y':365 }[periodKey] || 7;
-  // Step = tous les N jours → garde ~144 points/jour sur les jours chargés
-  // 1j–2s : tous les jours | 1m : 1j/2 | 3m : 1j/3 | 6m : 1j/5 | 1an : 1j/10
-  const step  = days <= 14 ? 1 : days <= 30 ? 2 : days <= 90 ? 3 : days <= 180 ? 5 : 10;
-  const today = new Date();
-  const dates = [];
-  for (let i = 0; i < days; i += step) {
-    const d = new Date(today); d.setDate(d.getDate() - i);
-    dates.push(d.toISOString().slice(0, 10));
-  }
-  const results = await Promise.all(dates.map(fetchDay));
-  const all = [];
-  results.forEach(snaps => { if (snaps?.length) all.push(...snaps); });
-  all.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-  return all;
-}
 
 // ═══════════════════════════════════════════════════════
 // MOVEMENTS (today)
@@ -475,7 +542,10 @@ function renderMapMarkers() {
 
   const maxMv = Math.max(1, ...Object.values(todayMv));
 
-  allStations.forEach(st => {
+  const stationsToShow = favFilterOn ? allStations.filter(s => favs.has(s.number)) : allStations;
+  updateFavCount();
+
+  stationsToShow.forEach(st => {
     if (!st.lat || !st.lng) return;
     const col = stationColor(st);
     const pct = st.bike_stands ? Math.round(st.available_bikes / st.bike_stands * 100) : 0;
@@ -488,7 +558,10 @@ function renderMapMarkers() {
 
     m.bindPopup(`
       <div class="mpop">
-        <div class="mpop-name">${cleanName(st.name)}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="mpop-name" style="margin-bottom:0">${cleanName(st.name)}</div>
+        <span class="fav-star ${favs.has(st.number)?'on':''}" onclick="toggleFav(${st.number},this)" title="Ajouter aux favoris">${favs.has(st.number)?'⭐':'☆'}</span>
+      </div>
         <div class="mpop-row"><span>⚡ Électriques</span><strong>${st.electrical_bikes}</strong></div>
         <div class="mpop-row"><span>🔧 Mécaniques</span><strong>${st.mechanical_bikes}</strong></div>
         <hr class="mpop-divider">
@@ -548,36 +621,27 @@ function buildDropdown(inputId, ddId, onSelect) {
 // ═══════════════════════════════════════════════════════
 // COURBES (onglet 2)
 // ═══════════════════════════════════════════════════════
-function getPeriodCourbes() {
-  return document.querySelector('#periods-courbes .period-btn.on')?.dataset.p || '1d';
-}
+
 
 buildDropdown('search-courbes', 'dd-courbes', st => {
   selCourbes = st;
   renderCourbes();
 });
 
-document.querySelectorAll('#periods-courbes .period-btn').forEach(btn => {
-  btn.onclick = () => {
-    document.querySelectorAll('#periods-courbes .period-btn').forEach(b => b.classList.remove('on'));
-    btn.classList.add('on');
-    if (selCourbes) renderCourbes();
-  };
-});
+
 
 async function renderCourbes() {
   const content = document.getElementById('courbes-content');
   if (!selCourbes) return;
   content.innerHTML = '<div class="loader">Chargement…</div>';
 
-  const period = getPeriodCourbes();
-  const snaps  = await fetchPeriod(period);
+  const range = getRangeCourbes();
+  if (!range) { content.innerHTML = '<div class="no-data">Sélectionnez une période via les raccourcis ou les champs date.</div>'; return; }
+  const snaps = await fetchRange(range.startMs, range.endMs);
   if (!snaps.length) { content.innerHTML = '<div class="no-data">Aucune donnée pour cette période.</div>'; return; }
 
-  const id = selCourbes.number;
-
-  // Agrégation selon la période
-  const days = { '1d':1,'3d':3,'1w':7,'2w':14,'1m':30,'3m':90,'6m':180,'1y':365 }[period];
+  const id   = selCourbes.number;
+  const days = (range.endMs - range.startMs) / 86400e3;
 
   let labels = [], dataElec = [], dataMeca = [], dataFlux = [];
 
@@ -587,7 +651,7 @@ async function renderCourbes() {
     const st = snap.stations?.find(s => s.number === id);
     const t  = new Date(snap.timestamp);
     // Label : heure seule si ≤3j, sinon date+heure
-    labels.push(days <= 3
+    labels.push(days <= 1
       ? t.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })
       : t.toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })
     );
@@ -631,7 +695,7 @@ async function renderCourbes() {
 // HEATMAP (onglet 3)
 // ═══════════════════════════════════════════════════════
 function getPeriodHeatmap() {
-  return document.querySelector('#periods-heatmap .period-btn.on')?.dataset.p || '1m';
+  return document.getElementById('periods-heatmap')?.value || '1w';
 }
 
 buildDropdown('search-heatmap', 'dd-heatmap', st => {
@@ -639,21 +703,16 @@ buildDropdown('search-heatmap', 'dd-heatmap', st => {
   renderHeatmap();
 });
 
-document.querySelectorAll('#periods-heatmap .period-btn').forEach(btn => {
-  btn.onclick = () => {
-    document.querySelectorAll('#periods-heatmap .period-btn').forEach(b => b.classList.remove('on'));
-    btn.classList.add('on');
-    if (selHeatmap) renderHeatmap();
-  };
-});
+
 
 async function renderHeatmap() {
   const content = document.getElementById('heatmap-content');
   if (!selHeatmap) return;
   content.innerHTML = '<div class="loader">Calcul en cours…</div>';
 
-  const period = getPeriodHeatmap();
-  const snaps  = await fetchPeriod(period);
+  const range  = getRangeHeatmap();
+  if (!range) { content.innerHTML = '<div class="no-data">Sélectionnez une période.</div>'; return; }
+  const snaps  = await fetchRange(range.startMs, range.endMs);
   if (!snaps.length) { content.innerHTML = '<div class="no-data">Aucune donnée.</div>'; return; }
 
   const id = selHeatmap.number;
@@ -714,8 +773,45 @@ async function renderHeatmap() {
 // ═══════════════════════════════════════════════════════
 // BOOT
 // ═══════════════════════════════════════════════════════
+
+function getRangeCourbes() {
+  const s = document.getElementById('range-courbes-start').value;
+  const e = document.getElementById('range-courbes-end').value;
+  if (!s || !e) return null;
+  return { startMs: new Date(s).getTime(), endMs: new Date(e).getTime() };
+}
+
+function getRangeHeatmap() {
+  const s = document.getElementById('range-heatmap-start').value;
+  const e = document.getElementById('range-heatmap-end').value;
+  if (!s || !e) return null;
+  return { startMs: new Date(s).getTime(), endMs: new Date(e).getTime() };
+}
+
+function setRangeShortcut(which, hours) {
+  const now   = new Date();
+  const start = new Date(now - hours * 3600e3);
+  const fmt   = d => d.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:MM"
+  document.getElementById(`range-${which}-start`).value = fmt(start);
+  document.getElementById(`range-${which}-end`).value   = fmt(now);
+  if (which === 'courbes' && selCourbes) renderCourbes();
+  if (which === 'heatmap' && selHeatmap) renderHeatmap();
+}
+
+function initRanges() {
+  const now   = new Date();
+  const fmt   = d => d.toISOString().slice(0, 16);
+  // Courbes : dernières 24h par défaut
+  document.getElementById('range-courbes-start').value = fmt(new Date(now - 24*3600e3));
+  document.getElementById('range-courbes-end').value   = fmt(now);
+  // Heatmap : dernier mois par défaut
+  document.getElementById('range-heatmap-start').value = fmt(new Date(now - 30*24*3600e3));
+  document.getElementById('range-heatmap-end').value   = fmt(now);
+}
+
 async function boot() {
   try {
+    initRanges();
     allStations = await loadLatest();
     await computeMovements();
     initMap();
