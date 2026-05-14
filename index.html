@@ -314,20 +314,27 @@ main { padding: 20px 24px 60px; max-width: 1400px; margin: 0 auto; }
       <input class="st-search" id="search-courbes" type="text" placeholder="Chercher une station…" autocomplete="off">
       <div class="st-dropdown" id="dd-courbes"></div>
     </div>
-    <select id="periods-courbes" onchange="if(selCourbes) renderCourbes()" style="width:180px">
-      <option value="1h">1 heure</option>
-      <option value="3h">3 heures</option>
-      <option value="6h">6 heures</option>
-      <option value="12h">12 heures</option>
-      <option value="1d" selected>1 jour</option>
-      <option value="3d">3 jours</option>
-      <option value="1w">1 semaine</option>
-      <option value="2w">2 semaines</option>
-      <option value="1m">1 mois</option>
-      <option value="3m">3 mois</option>
-      <option value="6m">6 mois</option>
-      <option value="1y">1 an</option>
-    </select>
+    <div class="range-picker">
+      <label>Du</label>
+      <input type="datetime-local" id="range-courbes-start" onchange="if(selCourbes) renderCourbes()">
+      <span class="range-sep">→</span>
+      <label>au</label>
+      <input type="datetime-local" id="range-courbes-end" onchange="if(selCourbes) renderCourbes()">
+    </div>
+    <div class="range-shortcuts">
+      <button class="range-sc" onclick="setRangeShortcut('courbes',1)">1h</button>
+      <button class="range-sc" onclick="setRangeShortcut('courbes',3)">3h</button>
+      <button class="range-sc" onclick="setRangeShortcut('courbes',6)">6h</button>
+      <button class="range-sc" onclick="setRangeShortcut('courbes',12)">12h</button>
+      <button class="range-sc" onclick="setRangeShortcut('courbes',24)">24h</button>
+      <button class="range-sc" onclick="setRangeShortcut('courbes',72)">3j</button>
+      <button class="range-sc" onclick="setRangeShortcut('courbes',168)">1 sem</button>
+      <button class="range-sc" onclick="setRangeShortcut('courbes',336)">2 sem</button>
+      <button class="range-sc" onclick="setRangeShortcut('courbes',720)">1 mois</button>
+      <button class="range-sc" onclick="setRangeShortcut('courbes',2160)">3 mois</button>
+      <button class="range-sc" onclick="setRangeShortcut('courbes',4320)">6 mois</button>
+      <button class="range-sc" onclick="setRangeShortcut('courbes',8760)">1 an</button>
+    </div>
   </div>
 
   <div id="courbes-content">
@@ -349,14 +356,21 @@ main { padding: 20px 24px 60px; max-width: 1400px; margin: 0 auto; }
       <input class="st-search" id="search-heatmap" type="text" placeholder="Chercher une station…" autocomplete="off">
       <div class="st-dropdown" id="dd-heatmap"></div>
     </div>
-    <select id="periods-heatmap" onchange="if(selHeatmap) renderHeatmap()" style="width:180px">
-      <option value="1w" selected>1 semaine</option>
-      <option value="2w">2 semaines</option>
-      <option value="1m">1 mois</option>
-      <option value="3m">3 mois</option>
-      <option value="6m">6 mois</option>
-      <option value="1y">1 an</option>
-    </select>
+    <div class="range-picker">
+      <label>Du</label>
+      <input type="datetime-local" id="range-heatmap-start" onchange="if(selHeatmap) renderHeatmap()">
+      <span class="range-sep">→</span>
+      <label>au</label>
+      <input type="datetime-local" id="range-heatmap-end" onchange="if(selHeatmap) renderHeatmap()">
+    </div>
+    <div class="range-shortcuts">
+      <button class="range-sc" onclick="setRangeShortcut('heatmap',168)">1 sem</button>
+      <button class="range-sc" onclick="setRangeShortcut('heatmap',336)">2 sem</button>
+      <button class="range-sc" onclick="setRangeShortcut('heatmap',720)">1 mois</button>
+      <button class="range-sc" onclick="setRangeShortcut('heatmap',2160)">3 mois</button>
+      <button class="range-sc" onclick="setRangeShortcut('heatmap',4320)">6 mois</button>
+      <button class="range-sc" onclick="setRangeShortcut('heatmap',8760)">1 an</button>
+    </div>
   </div>
 
   <div id="heatmap-content">
