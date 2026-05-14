@@ -2,14 +2,20 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
 <title>Vélo'v Lyon Analytics</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 
 <style>
@@ -31,7 +37,7 @@
   --orange:#ff9f0a;
   --red:#ff3b30;
   --radius:14px;
-  --shadow:0 2px 12px rgba(0,0,0,.08);
+  --shadow:0 2px 14px rgba(0,0,0,.08);
 }
 
 body{
@@ -48,7 +54,7 @@ header{
   z-index:300;
   height:56px;
   background:rgba(255,255,255,.92);
-  backdrop-filter:blur(16px);
+  backdrop-filter:blur(14px);
   border-bottom:1px solid #ececec;
   display:flex;
   align-items:center;
@@ -76,9 +82,9 @@ nav{
   position:sticky;
   top:56px;
   z-index:250;
-  display:flex;
   background:#fff;
   border-bottom:1px solid #ececec;
+  display:flex;
   padding:0 20px;
 }
 
@@ -119,13 +125,14 @@ main{
 
 .card-title{
   font-size:11px;
+  font-weight:600;
+  letter-spacing:.05em;
   text-transform:uppercase;
   color:var(--sub);
   margin-bottom:14px;
-  font-weight:600;
-  letter-spacing:.04em;
 }
 
+/* MAP */
 #map{
   height:calc(100vh - 140px);
   border-radius:var(--radius);
@@ -133,7 +140,8 @@ main{
 }
 
 #usage-map{
-  height:calc(100vh - 230px);
+  height:calc(100vh - 240px);
+  min-height:650px;
   border-radius:var(--radius);
   overflow:hidden;
 }
@@ -147,8 +155,8 @@ main{
 .search{
   width:100%;
   padding:10px 12px;
-  border:1px solid var(--border);
   border-radius:10px;
+  border:1px solid var(--border);
   font-size:14px;
 }
 
@@ -162,8 +170,8 @@ main{
   border-radius:10px;
   box-shadow:var(--shadow);
   overflow:hidden;
-  z-index:50;
   display:none;
+  z-index:50;
   max-height:280px;
   overflow-y:auto;
 }
@@ -184,8 +192,8 @@ main{
 /* RANGE */
 .range{
   display:flex;
-  gap:8px;
   flex-wrap:wrap;
+  gap:8px;
   align-items:center;
   margin-bottom:14px;
 }
@@ -211,6 +219,7 @@ main{
   font-size:11px;
 }
 
+/* LOADER */
 .loader,
 .no-data{
   padding:40px;
@@ -223,14 +232,25 @@ main{
 <body>
 
 <header>
-  <div class="brand">Vélo<em>'</em>v Lyon Analytics</div>
+  <div class="brand">
+    Vélo<em>'</em>v Lyon Analytics
+  </div>
+
   <div class="clock" id="clock"></div>
 </header>
 
 <nav>
-  <div class="tab on" data-tab="map">🗺 Stations</div>
-  <div class="tab" data-tab="courbes">📈 Utilisation</div>
-  <div class="tab" data-tab="heatmap">🔥 Heatmap Lyon</div>
+  <div class="tab on" data-tab="map">
+    🗺 Stations
+  </div>
+
+  <div class="tab" data-tab="courbes">
+    📈 Utilisation
+  </div>
+
+  <div class="tab" data-tab="heatmap">
+    🔥 Heatmap Lyon
+  </div>
 </nav>
 
 <main>
@@ -250,23 +270,38 @@ main{
     </div>
 
     <div class="search-wrap">
+
       <input
         id="station-search"
         class="search"
         type="text"
         placeholder="Chercher une station..."
         autocomplete="off"
-      >
+      />
 
-      <div class="dropdown" id="station-dd"></div>
+      <div
+        class="dropdown"
+        id="station-dd"
+      ></div>
+
     </div>
 
     <div class="range">
+
       <label>Du</label>
-      <input type="datetime-local" id="start">
+
+      <input
+        type="datetime-local"
+        id="start"
+      />
 
       <label>au</label>
-      <input type="datetime-local" id="end">
+
+      <input
+        type="datetime-local"
+        id="end"
+      />
+
     </div>
 
     <div class="shortcuts">
@@ -280,9 +315,11 @@ main{
   </div>
 
   <div id="courbes-content">
+
     <div class="no-data">
       Sélectionnez une station.
     </div>
+
   </div>
 
 </div>
@@ -307,10 +344,15 @@ main{
 <script>
 'use strict';
 
-/* STATE */
+/* =========================================================
+   STATE
+========================================================= */
+
 let allStations = [];
+
 let map = null;
 let usageMap = null;
+
 let markers = null;
 let usageHeatLayer = null;
 
@@ -320,52 +362,86 @@ let chartUsage = null;
 let chartElec = null;
 let chartMeca = null;
 
-const fmt = d => d.toISOString().slice(0,16);
+let todayMv = {};
 
-/* CLOCK */
+const fmt =
+  d => d.toISOString().slice(0,16);
+
+/* =========================================================
+   CLOCK
+========================================================= */
+
 setInterval(() => {
-  document.getElementById('clock').textContent =
-    new Date().toLocaleTimeString('fr-FR');
+
+  document.getElementById('clock')
+    .textContent =
+      new Date()
+        .toLocaleTimeString('fr-FR');
+
 },1000);
 
-/* TABS */
-document.querySelectorAll('.tab').forEach(tab => {
+/* =========================================================
+   TABS
+========================================================= */
 
-  tab.onclick = () => {
+document.querySelectorAll('.tab')
+  .forEach(tab => {
 
-    document.querySelectorAll('.tab')
-      .forEach(t => t.classList.remove('on'));
+    tab.onclick = () => {
 
-    document.querySelectorAll('.panel')
-      .forEach(p => p.classList.remove('on'));
+      document.querySelectorAll('.tab')
+        .forEach(t =>
+          t.classList.remove('on')
+        );
 
-    tab.classList.add('on');
+      document.querySelectorAll('.panel')
+        .forEach(p =>
+          p.classList.remove('on')
+        );
 
-    document.getElementById(
-      'tab-' + tab.dataset.tab
-    ).classList.add('on');
+      tab.classList.add('on');
 
-    setTimeout(() => {
-      map?.invalidateSize();
-      usageMap?.invalidateSize();
-    },100);
+      document.getElementById(
+        'tab-' + tab.dataset.tab
+      ).classList.add('on');
 
-  };
+      setTimeout(() => {
+
+        map?.invalidateSize();
+
+        usageMap?.invalidateSize();
+
+      },120);
+
+    };
 
 });
 
-/* HELPERS */
+/* =========================================================
+   HELPERS
+========================================================= */
+
 function cleanName(n){
-  return n.replace(/^\d+\s*[-–]\s*/, '').trim();
+
+  return n
+    .replace(/^\d+\s*[-–]\s*/,'')
+    .trim();
+
 }
 
 function stationColor(st){
 
-  if(!st.bike_stands || st.available_bikes === 0){
+  if(
+    !st.bike_stands
+    || st.available_bikes === 0
+  ){
     return '#ff3b30';
   }
 
-  return st.available_bikes / st.bike_stands <= .25
+  return (
+    st.available_bikes
+    / st.bike_stands
+  ) <= .25
     ? '#ff9f0a'
     : '#28cd41';
 
@@ -374,7 +450,9 @@ function stationColor(st){
 function chartOpts(){
 
   return {
+
     responsive:true,
+
     plugins:{
       legend:{
         labels:{
@@ -382,6 +460,7 @@ function chartOpts(){
         }
       }
     },
+
     scales:{
       x:{
         ticks:{
@@ -389,17 +468,21 @@ function chartOpts(){
         }
       },
       y:{
+        beginAtZero:true,
         ticks:{
           color:'#6e6e73'
-        },
-        beginAtZero:true
+        }
       }
     }
+
   };
 
 }
 
-/* DATA */
+/* =========================================================
+   DATA
+========================================================= */
+
 function parseStation(r){
 
   let elec = 0;
@@ -436,15 +519,25 @@ function parseStation(r){
   }catch{}
 
   return {
+
     number:r.number,
     name:r.name || '',
-    available_bikes:r.available_bikes || 0,
-    available_bike_stands:r.available_bike_stands || 0,
-    bike_stands:r.bike_stands || 0,
+
+    available_bikes:
+      r.available_bikes || 0,
+
+    available_bike_stands:
+      r.available_bike_stands || 0,
+
+    bike_stands:
+      r.bike_stands || 0,
+
     electrical_bikes:elec,
     mechanical_bikes:meca,
+
     lat:r.lat,
     lng:r.lng
+
   };
 
 }
@@ -459,11 +552,14 @@ async function loadLatest(){
 
     const data = await r.json();
 
-    return (data.values || []).map(parseStation);
+    return (
+      data.values || []
+    ).map(parseStation);
 
   }catch{
 
-    const r = await fetch('data/latest.json');
+    const r =
+      await fetch('data/latest.json');
 
     const data = await r.json();
 
@@ -512,12 +608,12 @@ async function fetchRange(startMs,endMs){
   const start = new Date(startMs);
   const end = new Date(endMs);
 
-  const dates = new Set();
+  const days = Math.ceil(
+    (endMs - startMs)
+    / 86400e3
+  );
 
-  const days =
-    Math.ceil(
-      (endMs-startMs)/86400e3
-    );
+  const dates = new Set();
 
   for(let i=0;i<=days;i++){
 
@@ -545,10 +641,13 @@ async function fetchRange(startMs,endMs){
 
   });
 
-  all.forEach(snap => {
+  all.forEach(s => {
 
-    if(!snap.timestamp && snap.last_update){
-      snap.timestamp = snap.last_update;
+    if(
+      !s.timestamp
+      && s.last_update
+    ){
+      s.timestamp = s.last_update;
     }
 
   });
@@ -557,9 +656,13 @@ async function fetchRange(startMs,endMs){
     .filter(s => {
 
       const t =
-        new Date(s.timestamp).getTime();
+        new Date(s.timestamp)
+          .getTime();
 
-      return t >= startMs && t <= endMs;
+      return (
+        t >= startMs
+        && t <= endMs
+      );
 
     })
     .sort((a,b) =>
@@ -569,7 +672,71 @@ async function fetchRange(startMs,endMs){
 
 }
 
-/* MAP */
+/* =========================================================
+   MOVEMENTS
+========================================================= */
+
+async function computeMovements(){
+
+  todayMv = {};
+
+  const today =
+    new Date()
+      .toISOString()
+      .slice(0,10);
+
+  const snaps =
+    await fetchDay(today);
+
+  if(!snaps || snaps.length < 2){
+    return;
+  }
+
+  for(let i=1;i<snaps.length;i++){
+
+    const prevStations =
+      getStationsFromSnapshot(
+        snaps[i-1]
+      );
+
+    const currStations =
+      getStationsFromSnapshot(
+        snaps[i]
+      );
+
+    currStations.forEach(curr => {
+
+      const prev =
+        prevStations.find(
+          s => s.number === curr.number
+        );
+
+      if(!prev){
+        return;
+      }
+
+      const delta =
+        prev.available_bikes
+        - curr.available_bikes;
+
+      if(delta > 0){
+
+        todayMv[curr.number] =
+          (todayMv[curr.number] || 0)
+          + delta;
+
+      }
+
+    });
+
+  }
+
+}
+
+/* =========================================================
+   MAP
+========================================================= */
+
 function initMap(){
 
   map = L.map('map')
@@ -582,8 +749,12 @@ function initMap(){
     }
   ).addTo(map);
 
-  usageMap = L.map('usage-map')
-    .setView([45.757,4.832],13);
+  usageMap = L.map(
+    'usage-map',
+    {
+      preferCanvas:true
+    }
+  ).setView([45.757,4.832],13);
 
   L.tileLayer(
     'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
@@ -600,7 +771,8 @@ function renderStations(){
     markers.clearLayers();
   }
 
-  markers = L.layerGroup().addTo(map);
+  markers =
+    L.layerGroup().addTo(map);
 
   allStations.forEach(st => {
 
@@ -608,31 +780,49 @@ function renderStations(){
       return;
     }
 
-    const marker = L.circleMarker(
-      [st.lat,st.lng],
-      {
-        radius:8,
-        fillColor:stationColor(st),
-        color:'#fff',
-        weight:1.5,
-        fillOpacity:.9
-      }
-    );
+    const mv =
+      todayMv[st.number] || 0;
+
+    const marker =
+      L.circleMarker(
+        [st.lat,st.lng],
+        {
+          radius:8,
+          fillColor:
+            stationColor(st),
+          color:'#fff',
+          weight:1.5,
+          fillOpacity:.9
+        }
+      );
 
     marker.bindPopup(`
-      <b>${cleanName(st.name)}</b><br><br>
+      <div style="min-width:220px">
 
-      ⚡ Électriques :
-      ${st.electrical_bikes}<br>
+        <div style="
+          font-weight:700;
+          margin-bottom:10px;
+          font-size:14px
+        ">
+          ${cleanName(st.name)}
+        </div>
 
-      🔧 Mécaniques :
-      ${st.mechanical_bikes}<br>
+        ⚡ Électriques :
+        <b>${st.electrical_bikes}</b><br>
 
-      🚲 Total :
-      ${st.available_bikes}<br>
+        🔧 Mécaniques :
+        <b>${st.mechanical_bikes}</b><br>
 
-      🅿️ Places :
-      ${st.available_bike_stands}
+        🚲 Total :
+        <b>${st.available_bikes}</b><br>
+
+        🅿️ Places :
+        <b>${st.available_bike_stands}</b><br><br>
+
+        ↕ Départs aujourd'hui :
+        <b>${mv}</b>
+
+      </div>
     `);
 
     markers.addLayer(marker);
@@ -641,87 +831,109 @@ function renderStations(){
 
 }
 
-/* SEARCH */
+/* =========================================================
+   SEARCH
+========================================================= */
+
 function buildSearch(){
 
   const input =
-    document.getElementById('station-search');
+    document.getElementById(
+      'station-search'
+    );
 
   const dd =
-    document.getElementById('station-dd');
+    document.getElementById(
+      'station-dd'
+    );
 
-  input.addEventListener('input', () => {
+  input.addEventListener(
+    'input',
+    () => {
 
-    const q =
-      input.value.toLowerCase().trim();
+      const q =
+        input.value
+          .toLowerCase()
+          .trim();
 
-    dd.innerHTML = '';
+      dd.innerHTML = '';
 
-    if(!q){
-
-      dd.classList.remove('open');
-      return;
-
-    }
-
-    const matches =
-      allStations
-        .filter(s =>
-          cleanName(s.name)
-            .toLowerCase()
-            .includes(q)
-        )
-        .slice(0,12);
-
-    matches.forEach(st => {
-
-      const el =
-        document.createElement('div');
-
-      el.className = 'opt';
-
-      el.textContent =
-        cleanName(st.name);
-
-      el.onclick = () => {
-
-        input.value =
-          cleanName(st.name);
+      if(!q){
 
         dd.classList.remove('open');
+        return;
 
-        selectedStation = st;
+      }
 
-        renderCourbes();
+      const matches =
+        allStations
+          .filter(s =>
+            cleanName(s.name)
+              .toLowerCase()
+              .includes(q)
+          )
+          .slice(0,12);
 
-      };
+      matches.forEach(st => {
 
-      dd.appendChild(el);
+        const el =
+          document.createElement('div');
 
-    });
+        el.className = 'opt';
 
-    dd.classList.add('open');
+        el.textContent =
+          cleanName(st.name);
 
-  });
+        el.onclick = () => {
+
+          input.value =
+            cleanName(st.name);
+
+          dd.classList.remove('open');
+
+          selectedStation = st;
+
+          renderCourbes();
+
+        };
+
+        dd.appendChild(el);
+
+      });
+
+      dd.classList.add('open');
+
+    }
+  );
 
 }
 
-/* RANGE */
+/* =========================================================
+   RANGE
+========================================================= */
+
 function getRange(){
 
   const s =
-    document.getElementById('start').value;
+    document.getElementById('start')
+      .value;
 
   const e =
-    document.getElementById('end').value;
+    document.getElementById('end')
+      .value;
 
   if(!s || !e){
     return null;
   }
 
   return {
-    startMs:new Date(s).getTime(),
-    endMs:new Date(e).getTime()
+
+    startMs:
+      new Date(s).getTime(),
+
+    endMs:
+      new Date(e).getTime()
+
   };
 
 }
@@ -731,13 +943,15 @@ function shortcut(hours){
   const now = new Date();
 
   const start =
-    new Date(now - hours*3600e3);
+    new Date(
+      now - hours * 3600e3
+    );
 
-  document.getElementById('start').value =
-    fmt(start);
+  document.getElementById('start')
+    .value = fmt(start);
 
-  document.getElementById('end').value =
-    fmt(now);
+  document.getElementById('end')
+    .value = fmt(now);
 
   if(selectedStation){
     renderCourbes();
@@ -751,19 +965,29 @@ function initRange(){
 
   const now = new Date();
 
-  document.getElementById('start').value =
-    fmt(new Date(now - 24*3600e3));
+  document.getElementById('start')
+    .value =
+      fmt(
+        new Date(
+          now - 24*3600e3
+        )
+      );
 
-  document.getElementById('end').value =
-    fmt(now);
+  document.getElementById('end')
+    .value = fmt(now);
 
 }
 
-/* COURBES */
+/* =========================================================
+   COURBES
+========================================================= */
+
 async function renderCourbes(){
 
   const content =
-    document.getElementById('courbes-content');
+    document.getElementById(
+      'courbes-content'
+    );
 
   if(!selectedStation){
     return;
@@ -773,6 +997,10 @@ async function renderCourbes(){
     '<div class="loader">Chargement...</div>';
 
   const range = getRange();
+
+  if(!range){
+    return;
+  }
 
   const snaps =
     await fetchRange(
@@ -791,11 +1019,12 @@ async function renderCourbes(){
 
   const labels = [];
 
+  const usage = [];
   const elec = [];
   const meca = [];
-  const usage = [];
 
-  const id = selectedStation.number;
+  const id =
+    selectedStation.number;
 
   snaps.forEach((snap,i) => {
 
@@ -803,7 +1032,9 @@ async function renderCourbes(){
       getStationsFromSnapshot(snap);
 
     const st =
-      stations.find(s => s.number === id);
+      stations.find(
+        s => s.number === id
+      );
 
     if(!st){
       return;
@@ -814,9 +1045,13 @@ async function renderCourbes(){
         .toLocaleString('fr-FR')
     );
 
-    elec.push(st.electrical_bikes || 0);
+    elec.push(
+      st.electrical_bikes || 0
+    );
 
-    meca.push(st.mechanical_bikes || 0);
+    meca.push(
+      st.mechanical_bikes || 0
+    );
 
     if(i === 0){
 
@@ -825,7 +1060,9 @@ async function renderCourbes(){
     }else{
 
       const prevStations =
-        getStationsFromSnapshot(snaps[i-1]);
+        getStationsFromSnapshot(
+          snaps[i-1]
+        );
 
       const prev =
         prevStations.find(
@@ -839,7 +1076,9 @@ async function renderCourbes(){
         : 0;
 
       usage.push(
-        delta > 0 ? delta : 0
+        delta > 0
+          ? delta
+          : 0
       );
 
     }
@@ -873,60 +1112,72 @@ async function renderCourbes(){
   chartElec?.destroy();
   chartMeca?.destroy();
 
-  chartUsage = new Chart(
-    document.getElementById('usage-chart'),
-    {
-      type:'line',
-      data:{
-        labels,
-        datasets:[{
-          label:'Départs estimés',
-          data:usage,
-          borderWidth:2,
-          tension:.15
-        }]
-      },
-      options:chartOpts()
-    }
-  );
+  chartUsage =
+    new Chart(
+      document.getElementById(
+        'usage-chart'
+      ),
+      {
+        type:'line',
+        data:{
+          labels,
+          datasets:[{
+            label:'Départs estimés',
+            data:usage,
+            borderWidth:2,
+            tension:.15
+          }]
+        },
+        options:chartOpts()
+      }
+    );
 
-  chartElec = new Chart(
-    document.getElementById('elec-chart'),
-    {
-      type:'line',
-      data:{
-        labels,
-        datasets:[{
-          label:'Électriques',
-          data:elec,
-          borderWidth:2,
-          tension:.15
-        }]
-      },
-      options:chartOpts()
-    }
-  );
+  chartElec =
+    new Chart(
+      document.getElementById(
+        'elec-chart'
+      ),
+      {
+        type:'line',
+        data:{
+          labels,
+          datasets:[{
+            label:'Électriques',
+            data:elec,
+            borderWidth:2,
+            tension:.15
+          }]
+        },
+        options:chartOpts()
+      }
+    );
 
-  chartMeca = new Chart(
-    document.getElementById('meca-chart'),
-    {
-      type:'line',
-      data:{
-        labels,
-        datasets:[{
-          label:'Mécaniques',
-          data:meca,
-          borderWidth:2,
-          tension:.15
-        }]
-      },
-      options:chartOpts()
-    }
-  );
+  chartMeca =
+    new Chart(
+      document.getElementById(
+        'meca-chart'
+      ),
+      {
+        type:'line',
+        data:{
+          labels,
+          datasets:[{
+            label:'Mécaniques',
+            data:meca,
+            borderWidth:2,
+            tension:.15
+          }]
+        },
+        options:chartOpts()
+      }
+    );
 
 }
 
-/* HEATMAP USAGE LYON */
+/* =========================================================
+   HEATMAP
+========================================================= */
+
 async function renderUsageHeatmap(){
 
   const range = getRange();
@@ -941,19 +1192,23 @@ async function renderUsageHeatmap(){
       range.endMs
     );
 
-  if(!snaps.length){
+  if(!snaps || snaps.length < 2){
     return;
   }
 
-  const usageMapData = {};
+  const usage = {};
 
   for(let i=1;i<snaps.length;i++){
 
     const prevStations =
-      getStationsFromSnapshot(snaps[i-1]);
+      getStationsFromSnapshot(
+        snaps[i-1]
+      );
 
     const currStations =
-      getStationsFromSnapshot(snaps[i]);
+      getStationsFromSnapshot(
+        snaps[i]
+      );
 
     currStations.forEach(curr => {
 
@@ -966,6 +1221,10 @@ async function renderUsageHeatmap(){
         return;
       }
 
+      if(!curr.lat || !curr.lng){
+        return;
+      }
+
       const delta =
         prev.available_bikes
         - curr.available_bikes;
@@ -974,58 +1233,91 @@ async function renderUsageHeatmap(){
         return;
       }
 
-      if(!usageMapData[curr.number]){
+      if(!usage[curr.number]){
 
-        usageMapData[curr.number] = {
+        usage[curr.number] = {
+
           lat:curr.lat,
           lng:curr.lng,
-          usage:0
+
+          count:0
+
         };
 
       }
 
-      usageMapData[curr.number].usage += delta;
+      usage[curr.number]
+        .count += delta;
 
     });
 
   }
 
-  const max =
-    Math.max(
-      1,
-      ...Object.values(usageMapData)
-        .map(x => x.usage)
-    );
+  const arr =
+    Object.values(usage);
 
-  const points =
-    Object.values(usageMapData)
-      .map(x => [
-        x.lat,
-        x.lng,
-        x.usage / max
-      ]);
-
-  if(usageHeatLayer){
-    usageMap.removeLayer(usageHeatLayer);
+  if(!arr.length){
+    return;
   }
 
-  usageHeatLayer = L.heatLayer(
-    points,
-    {
-      radius:28,
-      blur:22,
-      maxZoom:17
-    }
-  ).addTo(usageMap);
+  const max =
+    Math.max(
+      ...arr.map(
+        x => x.count
+      )
+    );
+
+  const heatData =
+    arr.map(x => [
+
+      x.lat,
+      x.lng,
+
+      x.count / max
+
+    ]);
+
+  if(usageHeatLayer){
+
+    usageMap.removeLayer(
+      usageHeatLayer
+    );
+
+  }
+
+  usageHeatLayer =
+    L.heatLayer(
+      heatData,
+      {
+        radius:35,
+        blur:28,
+        maxZoom:17,
+        minOpacity:.4,
+        gradient:{
+          0.1:'#2c7bb6',
+          0.3:'#00a6ca',
+          0.5:'#00ccbc',
+          0.7:'#90eb9d',
+          0.85:'#f9d057',
+          1:'#d7191c'
+        }
+      }
+    ).addTo(usageMap);
 
 }
 
-/* BOOT */
+/* =========================================================
+   BOOT
+========================================================= */
+
 async function boot(){
 
   initRange();
 
-  allStations = await loadLatest();
+  allStations =
+    await loadLatest();
+
+  await computeMovements();
 
   initMap();
 
@@ -1033,19 +1325,28 @@ async function boot(){
 
   buildSearch();
 
-  renderUsageHeatmap();
+  await renderUsageHeatmap();
 
 }
 
 boot();
 
+/* =========================================================
+   AUTO REFRESH
+========================================================= */
+
 setInterval(async () => {
 
-  allStations = await loadLatest();
+  allStations =
+    await loadLatest();
+
+  await computeMovements();
 
   renderStations();
 
-},5*60*1000);
+  await renderUsageHeatmap();
+
+}, 5 * 60 * 1000);
 </script>
 
 </body>
