@@ -4,377 +4,362 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vélo'v Lyon</title>
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <style>
-/* ── Reset ───────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg: #f5f5f7;
-  --paper: #ffffff;
-  --ink: #1d1d1f;
-  --sub: #6e6e73;
-  --dim: #aeaeb2;
-  --border: #d2d2d7;
-  --border-l: #e5e5ea;
-  --blue: #0071e3;
-  --blue-l: rgba(0,113,227,.08);
-  --green: #28cd41;
-  --green-l: rgba(40,205,65,.10);
-  --orange: #ff9f0a;
-  --orange-l: rgba(255,159,10,.10);
-  --red: #ff3b30;
-  --red-l: rgba(255,59,48,.10);
-  --sh: 0 1px 4px rgba(0,0,0,.08), 0 0 0 .5px rgba(0,0,0,.04);
-  --sh-md: 0 4px 20px rgba(0,0,0,.10), 0 0 0 .5px rgba(0,0,0,.04);
-  --r: 12px;
-}
-html { scroll-behavior: smooth; }
-body {
-  background: var(--bg); color: var(--ink);
-  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  font-size: 14px; line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#f5f5f7;
+  --paper:#fff;
+  --ink:#1d1d1f;
+  --sub:#6e6e73;
+  --dim:#aeaeb2;
+  --border:#d2d2d7;
+  --border-l:#e5e5ea;
+  --blue:#0071e3;
+  --green:#28cd41;
+  --orange:#ff9f0a;
+  --red:#ff3b30;
+  --sh:0 1px 4px rgba(0,0,0,.08);
+  --sh-md:0 4px 20px rgba(0,0,0,.10);
+  --r:12px;
 }
 
-/* ── Header ──────────────────────────────────────────── */
-header {
-  position: sticky; top: 0; z-index: 300;
-  height: 52px; padding: 0 24px;
-  display: flex; align-items: center; justify-content: space-between;
-  background: rgba(255,255,255,.85);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  border-bottom: 1px solid var(--border-l);
-}
-.brand { font-size: 17px; font-weight: 700; letter-spacing: -.4px; }
-.brand em { color: var(--blue); font-style: normal; }
-.hd-right { display: flex; align-items: center; gap: 12px; }
-.live-pill {
-  display: flex; align-items: center; gap: 5px;
-  padding: 3px 10px; background: var(--bg);
-  border: 1px solid var(--border); border-radius: 20px;
-  font-size: 11px; color: var(--sub);
-}
-.live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2.5s infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-.hd-clock { font-size: 12px; color: var(--dim); font-variant-numeric: tabular-nums; }
-
-/* ── Nav ─────────────────────────────────────────────── */
-nav {
-  position: sticky; top: 52px; z-index: 200;
-  background: rgba(255,255,255,.9);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border-l);
-  display: flex; padding: 0 24px; gap: 2px;
-}
-.tab {
-  padding: 13px 18px; font-size: 13px; font-weight: 500;
-  color: var(--sub); cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: color .15s, border-color .15s;
-  user-select: none; white-space: nowrap;
-}
-.tab:hover { color: var(--ink); }
-.tab.on { color: var(--blue); border-bottom-color: var(--blue); }
-
-/* ── Main ────────────────────────────────────────────── */
-main { padding: 20px 24px 60px; max-width: 1400px; margin: 0 auto; }
-.panel { display: none; }
-.panel.on { display: block; animation: fadein .18s ease; }
-@keyframes fadein { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
-
-/* ── Card ────────────────────────────────────────────── */
-.card {
-  background: var(--paper); border-radius: var(--r);
-  box-shadow: var(--sh); padding: 20px; margin-bottom: 14px;
-}
-.card-title {
-  font-size: 11px; font-weight: 600; letter-spacing: .04em;
-  text-transform: uppercase; color: var(--sub); margin-bottom: 14px;
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Helvetica,Arial,sans-serif;
+  font-size:14px;
 }
 
-/* ── Map ─────────────────────────────────────────────── */
-#map { height: calc(100vh - 130px); min-height: 480px; border-radius: var(--r); box-shadow: var(--sh-md); }
-.leaflet-popup-content-wrapper { border-radius: 12px !important; box-shadow: var(--sh-md) !important; padding: 0 !important; }
-.leaflet-popup-content { margin: 0 !important; font-family: -apple-system, sans-serif; }
-.mpop { padding: 14px 16px; min-width: 180px; }
-.mpop-name { font-size: 13px; font-weight: 600; margin-bottom: 10px; color: var(--ink); }
-.mpop-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--sub); padding: 2px 0; }
-.mpop-row strong { color: var(--ink); font-weight: 600; }
-.mpop-divider { border: none; border-top: 1px solid var(--border-l); margin: 8px 0; }
-.mpop-bar-bg { height: 4px; background: var(--border-l); border-radius: 2px; margin-top: 10px; overflow: hidden; }
-.mpop-bar { height: 100%; border-radius: 2px; transition: width .4s; }
-
-/* ── Map legend ──────────────────────────────────────── */
-.map-legend {
-  position: absolute; bottom: 24px; left: 24px; z-index: 500;
-  background: rgba(255,255,255,.92); backdrop-filter: blur(10px);
-  border-radius: 10px; box-shadow: var(--sh-md);
-  padding: 12px 16px; font-size: 12px; color: var(--sub);
-}
-.map-legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-.map-legend-row:last-child { margin-bottom: 0; }
-.leg-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.map-rel { position: relative; }
-
-/* ── Station search (onglets 2 & 3) ─────────────────── */
-.st-search-wrap {
-  position: relative; margin-bottom: 14px;
-}
-.st-search-wrap svg {
-  position: absolute; left: 12px; top: 50%;
-  transform: translateY(-50%); color: var(--dim); pointer-events: none;
-}
-.st-search {
-  width: 100%; padding: 9px 12px 9px 36px;
-  background: var(--paper); border: 1px solid var(--border);
-  border-radius: 10px; font-size: 14px; color: var(--ink);
-  outline: none; box-shadow: var(--sh);
-  transition: border-color .15s, box-shadow .15s;
-}
-.st-search:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,113,227,.12); }
-.st-search::placeholder { color: var(--dim); }
-.st-dropdown {
-  position: absolute; top: calc(100% + 4px); left: 0; right: 0;
-  background: var(--paper); border: 1px solid var(--border);
-  border-radius: 10px; box-shadow: var(--sh-md);
-  z-index: 100; max-height: 280px; overflow-y: auto;
-  display: none;
-}
-.st-dropdown.open { display: block; }
-.st-opt {
-  padding: 9px 14px; cursor: pointer; font-size: 13px;
-  border-bottom: 1px solid var(--border-l); transition: background .1s;
-}
-.st-opt:last-child { border-bottom: none; }
-.st-opt:hover { background: var(--blue-l); }
-.st-opt.selected { background: var(--blue-l); color: var(--blue); font-weight: 500; }
-
-/* ── Period selector ─────────────────────────────────── */
-.period-bar { display: flex; gap: 4px; flex-wrap: wrap; }
-.period-btn {
-  padding: 5px 14px; font-size: 12px; font-weight: 500;
-  border: 1px solid var(--border); border-radius: 20px;
-  background: var(--paper); color: var(--sub); cursor: pointer;
-  transition: all .15s;
-}
-.period-btn.on { background: var(--blue); color: #fff; border-color: var(--blue); }
-
-/* ── Chart ───────────────────────────────────────────── */
-.chart-area { position: relative; }
-
-/* ── Heatmap ─────────────────────────────────────────── */
-.hmap-scroll { overflow-x: auto; }
-.hmap-grid {
-  display: grid;
-  grid-template-columns: 80px repeat(24, 1fr);
-  gap: 2px; min-width: 560px;
-}
-.hmap-h {
-  font-size: 8px; color: var(--dim); height: 24px;
-  display: flex; align-items: center; justify-content: center;
-}
-.hmap-label {
-  font-size: 9px; font-weight: 500; color: var(--sub); height: 24px;
-  display: flex; align-items: center;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  padding-right: 4px;
-}
-.hmap-cell {
-  height: 24px; border-radius: 2px; cursor: default;
-  transition: outline .1s;
-}
-.hmap-cell:hover { outline: 1.5px solid var(--blue); }
-.hmap-legend {
-  display: flex; align-items: center; gap: 8px;
-  margin-top: 10px; font-size: 11px; color: var(--sub);
-}
-.hmap-legend-bar {
-  flex: 1; max-width: 140px; height: 6px; border-radius: 3px;
-  background: linear-gradient(to right, #ff3b30, #ff9f0a, #28cd41);
-}
-.hmap-section { margin-bottom: 28px; }
-.hmap-section-title {
-  font-size: 12px; font-weight: 600; color: var(--sub);
-  letter-spacing: .03em; margin-bottom: 8px;
+/* HEADER */
+header{
+  position:sticky;
+  top:0;
+  z-index:300;
+  height:52px;
+  padding:0 24px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  background:rgba(255,255,255,.9);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border-l);
 }
 
-/* ── Period select ───────────────────────────────────── */
-.period-select {
-  padding: 7px 32px 7px 12px; font-size: 13px; font-weight: 500;
-  background: var(--paper); border: 1px solid var(--border);
-  border-radius: 10px; color: var(--ink); outline: none;
-  box-shadow: var(--sh); cursor: pointer; appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23aeaeb2' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 10px center;
+.brand{
+  font-size:17px;
+  font-weight:700;
 }
-.period-select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,113,227,.12); }
 
-/* ── Favori star ─────────────────────────────────────── */
-.fav-star {
-  cursor: pointer; font-size: 16px; line-height: 1;
-  color: var(--dim); transition: color .15s, transform .15s;
-  user-select: none; flex-shrink: 0;
+.brand em{
+  color:var(--blue);
+  font-style:normal;
 }
-.fav-star:hover { transform: scale(1.2); }
-.fav-star.on { color: #ff9f0a; }
-.fav-filter {
-  display: flex; align-items: center; gap: 6px;
-  padding: 5px 12px; font-size: 12px; font-weight: 500;
-  border: 1px solid var(--border); border-radius: 20px;
-  background: var(--paper); color: var(--sub); cursor: pointer;
-  box-shadow: var(--sh); transition: all .15s;
-}
-.fav-filter.on { background: #fff8e8; border-color: #ff9f0a; color: #b36800; }
 
-/* ── Range picker ───────────────────────────────────── */
-.range-picker {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+.hd-right{
+  display:flex;
+  align-items:center;
+  gap:12px;
 }
-.range-picker label {
-  font-size: 11px; font-weight: 600; color: var(--sub);
-  text-transform: uppercase; letter-spacing: .04em;
-}
-.range-picker input[type=datetime-local] {
-  padding: 7px 10px; font-size: 13px;
-  background: var(--paper); border: 1px solid var(--border);
-  border-radius: 10px; color: var(--ink); outline: none;
-  box-shadow: var(--sh); cursor: pointer;
-  transition: border-color .15s, box-shadow .15s;
-}
-.range-picker input[type=datetime-local]:focus {
-  border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,113,227,.12);
-}
-.range-sep { font-size: 13px; color: var(--dim); }
-.range-shortcuts { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; }
-.range-sc {
-  padding: 4px 10px; font-size: 11px; font-weight: 500;
-  border: 1px solid var(--border); border-radius: 20px;
-  background: var(--paper); color: var(--sub); cursor: pointer;
-  transition: all .15s;
-}
-.range-sc:hover { border-color: var(--blue); color: var(--blue); }
 
-/* ── Misc ────────────────────────────────────────────── */
-.loader { display: flex; align-items: center; justify-content: center; padding: 56px; color: var(--dim); font-size: 13px; }
-.no-data { text-align: center; padding: 48px; color: var(--dim); font-size: 13px; }
-.err { background: var(--red-l); border: 1px solid rgba(255,59,48,.2); border-radius: 10px; padding: 12px 16px; color: var(--red); font-size: 13px; }
-.row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.live-pill{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 10px;
+  border-radius:20px;
+  background:#fff;
+  border:1px solid var(--border);
+  font-size:11px;
+}
+
+.live-dot{
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:var(--green);
+}
+
+.hd-clock{
+  font-size:12px;
+  color:var(--dim);
+}
+
+/* NAV */
+nav{
+  position:sticky;
+  top:52px;
+  z-index:200;
+  background:#fff;
+  border-bottom:1px solid var(--border-l);
+  display:flex;
+  padding:0 24px;
+}
+
+.tab{
+  padding:14px 18px;
+  cursor:pointer;
+  color:var(--sub);
+  border-bottom:2px solid transparent;
+}
+
+.tab.on{
+  color:var(--blue);
+  border-bottom-color:var(--blue);
+}
+
+/* MAIN */
+main{
+  max-width:1400px;
+  margin:auto;
+  padding:20px 24px 60px;
+}
+
+.panel{
+  display:none;
+}
+
+.panel.on{
+  display:block;
+}
+
+.card{
+  background:#fff;
+  border-radius:var(--r);
+  box-shadow:var(--sh);
+  padding:20px;
+  margin-bottom:16px;
+}
+
+.card-title{
+  font-size:11px;
+  text-transform:uppercase;
+  color:var(--sub);
+  margin-bottom:14px;
+}
+
+/* MAP */
+#map{
+  height:calc(100vh - 130px);
+  min-height:500px;
+  border-radius:var(--r);
+  box-shadow:var(--sh-md);
+}
+
+/* SEARCH */
+.st-search-wrap{
+  position:relative;
+  margin-bottom:14px;
+}
+
+.st-search{
+  width:100%;
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  font-size:14px;
+}
+
+.st-dropdown{
+  position:absolute;
+  top:100%;
+  left:0;
+  right:0;
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:10px;
+  box-shadow:var(--sh-md);
+  z-index:100;
+  max-height:260px;
+  overflow-y:auto;
+  display:none;
+}
+
+.st-dropdown.open{
+  display:block;
+}
+
+.st-opt{
+  padding:10px 14px;
+  cursor:pointer;
+}
+
+.st-opt:hover{
+  background:#f0f7ff;
+}
+
+/* RANGE */
+.range-picker{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:12px;
+}
+
+.range-picker input{
+  padding:8px 10px;
+  border:1px solid var(--border);
+  border-radius:10px;
+}
+
+.range-shortcuts{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+
+.range-sc{
+  padding:5px 10px;
+  border-radius:20px;
+  border:1px solid var(--border);
+  background:#fff;
+  cursor:pointer;
+  font-size:11px;
+}
+
+/* HEATMAP */
+.hmap-grid{
+  display:grid;
+  grid-template-columns:80px repeat(24,1fr);
+  gap:2px;
+  min-width:560px;
+}
+
+.hmap-h{
+  height:24px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:9px;
+  color:var(--dim);
+}
+
+.hmap-label{
+  font-size:10px;
+  display:flex;
+  align-items:center;
+}
+
+.hmap-cell{
+  height:24px;
+  border-radius:2px;
+}
+
+.hmap-scroll{
+  overflow-x:auto;
+}
+
+/* MISC */
+.loader{
+  padding:40px;
+  text-align:center;
+  color:var(--dim);
+}
+
+.no-data{
+  padding:40px;
+  text-align:center;
+  color:var(--dim);
+}
+
+.err{
+  background:#ffeaea;
+  border:1px solid #ffcaca;
+  color:#d10000;
+  padding:14px;
+  border-radius:12px;
+}
 </style>
 </head>
+
 <body>
 
 <header>
-  <div class="brand">Vélo<em>'</em>v <span style="font-weight:300;color:var(--sub)">Lyon</span></div>
+  <div class="brand">Vélo<em>'</em>v Lyon</div>
+
   <div class="hd-right">
-    <div class="live-pill"><div class="live-dot"></div><span id="src-tag">Grand Lyon</span></div>
+    <div class="live-pill">
+      <div class="live-dot"></div>
+      <span id="src-tag">Grand Lyon</span>
+    </div>
+
     <div class="hd-clock" id="clock"></div>
   </div>
 </header>
 
 <nav>
-  <div class="tab on"  data-tab="carte">🗺 Carte</div>
-  <div class="tab"     data-tab="courbes">📈 Courbes</div>
-  <div class="tab"     data-tab="heatmap">🌡 Heatmap</div>
+  <div class="tab on" data-tab="carte">🗺 Carte</div>
+  <div class="tab" data-tab="courbes">📈 Courbes</div>
+  <div class="tab" data-tab="heatmap">🌡 Heatmap</div>
 </nav>
 
 <main>
 
-<!-- ════════════════════════════════════════════════════
-     ONGLET 1 — CARTE
-═════════════════════════════════════════════════════ -->
+<!-- CARTE -->
 <div class="panel on" id="tab-carte">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-    <button class="fav-filter" id="fav-filter-btn" onclick="toggleFavFilter()">⭐ Favoris seulement</button>
-    <span style="font-size:12px;color:var(--dim)" id="fav-count"></span>
-  </div>
-  <div class="map-rel">
-    <div id="map"></div>
-    <div class="map-legend">
-      <div class="map-legend-row"><div class="leg-dot" style="background:var(--green)"></div>Vélos dispo (>25%)</div>
-      <div class="map-legend-row"><div class="leg-dot" style="background:var(--orange)"></div>Peu de vélos (≤25%)</div>
-      <div class="map-legend-row"><div class="leg-dot" style="background:var(--red)"></div>Vide</div>
-    </div>
-  </div>
+  <div id="map"></div>
 </div>
 
-<!-- ════════════════════════════════════════════════════
-     ONGLET 2 — COURBES
-═════════════════════════════════════════════════════ -->
+<!-- COURBES -->
 <div class="panel" id="tab-courbes">
+
   <div class="card">
-    <div class="card-title">Station</div>
-    <div class="st-search-wrap" id="sw-courbes">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.4"/>
-        <path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-      </svg>
-      <input class="st-search" id="search-courbes" type="text" placeholder="Chercher une station…" autocomplete="off">
+
+    <div class="card-title">
+      Station & période
+    </div>
+
+    <div class="st-search-wrap">
+      <input
+        class="st-search"
+        id="search-courbes"
+        type="text"
+        placeholder="Chercher une station…"
+        autocomplete="off"
+      >
+
       <div class="st-dropdown" id="dd-courbes"></div>
     </div>
+
     <div class="range-picker">
       <label>Du</label>
-      <input type="datetime-local" id="range-courbes-start" onchange="if(selCourbes) renderCourbes()">
-      <span class="range-sep">→</span>
+      <input type="datetime-local" id="rc-start">
+
       <label>au</label>
-      <input type="datetime-local" id="range-courbes-end" onchange="if(selCourbes) renderCourbes()">
+      <input type="datetime-local" id="rc-end">
     </div>
+
     <div class="range-shortcuts">
-      <button class="range-sc" onclick="setRangeShortcut('courbes',1)">1h</button>
-      <button class="range-sc" onclick="setRangeShortcut('courbes',3)">3h</button>
-      <button class="range-sc" onclick="setRangeShortcut('courbes',6)">6h</button>
-      <button class="range-sc" onclick="setRangeShortcut('courbes',12)">12h</button>
-      <button class="range-sc" onclick="setRangeShortcut('courbes',24)">24h</button>
-      <button class="range-sc" onclick="setRangeShortcut('courbes',72)">3j</button>
-      <button class="range-sc" onclick="setRangeShortcut('courbes',168)">1 sem</button>
-      <button class="range-sc" onclick="setRangeShortcut('courbes',336)">2 sem</button>
-      <button class="range-sc" onclick="setRangeShortcut('courbes',720)">1 mois</button>
-      <button class="range-sc" onclick="setRangeShortcut('courbes',2160)">3 mois</button>
-      <button class="range-sc" onclick="setRangeShortcut('courbes',4320)">6 mois</button>
-      <button class="range-sc" onclick="setRangeShortcut('courbes',8760)">1 an</button>
+      <button class="range-sc" onclick="shortcut(1)">1h</button>
+      <button class="range-sc" onclick="shortcut(6)">6h</button>
+      <button class="range-sc" onclick="shortcut(24)">24h</button>
+      <button class="range-sc" onclick="shortcut(168)">1 sem</button>
+      <button class="range-sc" onclick="shortcut(720)">1 mois</button>
+      <button class="range-sc" onclick="shortcut(8760)">1 an</button>
     </div>
+
   </div>
 
   <div id="courbes-content">
-    <div class="no-data">Sélectionnez une station pour afficher ses courbes.</div>
+    <div class="no-data">
+      Sélectionnez une station.
+    </div>
   </div>
+
 </div>
 
-<!-- ════════════════════════════════════════════════════
-     ONGLET 3 — HEATMAP
-═════════════════════════════════════════════════════ -->
+<!-- HEATMAP -->
 <div class="panel" id="tab-heatmap">
-  <div class="card">
-    <div class="card-title">Station</div>
-    <div class="st-search-wrap" id="sw-heatmap">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.4"/>
-        <path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-      </svg>
-      <input class="st-search" id="search-heatmap" type="text" placeholder="Chercher une station…" autocomplete="off">
-      <div class="st-dropdown" id="dd-heatmap"></div>
-    </div>
-    <div class="range-picker">
-      <label>Du</label>
-      <input type="datetime-local" id="range-heatmap-start" onchange="if(selHeatmap) renderHeatmap()">
-      <span class="range-sep">→</span>
-      <label>au</label>
-      <input type="datetime-local" id="range-heatmap-end" onchange="if(selHeatmap) renderHeatmap()">
-    </div>
-    <div class="range-shortcuts">
-      <button class="range-sc" onclick="setRangeShortcut('heatmap',168)">1 sem</button>
-      <button class="range-sc" onclick="setRangeShortcut('heatmap',336)">2 sem</button>
-      <button class="range-sc" onclick="setRangeShortcut('heatmap',720)">1 mois</button>
-      <button class="range-sc" onclick="setRangeShortcut('heatmap',2160)">3 mois</button>
-      <button class="range-sc" onclick="setRangeShortcut('heatmap',4320)">6 mois</button>
-      <button class="range-sc" onclick="setRangeShortcut('heatmap',8760)">1 an</button>
-    </div>
-  </div>
-
   <div id="heatmap-content">
-    <div class="no-data">Sélectionnez une station pour afficher la heatmap.</div>
+    <div class="no-data">
+      Sélectionnez une station.
+    </div>
   </div>
 </div>
 
@@ -383,463 +368,776 @@ main { padding: 20px 24px 60px; max-width: 1400px; margin: 0 auto; }
 <script>
 'use strict';
 
-// ═══════════════════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════════════════
-let allStations  = [];   // dernier snapshot live
-let favs         = new Set(JSON.parse(localStorage.getItem('vv_favs')||'[]'));
-let favFilterOn  = false;
+/* STATE */
+let allStations = [];
+let mapInst = null;
+let markerLayer = null;
 
-function toggleFav(number, starEl) {
-  if (favs.has(number)) { favs.delete(number); starEl.textContent='☆'; starEl.classList.remove('on'); }
-  else                  { favs.add(number);    starEl.textContent='⭐'; starEl.classList.add('on'); }
-  localStorage.setItem('vv_favs', JSON.stringify([...favs]));
-  updateFavCount();
-}
+let selCourbes = null;
+let selHeatmap = null;
 
-function toggleFavFilter() {
-  favFilterOn = !favFilterOn;
-  const btn = document.getElementById('fav-filter-btn');
-  btn.classList.toggle('on', favFilterOn);
-  renderMapMarkers();
-}
+let chartElec = null;
+let chartMeca = null;
+let chartFlux = null;
 
-function updateFavCount() {
-  const el = document.getElementById('fav-count');
-  if (el) el.textContent = favs.size ? `${favs.size} favori${favs.size>1?'s':''}` : '';
-}
-let todayMv      = {};   // { number: departs }
-let mapInst      = null;
-let markerLayer  = null;
-let chartElec    = null;
-let chartMeca    = null;
-let chartFlux    = null;
-let selCourbes   = null; // station sélectionnée onglet 2
-let selHeatmap   = null; // station sélectionnée onglet 3
+const DAYS = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+const ORDER = [1,2,3,4,5,6,0];
 
-const DAYS  = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
-const ORDER = [1,2,3,4,5,6,0]; // Lun → Dim
+const fmt = d => d.toISOString().slice(0,16);
 
-// ═══════════════════════════════════════════════════════
-// UTILS
-// ═══════════════════════════════════════════════════════
-const cleanName = n => n.replace(/^\d+\s*[-–]\s*/, '').trim();
-const todayStr  = () => new Date().toISOString().slice(0, 10);
-
-function stationColor(st) {
-  if (!st.bike_stands || st.available_bikes === 0) return '#ff3b30';
-  return st.available_bikes / st.bike_stands <= .25 ? '#ff9f0a' : '#28cd41';
-}
-
-function heatColor(pct) {
-  const t = Math.max(0, Math.min(1, pct / 100));
-  if (t < .5) {
-    return `rgba(${255},${Math.round(59 + t * 2 * (159 - 59))},${48},.72)`;
-  }
-  const u = (t - .5) * 2;
-  return `rgba(${Math.round(255 - u * (255 - 40))},${Math.round(159 + u * (205 - 159))},${Math.round(48 + u * (65 - 48))},.72)`;
-}
-
-const chartDefaults = () => ({
-  responsive: true,
-  plugins: { legend: { labels: { color: '#6e6e73', font: { family: '-apple-system,Helvetica Neue,Arial,sans-serif', size: 11 } } } },
-  scales: {
-    x: { ticks: { color: '#aeaeb2', font: { size: 10 }, maxTicksLimit: 14 }, grid: { color: '#f0f0f5' } },
-    y: { ticks: { color: '#6e6e73', font: { size: 11 } }, grid: { color: '#f0f0f5' }, min: 0 },
-  },
-});
-
-// ═══════════════════════════════════════════════════════
-// CLOCK & TABS
-// ═══════════════════════════════════════════════════════
+/* CLOCK */
 setInterval(() => {
-  document.getElementById('clock').textContent = new Date().toLocaleTimeString('fr-FR');
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('fr-FR');
 }, 1000);
 
+/* TABS */
 document.querySelectorAll('.tab').forEach(tab => {
+
   tab.onclick = () => {
+
     const t = tab.dataset.tab;
-    document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+
+    document.querySelectorAll('.tab')
+      .forEach(x => x.classList.remove('on'));
+
+    document.querySelectorAll('.panel')
+      .forEach(x => x.classList.remove('on'));
+
     tab.classList.add('on');
-    document.getElementById(`tab-${t}`).classList.add('on');
-    if (t === 'carte') { initMap(); renderMapMarkers(); }
+
+    document.getElementById(`tab-${t}`)
+      .classList.add('on');
+
+    if (t === 'carte' && mapInst) {
+      mapInst.invalidateSize();
+    }
+
   };
+
 });
 
-// ═══════════════════════════════════════════════════════
-// DATA
-// ═══════════════════════════════════════════════════════
-function parseStation(r) {
-  let elec = 0, meca = 0;
-  try {
-    const raw = r.main_stands || r.overflow_stands || '';
-    if (raw) {
-      const s = (typeof raw === 'string' ? raw : JSON.stringify(raw))
-        .replace(/'/g, '"').replace(/\bTrue\b/g, 'true').replace(/\bFalse\b/g, 'false');
-      const d = JSON.parse(s);
-      elec = d?.availabilities?.electricalBikes ?? 0;
-      meca = d?.availabilities?.mechanicalBikes ?? (r.available_bikes || 0);
-    }
-  } catch {}
+/* HELPERS */
+function cleanName(n){
+  return n.replace(/^\d+\s*[-–]\s*/, '').trim();
+}
+
+function stationColor(st){
+
+  if (!st.bike_stands || st.available_bikes === 0) {
+    return '#ff3b30';
+  }
+
+  return st.available_bikes / st.bike_stands <= .25
+    ? '#ff9f0a'
+    : '#28cd41';
+}
+
+function heatColor(pct){
+
+  const t = Math.max(0, Math.min(1, pct / 100));
+
+  if (t < .5) {
+    return `rgba(255,${Math.round(59+t*2*(159-59))},48,.72)`;
+  }
+
+  const u = (t-.5)*2;
+
+  return `rgba(${Math.round(255-u*(255-40))},${Math.round(159+u*(205-159))},${Math.round(48+u*(65-48))},.72)`;
+}
+
+function chartDefs(){
+
   return {
-    number:                r.number,
-    name:                  r.name || '',
-    available_bikes:       r.available_bikes || 0,
-    available_bike_stands: r.available_bike_stands || 0,
-    bike_stands:           r.bike_stands || 0,
-    electrical_bikes:      elec,
-    mechanical_bikes:      meca,
-    status:                r.status || 'OPEN',
-    lat: r.lat, lng: r.lng,
+    responsive:true,
+    scales:{
+      x:{
+        ticks:{maxTicksLimit:14}
+      },
+      y:{
+        min:0
+      }
+    }
   };
+
 }
 
-async function loadLatest() {
-  try {
-    const API = 'https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov/all.json?maxfeatures=-1&start=1';
-    const r = await fetch(API, { signal: AbortSignal.timeout(8000) });
-    if (!r.ok) throw new Error();
+/* DATA */
+function parseStation(r){
+
+  let elec = 0;
+  let meca = 0;
+
+  try{
+
+    const raw = r.main_stands || r.overflow_stands || '';
+
+    if(raw){
+
+      const s = (typeof raw === 'string'
+        ? raw
+        : JSON.stringify(raw))
+        .replace(/'/g,'"');
+
+      const d = JSON.parse(s);
+
+      elec = d?.availabilities?.electricalBikes ?? 0;
+
+      meca = d?.availabilities?.mechanicalBikes
+        ?? (r.available_bikes || 0);
+
+    }
+
+  }catch{}
+
+  return {
+    number:r.number,
+    name:r.name || '',
+    available_bikes:r.available_bikes || 0,
+    available_bike_stands:r.available_bike_stands || 0,
+    bike_stands:r.bike_stands || 0,
+    electrical_bikes:elec,
+    mechanical_bikes:meca,
+    lat:r.lat,
+    lng:r.lng,
+  };
+
+}
+
+async function loadLatest(){
+
+  try{
+
+    const r = await fetch(
+      'https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov/all.json?maxfeatures=-1&start=1'
+    );
+
     const data = await r.json();
-    document.getElementById('src-tag').textContent = '⚡ Temps réel';
+
+    document.getElementById('src-tag').textContent =
+      '⚡ Temps réel';
+
     return (data.values || []).map(parseStation);
-  } catch {
-    const r = await fetch('data/latest.json?_=' + Date.now());
-    if (!r.ok) throw new Error('data/latest.json introuvable — lancez Actions → Run workflow.');
+
+  }catch{
+
+    const r = await fetch('data/latest.json');
+
     const snap = await r.json();
-    document.getElementById('src-tag').textContent = '📦 Cache';
+
+    document.getElementById('src-tag').textContent =
+      '📦 Cache';
+
     return snap.stations || [];
+
   }
+
 }
 
-async function fetchDay(date) {
-  try {
-    const r = await fetch(`data/history/${date}.json?_=` + Date.now());
+async function fetchDay(date){
+
+  try{
+
+    const r = await fetch(`data/history/${date}.json`);
+
     return r.ok ? r.json() : null;
-  } catch { return null; }
-}
 
+  }catch{
 
-// ═══════════════════════════════════════════════════════
-// MOVEMENTS (today)
-// ═══════════════════════════════════════════════════════
-async function computeMovements() {
-  todayMv = {};
-  const snaps = await fetchDay(todayStr());
-  if (!snaps || snaps.length < 2) return;
-  for (let i = 1; i < snaps.length; i++) {
-    const prev = snaps[i - 1], curr = snaps[i];
-    curr.stations?.forEach(cst => {
-      const pst = prev.stations?.find(s => s.number === cst.number);
-      if (!pst) return;
-      const delta = cst.available_bikes - pst.available_bikes;
-      if (delta < 0) todayMv[cst.number] = (todayMv[cst.number] || 0) + Math.abs(delta);
-    });
+    return null;
+
   }
+
 }
 
-// ═══════════════════════════════════════════════════════
-// MAP (onglet 1)
-// ═══════════════════════════════════════════════════════
-function initMap() {
-  if (mapInst) { mapInst.invalidateSize(); return; }
-  mapInst = L.map('map', { zoomControl: true }).setView([45.757, 4.832], 13);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© OpenStreetMap, © CARTO', maxZoom: 19,
-  }).addTo(mapInst);
+async function fetchRange(startMs, endMs){
+
+  const start = new Date(startMs);
+  const end = new Date(endMs);
+
+  const days = (endMs - startMs) / 86400e3;
+
+  const dates = new Set();
+
+  for(let i=0;i<=Math.ceil(days);i++){
+
+    const d = new Date(start);
+
+    d.setDate(d.getDate() + i);
+
+    dates.add(d.toISOString().slice(0,10));
+
+  }
+
+  dates.add(end.toISOString().slice(0,10));
+
+  const results = await Promise.all(
+    [...dates].map(fetchDay)
+  );
+
+  const all = [];
+
+  results.forEach(snaps => {
+
+    if(snaps?.length){
+      all.push(...snaps);
+    }
+
+  });
+
+  all.forEach(snap => {
+
+    if(!snap.timestamp && snap.last_update){
+      snap.timestamp = snap.last_update;
+    }
+
+  });
+
+  return all.filter(snap => {
+
+    const t = new Date(snap.timestamp).getTime();
+
+    return t >= startMs && t <= endMs;
+
+  });
+
 }
 
-function renderMapMarkers() {
-  if (!mapInst || !allStations.length) return;
-  if (markerLayer) markerLayer.clearLayers();
+function getStationsFromSnapshot(snap){
+
+  if(Array.isArray(snap)){
+    return snap;
+  }
+
+  if(Array.isArray(snap.stations)){
+    return snap.stations;
+  }
+
+  return [];
+
+}
+
+/* MAP */
+function initMap(){
+
+  mapInst = L.map('map')
+    .setView([45.757,4.832],13);
+
+  L.tileLayer(
+    'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    {
+      attribution:'© OpenStreetMap © CARTO',
+      maxZoom:19
+    }
+  ).addTo(mapInst);
+
+}
+
+function renderMarkers(){
+
+  if(markerLayer){
+    markerLayer.clearLayers();
+  }
+
   markerLayer = L.layerGroup().addTo(mapInst);
 
-  const maxMv = Math.max(1, ...Object.values(todayMv));
+  allStations.forEach(st => {
 
-  const stationsToShow = favFilterOn ? allStations.filter(s => favs.has(s.number)) : allStations;
-  updateFavCount();
+    if(!st.lat || !st.lng){
+      return;
+    }
 
-  stationsToShow.forEach(st => {
-    if (!st.lat || !st.lng) return;
-    const col = stationColor(st);
-    const pct = st.bike_stands ? Math.round(st.available_bikes / st.bike_stands * 100) : 0;
-    const mv  = todayMv[st.number] || 0;
-
-    const m = L.circleMarker([st.lat, st.lng], {
-      radius: 8, fillColor: col, color: '#fff',
-      fillOpacity: .9, weight: 1.5,
-    });
+    const m = L.circleMarker(
+      [st.lat, st.lng],
+      {
+        radius:8,
+        fillColor:stationColor(st),
+        color:'#fff',
+        fillOpacity:.9,
+        weight:1.5
+      }
+    );
 
     m.bindPopup(`
-      <div class="mpop">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div class="mpop-name" style="margin-bottom:0">${cleanName(st.name)}</div>
-        <span class="fav-star ${favs.has(st.number)?'on':''}" onclick="toggleFav(${st.number},this)" title="Ajouter aux favoris">${favs.has(st.number)?'⭐':'☆'}</span>
-      </div>
-        <div class="mpop-row"><span>⚡ Électriques</span><strong>${st.electrical_bikes}</strong></div>
-        <div class="mpop-row"><span>🔧 Mécaniques</span><strong>${st.mechanical_bikes}</strong></div>
-        <hr class="mpop-divider">
-        <div class="mpop-row"><span>Total vélos</span><strong>${st.available_bikes}</strong></div>
-        <div class="mpop-row"><span>Places libres</span><strong>${st.available_bike_stands}</strong></div>
-        <div class="mpop-row"><span>Capacité</span><strong>${st.bike_stands}</strong></div>
-        <hr class="mpop-divider">
-        <div class="mpop-row"><span>↕ Départs aujourd'hui</span><strong>${mv}</strong></div>
-        <div class="mpop-bar-bg">
-          <div class="mpop-bar" style="width:${Math.round(mv/maxMv*100)}%;background:var(--blue)"></div>
-        </div>
-        <div class="mpop-bar-bg" style="margin-top:5px">
-          <div class="mpop-bar" style="width:${pct}%;background:${col}"></div>
-        </div>
-        <div style="font-size:10px;color:var(--dim);text-align:right;margin-top:2px">${pct}% dispo</div>
-      </div>
-    `, { maxWidth: 240 });
+      <b>${cleanName(st.name)}</b><br><br>
+      ⚡ Électriques : ${st.electrical_bikes}<br>
+      🔧 Mécaniques : ${st.mechanical_bikes}<br>
+      🚲 Total : ${st.available_bikes}
+    `);
 
     markerLayer.addLayer(m);
+
   });
+
 }
 
-// ═══════════════════════════════════════════════════════
-// STATION SEARCH (onglets 2 & 3)
-// ═══════════════════════════════════════════════════════
-function buildDropdown(inputId, ddId, onSelect) {
+/* SEARCH */
+function buildDropdown(inputId, ddId, onSelect){
+
   const input = document.getElementById(inputId);
-  const dd    = document.getElementById(ddId);
+  const dd = document.getElementById(ddId);
 
   input.addEventListener('input', () => {
+
     const q = input.value.toLowerCase().trim();
+
     const matches = allStations
       .filter(s => cleanName(s.name).toLowerCase().includes(q))
-      .slice(0, 12);
+      .slice(0,12);
+
     dd.innerHTML = '';
-    if (!matches.length || !q) { dd.classList.remove('open'); return; }
-    matches.forEach(s => {
-      const el = document.createElement('div');
-      el.className = 'st-opt';
-      el.textContent = cleanName(s.name);
-      el.onclick = () => {
-        input.value = cleanName(s.name);
-        dd.classList.remove('open');
-        onSelect(s);
-      };
-      dd.appendChild(el);
-    });
-    dd.classList.add('open');
-  });
 
-  document.addEventListener('click', e => {
-    if (!input.contains(e.target) && !dd.contains(e.target))
+    if(!matches.length || !q){
+
       dd.classList.remove('open');
-  });
-}
+      return;
 
-// ═══════════════════════════════════════════════════════
-// COURBES (onglet 2)
-// ═══════════════════════════════════════════════════════
+    }
 
+    matches.forEach(s => {
 
-buildDropdown('search-courbes', 'dd-courbes', st => {
-  selCourbes = st;
-  renderCourbes();
-});
+      const el = document.createElement('div');
 
+      el.className = 'st-opt';
 
+      el.textContent = cleanName(s.name);
 
-async function renderCourbes() {
-  const content = document.getElementById('courbes-content');
-  if (!selCourbes) return;
-  content.innerHTML = '<div class="loader">Chargement…</div>';
+      el.onclick = () => {
 
-  const range = getRangeCourbes();
-  if (!range) { content.innerHTML = '<div class="no-data">Sélectionnez une période via les raccourcis ou les champs date.</div>'; return; }
-  const snaps = await fetchRange(range.startMs, range.endMs);
-  if (!snaps.length) { content.innerHTML = '<div class="no-data">Aucune donnée pour cette période.</div>'; return; }
+        input.value = cleanName(s.name);
 
-  const id   = selCourbes.number;
-  const days = (range.endMs - range.startMs) / 86400e3;
+        dd.classList.remove('open');
 
-  let labels = [], dataElec = [], dataMeca = [], dataFlux = [];
+        onSelect(s);
 
-  // Snapshots bruts (~10 min) — le step dans fetchPeriod gère déjà
-  // le nombre de jours chargés pour les longues périodes.
-  snaps.forEach((snap, i) => {
-    const st = snap.stations?.find(s => s.number === id);
-    const t  = new Date(snap.timestamp);
-    // Label : heure seule si ≤3j, sinon date+heure
-    labels.push(days <= 1
-      ? t.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })
-      : t.toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })
-    );
-    dataElec.push(st?.electrical_bikes ?? null);
-    dataMeca.push(st?.mechanical_bikes ?? null);
-    if (i === 0) { dataFlux.push(0); return; }
-    const prev = snaps[i-1].stations?.find(s => s.number === id);
-    if (!st || !prev) { dataFlux.push(0); return; }
-    const delta = st.available_bikes - prev.available_bikes;
-    dataFlux.push(delta < 0 ? Math.abs(delta) : 0); // départs uniquement
-  });
+      };
 
-  content.innerHTML = `
-    <div class="card"><div class="card-title">⚡ Vélos électriques</div><div class="chart-area"><canvas id="c-elec" height="80"></canvas></div></div>
-    <div class="card"><div class="card-title">🔧 Vélos mécaniques</div><div class="chart-area"><canvas id="c-meca" height="80"></canvas></div></div>
-    <div class="card"><div class="card-title">↕ Flux journalier (départs estimés)</div><div class="chart-area"><canvas id="c-flux" height="55"></canvas></div></div>
-  `;
+      dd.appendChild(el);
 
-  const mk = (id, data, color, label) => new Chart(document.getElementById(id), {
-    type: 'line',
-    data: { labels, datasets: [{ label, data, borderColor: color, backgroundColor: color+'14',
-      tension: 0, borderWidth: 1.8, pointRadius: days <= 3 ? 2 : 0, spanGaps: true, fill: true }] },
-    options: chartDefaults(),
-  });
-
-  if (chartElec) chartElec.destroy();
-  if (chartMeca) chartMeca.destroy();
-  if (chartFlux) chartFlux.destroy();
-  chartElec = mk('c-elec', dataElec, '#28cd41', '⚡ Électriques');
-  chartMeca = mk('c-meca', dataMeca, '#0071e3', '🔧 Mécaniques');
-  chartFlux = new Chart(document.getElementById('c-flux'), {
-    type: 'bar',
-    data: { labels, datasets: [{ label: 'Départs', data: dataFlux,
-      backgroundColor: dataFlux.map(v => v > 0 ? 'rgba(0,113,227,.55)' : 'rgba(174,174,178,.3)'),
-      borderWidth: 0 }] },
-    options: chartDefaults(),
-  });
-}
-
-// ═══════════════════════════════════════════════════════
-// HEATMAP (onglet 3)
-// ═══════════════════════════════════════════════════════
-function getPeriodHeatmap() {
-  return document.getElementById('periods-heatmap')?.value || '1w';
-}
-
-buildDropdown('search-heatmap', 'dd-heatmap', st => {
-  selHeatmap = st;
-  renderHeatmap();
-});
-
-
-
-async function renderHeatmap() {
-  const content = document.getElementById('heatmap-content');
-  if (!selHeatmap) return;
-  content.innerHTML = '<div class="loader">Calcul en cours…</div>';
-
-  const range  = getRangeHeatmap();
-  if (!range) { content.innerHTML = '<div class="no-data">Sélectionnez une période.</div>'; return; }
-  const snaps  = await fetchRange(range.startMs, range.endMs);
-  if (!snaps.length) { content.innerHTML = '<div class="no-data">Aucune donnée.</div>'; return; }
-
-  const id = selHeatmap.number;
-  // buckets[type][dow][hour] = [values]
-  const bk = {
-    elec: Array.from({length:7}, () => Array.from({length:24}, () => [])),
-    meca: Array.from({length:7}, () => Array.from({length:24}, () => [])),
-  };
-
-  snaps.forEach(snap => {
-    const st = snap.stations?.find(s => s.number === id);
-    if (!st || !st.bike_stands) return;
-    const t    = new Date(snap.timestamp);
-    const hour = (t.getUTCHours() + 2) % 24;
-    const dow  = t.getDay();
-    bk.elec[dow][hour].push((st.electrical_bikes || 0) / st.bike_stands * 100);
-    bk.meca[dow][hour].push((st.mechanical_bikes || 0) / st.bike_stands * 100);
-  });
-
-  const mkGrid = (buckets) => {
-    let html = '<div class="hmap-grid">';
-    html += '<div class="hmap-h"></div>';
-    for (let h = 0; h < 24; h++) html += `<div class="hmap-h">${String(h).padStart(2,'0')}</div>`;
-    ORDER.forEach(d => {
-      html += `<div class="hmap-label">${DAYS[d]}</div>`;
-      for (let h = 0; h < 24; h++) {
-        const vals = buckets[d][h];
-        if (!vals.length) {
-          html += `<div class="hmap-cell" style="background:#f0f0f5" title="—"></div>`;
-        } else {
-          const avg = vals.reduce((a,b)=>a+b,0) / vals.length;
-          html += `<div class="hmap-cell" style="background:${heatColor(avg)}" title="${DAYS[d]} ${h}h — ${Math.round(avg)}%"></div>`;
-        }
-      }
     });
-    html += '</div>';
-    return html;
+
+    dd.classList.add('open');
+
+  });
+
+}
+
+/* RANGE */
+function getRange(){
+
+  const s = document.getElementById('rc-start').value;
+  const e = document.getElementById('rc-end').value;
+
+  if(!s || !e){
+    return null;
+  }
+
+  return {
+    startMs:new Date(s).getTime(),
+    endMs:new Date(e).getTime()
   };
+
+}
+
+function shortcut(hours){
+
+  const now = new Date();
+
+  const start = new Date(now - hours * 3600e3);
+
+  document.getElementById('rc-start').value = fmt(start);
+
+  document.getElementById('rc-end').value = fmt(now);
+
+  if(selCourbes){
+    renderCourbes();
+  }
+
+  if(selHeatmap){
+    renderHeatmap();
+  }
+
+}
+
+function initRanges(){
+
+  const now = new Date();
+
+  document.getElementById('rc-start').value =
+    fmt(new Date(now - 24*3600e3));
+
+  document.getElementById('rc-end').value =
+    fmt(now);
+
+}
+
+/* COURBES */
+buildDropdown(
+  'search-courbes',
+  'dd-courbes',
+  st => {
+
+    selCourbes = st;
+    selHeatmap = st;
+
+    renderCourbes();
+    renderHeatmap();
+
+  }
+);
+
+document.getElementById('rc-start')
+  .addEventListener('change', () => {
+
+    if(selCourbes){
+      renderCourbes();
+      renderHeatmap();
+    }
+
+  });
+
+document.getElementById('rc-end')
+  .addEventListener('change', () => {
+
+    if(selCourbes){
+      renderCourbes();
+      renderHeatmap();
+    }
+
+  });
+
+async function renderCourbes(){
+
+  const content =
+    document.getElementById('courbes-content');
+
+  if(!selCourbes){
+    return;
+  }
+
+  content.innerHTML =
+    '<div class="loader">Chargement…</div>';
+
+  const range = getRange();
+
+  if(!range){
+
+    content.innerHTML =
+      '<div class="no-data">Choisissez une période.</div>';
+
+    return;
+
+  }
+
+  const snaps = await fetchRange(
+    range.startMs,
+    range.endMs
+  );
+
+  if(!snaps.length){
+
+    content.innerHTML =
+      '<div class="no-data">Aucune donnée.</div>';
+
+    return;
+
+  }
+
+  const id = selCourbes.number;
+
+  const labels = [];
+  const dataElec = [];
+  const dataMeca = [];
+  const dataFlux = [];
+
+  snaps.forEach((snap, i) => {
+
+    const stations = getStationsFromSnapshot(snap);
+
+    const st = stations.find(
+      s => s.number === id
+    );
+
+    const t = new Date(snap.timestamp);
+
+    labels.push(
+      t.toLocaleString('fr-FR')
+    );
+
+    dataElec.push(st?.electrical_bikes ?? null);
+
+    dataMeca.push(st?.mechanical_bikes ?? null);
+
+    if(i === 0){
+
+      dataFlux.push(0);
+      return;
+
+    }
+
+    const prevStations =
+      getStationsFromSnapshot(snaps[i-1]);
+
+    const prev =
+      prevStations.find(s => s.number === id);
+
+    const delta =
+      (st && prev)
+      ? st.available_bikes - prev.available_bikes
+      : 0;
+
+    dataFlux.push(delta < 0 ? Math.abs(delta) : 0);
+
+  });
 
   content.innerHTML = `
     <div class="card">
-      <div class="hmap-section">
-        <div class="hmap-section-title">⚡ Électriques — % disponibles par heure</div>
-        <div class="hmap-scroll">${mkGrid(bk.elec)}</div>
-      </div>
-      <div class="hmap-section">
-        <div class="hmap-section-title">🔧 Mécaniques — % disponibles par heure</div>
-        <div class="hmap-scroll">${mkGrid(bk.meca)}</div>
-      </div>
-      <div class="hmap-legend">
-        <span>0%</span><div class="hmap-legend-bar"></div><span>100%</span>
-        <span style="margin-left:10px">% de la capacité totale · survol = valeur</span>
-      </div>
+      <div class="card-title">⚡ Vélos électriques</div>
+      <canvas id="c-elec"></canvas>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔧 Vélos mécaniques</div>
+      <canvas id="c-meca"></canvas>
+    </div>
+
+    <div class="card">
+      <div class="card-title">↕ Départs estimés</div>
+      <canvas id="c-flux"></canvas>
     </div>
   `;
+
+  if(chartElec) chartElec.destroy();
+  if(chartMeca) chartMeca.destroy();
+  if(chartFlux) chartFlux.destroy();
+
+  chartElec = new Chart(
+    document.getElementById('c-elec'),
+    {
+      type:'line',
+      data:{
+        labels,
+        datasets:[{
+          label:'Électriques',
+          data:dataElec
+        }]
+      },
+      options:chartDefs()
+    }
+  );
+
+  chartMeca = new Chart(
+    document.getElementById('c-meca'),
+    {
+      type:'line',
+      data:{
+        labels,
+        datasets:[{
+          label:'Mécaniques',
+          data:dataMeca
+        }]
+      },
+      options:chartDefs()
+    }
+  );
+
+  chartFlux = new Chart(
+    document.getElementById('c-flux'),
+    {
+      type:'bar',
+      data:{
+        labels,
+        datasets:[{
+          label:'Départs',
+          data:dataFlux
+        }]
+      },
+      options:chartDefs()
+    }
+  );
+
 }
 
-// ═══════════════════════════════════════════════════════
-// BOOT
-// ═══════════════════════════════════════════════════════
+/* HEATMAP */
+async function renderHeatmap(){
 
-function getRangeCourbes() {
-  const s = document.getElementById('range-courbes-start').value;
-  const e = document.getElementById('range-courbes-end').value;
-  if (!s || !e) return null;
-  return { startMs: new Date(s).getTime(), endMs: new Date(e).getTime() };
-}
+  const content =
+    document.getElementById('heatmap-content');
 
-function getRangeHeatmap() {
-  const s = document.getElementById('range-heatmap-start').value;
-  const e = document.getElementById('range-heatmap-end').value;
-  if (!s || !e) return null;
-  return { startMs: new Date(s).getTime(), endMs: new Date(e).getTime() };
-}
-
-function setRangeShortcut(which, hours) {
-  const now   = new Date();
-  const start = new Date(now - hours * 3600e3);
-  const fmt   = d => d.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:MM"
-  document.getElementById(`range-${which}-start`).value = fmt(start);
-  document.getElementById(`range-${which}-end`).value   = fmt(now);
-  if (which === 'courbes' && selCourbes) renderCourbes();
-  if (which === 'heatmap' && selHeatmap) renderHeatmap();
-}
-
-function initRanges() {
-  const now = new Date();
-  const fmt = d => d.toISOString().slice(0, 16);
-  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
-  set('range-courbes-start', fmt(new Date(now - 24*3600e3)));
-  set('range-courbes-end',   fmt(now));
-  set('range-heatmap-start', fmt(new Date(now - 30*24*3600e3)));
-  set('range-heatmap-end',   fmt(now));
-}
-
-async function boot() {
-  try {
-    initRanges();
-    allStations = await loadLatest();
-    await computeMovements();
-    initMap();
-    renderMapMarkers();
-  } catch (e) {
-    document.getElementById('tab-carte').innerHTML = `<div class="err" style="margin-top:20px">⚠ ${e.message}</div>`;
+  if(!selHeatmap){
+    return;
   }
+
+  content.innerHTML =
+    '<div class="loader">Calcul…</div>';
+
+  const range = getRange();
+
+  if(!range){
+
+    content.innerHTML =
+      '<div class="no-data">Choisissez une période.</div>';
+
+    return;
+
+  }
+
+  const snaps = await fetchRange(
+    range.startMs,
+    range.endMs
+  );
+
+  if(!snaps.length){
+
+    content.innerHTML =
+      '<div class="no-data">Aucune donnée.</div>';
+
+    return;
+
+  }
+
+  const id = selHeatmap.number;
+
+  const bk = {
+    elec:Array.from({length:7},
+      () => Array.from({length:24}, () => [])
+    ),
+
+    meca:Array.from({length:7},
+      () => Array.from({length:24}, () => [])
+    )
+  };
+
+  snaps.forEach(snap => {
+
+    const stations =
+      getStationsFromSnapshot(snap);
+
+    const st = stations.find(
+      s => s.number === id
+    );
+
+    if(!st || !st.bike_stands){
+      return;
+    }
+
+    const t = new Date(snap.timestamp);
+
+    const hour = t.getHours();
+
+    const dow = t.getDay();
+
+    bk.elec[dow][hour].push(
+      (st.electrical_bikes || 0)
+      / st.bike_stands * 100
+    );
+
+    bk.meca[dow][hour].push(
+      (st.mechanical_bikes || 0)
+      / st.bike_stands * 100
+    );
+
+  });
+
+  function mkGrid(grid){
+
+    let h =
+      '<div class="hmap-grid"><div class="hmap-h"></div>';
+
+    for(let i=0;i<24;i++){
+
+      h += `<div class="hmap-h">${i}</div>`;
+
+    }
+
+    ORDER.forEach(d => {
+
+      h += `<div class="hmap-label">${DAYS[d]}</div>`;
+
+      for(let i=0;i<24;i++){
+
+        const vals = grid[d][i];
+
+        if(!vals.length){
+
+          h += '<div class="hmap-cell" style="background:#f0f0f5"></div>';
+
+        }else{
+
+          const avg =
+            vals.reduce((a,b)=>a+b,0)
+            / vals.length;
+
+          h += `
+            <div
+              class="hmap-cell"
+              style="background:${heatColor(avg)}"
+              title="${Math.round(avg)}%"
+            ></div>
+          `;
+
+        }
+
+      }
+
+    });
+
+    return h + '</div>';
+
+  }
+
+  content.innerHTML = `
+    <div class="card">
+
+      <div style="margin-bottom:28px">
+        <div class="card-title">
+          ⚡ Électriques
+        </div>
+
+        <div class="hmap-scroll">
+          ${mkGrid(bk.elec)}
+        </div>
+      </div>
+
+      <div>
+        <div class="card-title">
+          🔧 Mécaniques
+        </div>
+
+        <div class="hmap-scroll">
+          ${mkGrid(bk.meca)}
+        </div>
+      </div>
+
+    </div>
+  `;
+
+}
+
+/* BOOT */
+async function boot(){
+
+  initRanges();
+
+  try{
+
+    allStations = await loadLatest();
+
+    initMap();
+
+    renderMarkers();
+
+  }catch(e){
+
+    document.getElementById('tab-carte').innerHTML =
+      `<div class="err">${e.message}</div>`;
+
+  }
+
 }
 
 boot();
-setInterval(async () => {
-  allStations = await loadLatest();
-  await computeMovements();
-  renderMapMarkers();
-}, 5 * 60 * 1000);
 </script>
+
 </body>
 </html>
