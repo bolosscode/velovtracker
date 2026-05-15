@@ -198,15 +198,12 @@ main{max-width:1500px;margin:auto;padding:20px}
       </div>
     </div>
     <div class="range" style="margin-bottom:18px">
-      <label>Durée trajet</label>
-      <select id="tj-duration" style="padding:8px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none">
-        <option value="5">5 min</option>
-        <option value="10" selected>10 min</option>
-        <option value="15">15 min</option>
-        <option value="20">20 min</option>
-        <option value="30">30 min</option>
-        <option value="45">45 min</option>
-      </select>
+      <label>Heure départ</label>
+      <input type="time" id="tj-deptime" style="padding:8px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none">
+      <label>Durée (min)</label>
+      <input type="number" id="tj-duration" value="15" min="1" max="120"
+        style="width:70px;padding:8px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none"
+        title="Modifiable après calcul de l'itinéraire">
       <label>Type vélo</label>
       <select id="tj-type" style="padding:8px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none">
         <option value="elec">⚡ Électrique</option>
@@ -480,6 +477,8 @@ function initRanges(){
   document.getElementById('lb-end').value=fmt(now);
   const h=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
   document.getElementById('reco-time').value=h;
+  const tjEl=document.getElementById('tj-deptime');
+  if(tjEl) tjEl.value=h;
 }
 
 /* ═══ COURBES ═════════════════════════════════════════ */
@@ -782,23 +781,27 @@ async function drawTjRoute(){
   if(window._tjInfo) { window._tjInfo.remove(); window._tjInfo=null; }
 
   try{
-    // OSRM public API — profil vélo
-    const url=`https://router.project-osrm.org/route/v1/bicycle/${tjFrom.lng},${tjFrom.lat};${tjTo.lng},${tjTo.lat}?overview=full&geometries=geojson`;
-    const r=await fetch(url);
-    if(!r.ok) throw new Error(`OSRM ${r.status}`);
+    // Graphhopper API publique — profil bike (bien calibré urbain France)
+    // Clé vide = tier gratuit, limité mais suffisant pour usage perso
+    const ghUrl=`https://graphhopper.com/api/1/route?point=${tjFrom.lat},${tjFrom.lng}&point=${tjTo.lat},${tjTo.lng}&vehicle=bike&locale=fr&points_encoded=false&key=`;
+    const r=await fetch(ghUrl);
+    if(!r.ok) throw new Error(`GH ${r.status}`);
     const data=await r.json();
-    const route=data.routes?.[0];
-    if(!route) throw new Error('no route');
-
-    tjRoute=L.geoJSON(route.geometry,{style:{color:'#0071e3',weight:4,opacity:.85}}).addTo(tjMap);
-
-    const km=(route.distance/1000).toFixed(1);
-    const min=Math.round(route.duration/60);
+    if(data.message) throw new Error(data.message);
+    const path=data.paths?.[0];
+    if(!path) throw new Error('no path');
+    tjRoute=L.geoJSON(path.points,{style:{color:'#0071e3',weight:4,opacity:.85}}).addTo(tjMap);
+    const km=(path.distance/1000).toFixed(1);
+    // +20% pour les feux, arrêts, circulation en urbain dense
+    const minOsrm=Math.round(path.time/60000);
+    const minCorrected=Math.round(minOsrm*1.2);
+    const durInput=document.getElementById('tj-duration');
+    if(durInput) durInput.value=minCorrected;
     const info=L.control({position:'bottomleft'});
     info.onAdd=()=>{
       const d=L.DomUtil.create('div','');
       d.style.cssText='background:rgba(255,255,255,.92);backdrop-filter:blur(8px);padding:8px 14px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.12)';
-      d.innerHTML=`🚴 ${km} km · ${min} min`;
+      d.innerHTML=`🚴 ${km} km · ~${minCorrected} min <span style="font-weight:400;font-size:11px;color:#6e6e73">(modifiable)</span>`;
       return d;
     };
     info.addTo(tjMap);
@@ -819,10 +822,13 @@ async function computeTrajet(){
   if(tjFrom.number===tjTo.number){content.innerHTML='<div class="no-data">Les stations doivent être différentes.</div>';return;}
   content.innerHTML='<div class="loader">Analyse…</div>';
 
-  const durationMin=parseInt(document.getElementById('tj-duration').value);
+  const durationMin=parseInt(document.getElementById('tj-duration').value)||15;
+  const depTimeStr=document.getElementById('tj-deptime').value;
   const bikeType=document.getElementById('tj-type').value;
   const histDays=parseInt(document.getElementById('tj-days').value);
   const today=new Date(), targetDow=today.getDay();
+  // Si heure de départ fournie, calculer l'heure d'arrivée cible
+  const depHourFixed=depTimeStr ? parseInt(depTimeStr.split(':')[0]) : null;
 
   const promises=[];
   for(let i=0;i<histDays;i++){
@@ -833,6 +839,7 @@ async function computeTrajet(){
   if(!allDays.length){content.innerHTML='<div class="no-data">Pas assez d\'historique.</div>';return;}
 
   const hourData=Array.from({length:24},()=>({dep:[],arr:[],joint:[]}));
+  const hoursToAnalyze=depHourFixed!==null?[depHourFixed]:Array.from({length:24},(_,i)=>i);
 
   allDays.forEach(snaps=>{
     const byHour={};
@@ -841,7 +848,7 @@ async function computeTrajet(){
       if(!byHour[h]) byHour[h]=[];
       byHour[h].push(snap);
     });
-    for(let h=0;h<24;h++){
+    for(const h of hoursToAnalyze){
       const arrH=Math.round((h*60+durationMin)/60)%24;
       const dSnaps=byHour[h]||[], aSnaps=byHour[arrH]||[];
       if(!dSnaps.length||!aSnaps.length) continue;
@@ -869,7 +876,12 @@ async function computeTrajet(){
   }
 
   let bestH=-1,bestScore=-1;
-  jointData.forEach((v,h)=>{if(v!==null&&v>bestScore){bestScore=v;bestH=h;}});
+  if(depHourFixed!==null){
+    bestH=depHourFixed;
+    bestScore=jointData[depHourFixed]??-1;
+  } else {
+    jointData.forEach((v,h)=>{if(v!==null&&v>bestScore){bestScore=v;bestH=h;}});
+  }
 
   const fromName=cleanName(tjFrom.name),toName=cleanName(tjTo.name);
   const bikeLabel=bikeType==='elec'?'⚡ élec':bikeType==='meca'?'🔧 méca':'🚲 tous';
