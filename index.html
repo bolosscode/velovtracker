@@ -88,18 +88,7 @@ main{max-width:1500px;margin:auto;padding:20px}
       <input type="datetime-local" id="start"/>
       <label>au</label>
       <input type="datetime-local" id="end"/>
-    </div>
-    <div class="shortcuts">
-      <button onclick="shortcut(1)">1h</button>
-      <button onclick="shortcut(3)">3h</button>
-      <button onclick="shortcut(6)">6h</button>
-      <button onclick="shortcut(12)">12h</button>
-      <button onclick="shortcut(24)">24h</button>
-      <button onclick="shortcut(72)">3j</button>
-      <button onclick="shortcut(168)">1 sem</button>
-      <button onclick="shortcut(720)">1 mois</button>
-      <button onclick="shortcut(2160)">3 mois</button>
-      <button onclick="shortcut(8760)">1 an</button>
+      <button onclick="renderCourbes()" style="padding:8px 18px;border-radius:10px;border:none;background:var(--blue);color:#fff;font-size:13px;font-weight:600;cursor:pointer">Tracer</button>
     </div>
   </div>
   <div id="courbes-content"><div class="no-data">Sélectionnez une station.</div></div>
@@ -204,10 +193,32 @@ async function fetchDay(date) {
   } catch { return null; }
 }
 
+// Normalise les deux formats : ancien {timestamp,stations:[]} et compact {t,s:[]}
+function getSnapshotTs(snap) {
+  return snap.timestamp || snap.t || '';
+}
+
 function getSnapshotStations(snap) {
-  if (Array.isArray(snap)) return snap;
-  if (Array.isArray(snap?.stations)) return snap.stations;
-  return [];
+  let arr = [];
+  if (Array.isArray(snap))             arr = snap;
+  else if (Array.isArray(snap?.stations)) arr = snap.stations;
+  else if (Array.isArray(snap?.s))        arr = snap.s;
+  if (!arr.length) return [];
+  // Normaliser le format compact vers le format standard
+  return arr.map(st => {
+    if (st.number !== undefined) return st;
+    return {
+      number:                st.n,
+      available_bikes:       st.b ?? 0,
+      available_bike_stands: st.s ?? 0,
+      bike_stands:           st.c ?? 0,
+      electrical_bikes:      st.e ?? 0,
+      mechanical_bikes:      st.m ?? 0,
+      status:                st.st || 'OPEN',
+      lat:                   st.la,
+      lng:                   st.ln,
+    };
+  });
 }
 
 async function fetchRange(startMs, endMs) {
@@ -223,8 +234,8 @@ async function fetchRange(startMs, endMs) {
   const all = [];
   results.forEach(snaps => { if (snaps?.length) all.push(...snaps); });
   return all
-    .filter(s => { const t=new Date(s.timestamp).getTime(); return t>=startMs&&t<=endMs; })
-    .sort((a,b) => new Date(a.timestamp)-new Date(b.timestamp));
+    .filter(s => { const t=new Date(getSnapshotTs(s)).getTime(); return t>=startMs&&t<=endMs; })
+    .sort((a,b) => new Date(getSnapshotTs(a))-new Date(getSnapshotTs(b)));
 }
 
 /* ── MOUVEMENTS (aujourd'hui) ───────────────────────────── */
@@ -355,7 +366,7 @@ async function renderCourbes() {
     const sts = getSnapshotStations(snap);
     const st  = sts.find(s => s.number===id);
     if (!st) return;
-    const t = new Date(snap.timestamp);
+    const t = new Date(getSnapshotTs(snap));
     labels.push(days<=1
       ? t.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})
       : t.toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
