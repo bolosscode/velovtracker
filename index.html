@@ -113,9 +113,11 @@ main{max-width:1500px;margin:auto;padding:20px}
       <input id="station-search" class="search" type="text" placeholder="Chercher une station…" autocomplete="off"/>
       <div class="dropdown" id="station-dd"></div>
     </div>
-    <div class="range">
-      <label>Du</label><input type="datetime-local" id="start"/>
-      <label>au</label><input type="datetime-local" id="end"/>
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <input type="range" id="courbes-slider" min="1" max="365" value="1"
+        style="flex:1;min-width:140px;max-width:340px;accent-color:var(--blue)"
+        oninput="onCourbesSlider()">
+      <span id="courbes-slider-label" style="font-size:13px;font-weight:600;color:var(--blue);min-width:80px">Aujourd&#39;hui</span>
       <button class="btn" onclick="renderCourbes()">Tracer</button>
     </div>
   </div>
@@ -415,8 +417,6 @@ function getRange(sId,eId){
 }
 function initRanges(){
   const now=new Date();
-  document.getElementById('start').value=fmt(new Date(now-24*3600e3));
-  document.getElementById('end').value=fmt(now);
   document.getElementById('lb-start').value=fmt(new Date(now-24*3600e3));
   document.getElementById('lb-end').value=fmt(now);
   const h=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
@@ -424,32 +424,79 @@ function initRanges(){
 }
 
 /* ═══ COURBES ═════════════════════════════════════════ */
+let chartFlux=null;
+let courbesSliderDays=1;
+
+function onCourbesSlider(){
+  const v=parseInt(document.getElementById('courbes-slider').value);
+  courbesSliderDays=v;
+  const lbl=document.getElementById('courbes-slider-label');
+  if(v===1)       lbl.textContent="Aujourd'hui";
+  else if(v<=7)   lbl.textContent=`${v} jours`;
+  else if(v<=30)  lbl.textContent=`${Math.round(v/7)} sem.`;
+  else if(v<=365) lbl.textContent=`${Math.round(v/30)} mois`;
+}
+
 async function renderCourbes(){
   const content=document.getElementById('courbes-content');
   if(!selectedStation) return;
   content.innerHTML='<div class="loader">Chargement…</div>';
-  const range=getRange('start','end');
-  if(!range){content.innerHTML='<div class="no-data">Sélectionnez une période.</div>';return;}
-  const snaps=await fetchRange(range.startMs,range.endMs);
-  if(!snaps.length){content.innerHTML='<div class="no-data">Aucune donnée.</div>';return;}
-  const id=selectedStation.number,days=(range.endMs-range.startMs)/86400e3;
-  const labels=[],dataElec=[],dataMeca=[];
+
+  const days=courbesSliderDays;
+  const endMs=Date.now();
+  const startMs=endMs-days*86400e3;
+  const snaps=await fetchRange(startMs,endMs);
+  if(!snaps.length){content.innerHTML='<div class="no-data">Aucune donnée pour cette période.</div>';return;}
+
+  const id=selectedStation.number;
+  const labels=[],dataElec=[],dataMeca=[],dataFluxH=[];
+
+  // Flux/h : on agrège les départs par heure glissante
+  // D'abord collecter les deltas bruts par timestamp
+  const rawDeltas=[]; // {ms, delta}
+  snaps.forEach((snap,i)=>{
+    if(i===0) return;
+    const prev=getSts(snaps[i-1]),curr=getSts(snap);
+    const st=curr.find(s=>s.number===id),pst=prev.find(s=>s.number===id);
+    if(!st||!pst) return;
+    const d=pst.available_bikes-st.available_bikes; // >0 = départs
+    rawDeltas.push({ms:new Date(getTs(snap)).getTime(), delta:d>0?d:0});
+  });
+
   snaps.forEach(snap=>{
     const sts=getSts(snap),st=sts.find(s=>s.number===id);
     if(!st) return;
     const t=new Date(getTs(snap));
-    labels.push(days<=1?t.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})
-      :t.toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}));
+    const ms=t.getTime();
+    labels.push(days<=1
+      ? t.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})
+      : t.toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}));
     dataElec.push(st.electrical_bikes||0);
     dataMeca.push(st.mechanical_bikes||0);
+    // Flux/h = somme des départs dans la fenêtre [ms-3600e3, ms]
+    const windowMs=3600e3;
+    const fluxH=rawDeltas.filter(d=>d.ms>ms-windowMs&&d.ms<=ms).reduce((a,d)=>a+d.delta,0);
+    dataFluxH.push(fluxH);
   });
-  content.innerHTML=`<div class="card"><div class="card-title">⚡ Électriques</div><canvas id="elec-chart" height="80"></canvas></div>
-    <div class="card"><div class="card-title">🔧 Mécaniques</div><canvas id="meca-chart" height="80"></canvas></div>`;
-  chartElec?.destroy();chartMeca?.destroy();
-  const mk=(id,data,color,label)=>new Chart(document.getElementById(id),{type:'line',
-    data:{labels,datasets:[{label,data,borderColor:color,backgroundColor:color+'18',borderWidth:1.8,tension:0,pointRadius:days<=1?0:2,spanGaps:true,fill:true}]},options:chartOpts()});
+
+  content.innerHTML=`
+    <div class="card"><div class="card-title">⚡ Électriques disponibles</div><canvas id="elec-chart" height="80"></canvas></div>
+    <div class="card"><div class="card-title">🔧 Mécaniques disponibles</div><canvas id="meca-chart" height="80"></canvas></div>
+    <div class="card"><div class="card-title">↕ Flux de départs / heure glissante</div><canvas id="flux-chart" height="60"></canvas></div>`;
+
+  chartElec?.destroy();chartMeca?.destroy();chartFlux?.destroy();
+  const pr=days<=1?0:2;
+  const mk=(cid,data,color,label)=>new Chart(document.getElementById(cid),{type:'line',
+    data:{labels,datasets:[{label,data,borderColor:color,backgroundColor:color+'18',borderWidth:1.8,tension:0,pointRadius:pr,spanGaps:true,fill:true}]},
+    options:chartOpts()});
   chartElec=mk('elec-chart',dataElec,'#28cd41','⚡ Électriques');
   chartMeca=mk('meca-chart',dataMeca,'#0071e3','🔧 Mécaniques');
+  chartFlux=new Chart(document.getElementById('flux-chart'),{type:'bar',
+    data:{labels,datasets:[{label:'Départs/h',data:dataFluxH,
+      backgroundColor:dataFluxH.map(v=>v>5?'rgba(255,59,48,.65)':v>2?'rgba(255,159,10,.6)':'rgba(0,113,227,.5)'),
+      borderWidth:0}]},
+    options:{...chartOpts(),scales:{...chartOpts().scales,y:{...chartOpts().scales.y,title:{display:true,text:'départs / heure',color:'#aeaeb2',font:{size:10}}}}}
+  });
 }
 
 /* ═══ LEADERBOARD ═════════════════════════════════════ */
