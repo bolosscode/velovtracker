@@ -781,20 +781,18 @@ async function drawTjRoute(){
   if(window._tjInfo) { window._tjInfo.remove(); window._tjInfo=null; }
 
   try{
-    // Graphhopper API publique — profil bike (bien calibré urbain France)
-    // Clé vide = tier gratuit, limité mais suffisant pour usage perso
-    const ghUrl=`https://graphhopper.com/api/1/route?point=${tjFrom.lat},${tjFrom.lng}&point=${tjTo.lat},${tjTo.lng}&vehicle=bike&locale=fr&points_encoded=false&key=`;
-    const r=await fetch(ghUrl);
-    if(!r.ok) throw new Error(`GH ${r.status}`);
+    // OSRM profil cycling-regular via l'instance publique française
+    const osrmUrl=`https://router.project-osrm.org/route/v1/cycling/${tjFrom.lng},${tjFrom.lat};${tjTo.lng},${tjTo.lat}?overview=full&geometries=geojson`;
+    const r=await fetch(osrmUrl);
+    if(!r.ok) throw new Error(`OSRM ${r.status}`);
     const data=await r.json();
-    if(data.message) throw new Error(data.message);
-    const path=data.paths?.[0];
-    if(!path) throw new Error('no path');
-    tjRoute=L.geoJSON(path.points,{style:{color:'#0071e3',weight:4,opacity:.85}}).addTo(tjMap);
-    const km=(path.distance/1000).toFixed(1);
-    // +20% pour les feux, arrêts, circulation en urbain dense
-    const minOsrm=Math.round(path.time/60000);
-    const minCorrected=Math.round(minOsrm*1.2);
+    const route=data.routes?.[0];
+    if(!route) throw new Error('no route');
+    tjRoute=L.geoJSON(route.geometry,{style:{color:'#0071e3',weight:4,opacity:.85}}).addTo(tjMap);
+    const km=(route.distance/1000).toFixed(1);
+    // +35% pour feux, arrêts, trafic urbain réel (~20 km/h effective)
+    const minRaw=Math.round(route.duration/60);
+    const minCorrected=Math.round(minRaw*1.35);
     const durInput=document.getElementById('tj-duration');
     if(durInput) durInput.value=minCorrected;
     const info=L.control({position:'bottomleft'});
@@ -900,7 +898,7 @@ async function computeTrajet(){
         </div>
         <div style="text-align:right">
           <div style="font-size:11px;color:var(--sub)">Score conjoint</div>
-          <div style="font-size:36px;font-weight:700;color:var(--blue)">${bestScore}%</div>
+          <div style="font-size:36px;font-weight:700;color:var(--blue)">${bestScore>=0?bestScore+'%':'—'}</div>
         </div>
       </div>
     </div>
