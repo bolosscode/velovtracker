@@ -333,8 +333,11 @@ function buildHeatLayer(mvData){
     return [s.lat,s.lng,mv/maxMv];
   }).filter(p=>p[2]>0);
   heatLayer=L.heatLayer(pts,{
-    radius:40,blur:28,maxZoom:17,minOpacity:.3,
-    gradient:{0:'#2c7bb6',0.3:'#00ccbc',0.6:'#90eb9d',0.8:'#f9d057',1:'#d7191c'}
+    radius:20,      // plus petit = chaque station garde son aura distincte
+    blur:12,        // moins de diffusion entre stations proches
+    maxZoom:17,
+    minOpacity:.4,
+    gradient:{0:'#2c7bb6',0.25:'#00ccbc',0.5:'#90eb9d',0.75:'#f9d057',1:'#d7191c'}
   });
   if(heatOn) heatLayer.addTo(map);
 }
