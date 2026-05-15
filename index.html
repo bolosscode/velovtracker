@@ -53,6 +53,29 @@ main{max-width:1500px;margin:auto;padding:20px}
 .shortcuts button:hover{border-color:var(--blue);color:var(--blue)}
 
 .loader,.no-data{padding:40px;text-align:center;color:var(--dim)}
+
+/* TABLE */
+#lb-table th{text-align:left;padding:10px 12px;border-bottom:2px solid var(--border);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--sub);position:sticky;top:0;background:#fff}
+#lb-table td{padding:9px 12px;border-bottom:1px solid #f0f0f0;font-variant-numeric:tabular-nums}
+#lb-table tr:hover td{background:#f8f8fa}
+.rank-cell{font-weight:700;color:var(--blue);width:40px}
+.mv-bar{display:inline-block;height:6px;border-radius:3px;background:var(--blue);vertical-align:middle;margin-left:6px}
+.fill-pill{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.fill-high{background:rgba(40,205,65,.12);color:#1a7f2b}
+.fill-med{background:rgba(255,159,10,.12);color:#a56800}
+.fill-low{background:rgba(255,59,48,.12);color:#c0392b}
+
+/* RECO */
+#reco-map{box-shadow:var(--shadow)}
+.reco-card{display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid #f0f0f0}
+.reco-card:last-child{border-bottom:none}
+.reco-rank{font-size:22px;font-weight:700;color:var(--blue);min-width:36px;text-align:center}
+.reco-info{flex:1}
+.reco-name{font-weight:600;margin-bottom:3px}
+.reco-meta{font-size:12px;color:var(--sub)}
+.reco-score{text-align:right}
+.reco-pct{font-size:20px;font-weight:700}
+.reco-dist{font-size:11px;color:var(--dim)}
 </style>
 </head>
 <body>
@@ -66,6 +89,8 @@ main{max-width:1500px;margin:auto;padding:20px}
   <div class="tab on" data-tab="map">🗺 Stations</div>
   <div class="tab" data-tab="courbes">📈 Utilisation</div>
   <div class="tab" data-tab="heatmap">🔥 Heatmap Lyon</div>
+  <div class="tab" data-tab="leaderboard">🏆 Leaderboard</div>
+  <div class="tab" data-tab="reco">📍 Recommandation</div>
 </nav>
 
 <main>
@@ -102,6 +127,64 @@ main{max-width:1500px;margin:auto;padding:20px}
   </div>
 </div>
 
+<!-- LEADERBOARD -->
+<div class="panel" id="tab-leaderboard">
+  <div class="card">
+    <div class="card-title">Classement des stations — aujourd'hui</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+      <label style="font-size:12px;color:var(--sub);font-weight:500">Trier par</label>
+      <select id="lb-sort" onchange="renderLeaderboard()" style="padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none;cursor:pointer">
+        <option value="mv">Mouvements ↕</option>
+        <option value="rotation">Taux de rotation ↕/capacité</option>
+        <option value="bikes">Vélos dispo</option>
+        <option value="elec">⚡ Électriques</option>
+        <option value="meca">🔧 Mécaniques</option>
+        <option value="stands">Places libres</option>
+        <option value="fill">% remplissage</option>
+      </select>
+    </div>
+    <div style="overflow-x:auto">
+      <table id="lb-table" style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead id="lb-head"></thead>
+        <tbody id="lb-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- RECOMMANDATION -->
+<div class="panel" id="tab-reco">
+  <div class="card">
+    <div class="card-title">Trouver la meilleure station</div>
+    <p style="font-size:13px;color:var(--sub);margin-bottom:14px;line-height:1.6">
+      Cliquez sur la carte ou entrez une adresse pour définir votre position. Choisissez l'heure souhaitée — l'algorithme classe les stations proches par probabilité de disponibilité.
+    </p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+      <input id="reco-addr" class="search" type="text" placeholder="Adresse, lieu…" style="flex:1;min-width:200px" autocomplete="off"/>
+      <button onclick="geocodeReco()" style="padding:8px 16px;border-radius:10px;border:none;background:var(--blue);color:#fff;font-size:13px;font-weight:600;cursor:pointer">Localiser</button>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+      <label style="font-size:12px;color:var(--sub);font-weight:500">Heure cible</label>
+      <input type="time" id="reco-time" style="padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none"/>
+      <label style="font-size:12px;color:var(--sub);font-weight:500">Rayon</label>
+      <select id="reco-radius" style="padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none;cursor:pointer">
+        <option value="500">500 m</option>
+        <option value="750" selected>750 m</option>
+        <option value="1000">1 km</option>
+        <option value="1500">1,5 km</option>
+      </select>
+      <label style="font-size:12px;color:var(--sub);font-weight:500">Type</label>
+      <select id="reco-type" style="padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none;cursor:pointer">
+        <option value="bikes">Prendre un vélo</option>
+        <option value="stands">Déposer un vélo</option>
+      </select>
+      <button onclick="computeReco()" style="padding:8px 16px;border-radius:10px;border:none;background:var(--blue);color:#fff;font-size:13px;font-weight:600;cursor:pointer">Chercher</button>
+    </div>
+    <div id="reco-map" style="height:400px;border-radius:var(--radius);overflow:hidden;margin-bottom:14px"></div>
+    <div id="reco-results"><div class="no-data">Cliquez sur la carte ou entrez une adresse.</div></div>
+  </div>
+</div>
+
 </main>
 <script>
 'use strict';
@@ -113,6 +196,8 @@ let markers = null, usageHeatLayer = null, heatMarkers = null;
 let selectedStation = null;
 let chartElec = null, chartMeca = null;
 let todayMv = {};
+
+let recoMap = null, recoMarkers = null, recoCircle = null, recoPos = null;
 
 const fmt = d => d.toISOString().slice(0,16);
 
@@ -128,7 +213,9 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
     tab.classList.add('on');
     document.getElementById('tab-'+tab.dataset.tab).classList.add('on');
-    setTimeout(() => { map?.invalidateSize(); usageMap?.invalidateSize(); }, 120);
+    setTimeout(() => { map?.invalidateSize(); usageMap?.invalidateSize(); recoMap?.invalidateSize(); }, 120);
+    if (tab.dataset.tab === 'leaderboard') renderLeaderboard();
+    if (tab.dataset.tab === 'reco') initRecoMap();
   };
 });
 
@@ -454,6 +541,211 @@ async function renderUsageHeatmap() {
 
     heatMarkers.addLayer(m);
   });
+}
+
+/* ── LEADERBOARD ────────────────────────────────────────── */
+function renderLeaderboard() {
+  const head = document.getElementById('lb-head');
+  const body = document.getElementById('lb-body');
+  if (!allStations.length) { body.innerHTML = '<tr><td colspan="8" class="no-data">Chargement…</td></tr>'; return; }
+
+  head.innerHTML = `<tr>
+    <th>#</th><th>Station</th><th>⚡ Élec</th><th>🔧 Méca</th>
+    <th>Total</th><th>Places</th><th>↕ Mvts</th><th>Remplissage</th>
+  </tr>`;
+
+  const sortKey = document.getElementById('lb-sort').value;
+  const maxMv   = Math.max(1, ...Object.values(todayMv));
+
+  const rows = allStations.map(st => {
+    const mv   = todayMv[st.number] || 0;
+    const fill = st.bike_stands ? st.available_bikes / st.bike_stands : 0;
+    const rot  = st.bike_stands ? mv / st.bike_stands : 0;
+    return { ...st, mv, fill, rot };
+  });
+
+  const sorters = {
+    mv:       (a,b) => b.mv - a.mv,
+    rotation: (a,b) => b.rot - a.rot,
+    bikes:    (a,b) => b.available_bikes - a.available_bikes,
+    elec:     (a,b) => b.electrical_bikes - a.electrical_bikes,
+    meca:     (a,b) => b.mechanical_bikes - a.mechanical_bikes,
+    stands:   (a,b) => b.available_bike_stands - a.available_bike_stands,
+    fill:     (a,b) => b.fill - a.fill,
+  };
+  rows.sort(sorters[sortKey] || sorters.mv);
+
+  body.innerHTML = rows.map((st, i) => {
+    const fillPct = Math.round(st.fill * 100);
+    const fillCls = fillPct >= 50 ? 'fill-high' : fillPct >= 25 ? 'fill-med' : 'fill-low';
+    const barW    = Math.round(st.mv / maxMv * 60);
+    return `<tr>
+      <td class="rank-cell">${i+1}</td>
+      <td>${cleanName(st.name)}</td>
+      <td>⚡ ${st.electrical_bikes}</td>
+      <td>🔧 ${st.mechanical_bikes}</td>
+      <td><b>${st.available_bikes}</b></td>
+      <td>${st.available_bike_stands}</td>
+      <td>${st.mv}<span class="mv-bar" style="width:${barW}px"></span></td>
+      <td><span class="fill-pill ${fillCls}">${fillPct}%</span></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── RECOMMANDATION ────────────────────────────────────── */
+function initRecoMap() {
+  if (recoMap) { recoMap.invalidateSize(); return; }
+  recoMap = L.map('reco-map').setView([45.757, 4.832], 14);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    { attribution:'© OpenStreetMap © CARTO' }).addTo(recoMap);
+
+  recoMap.on('click', e => {
+    recoPos = e.latlng;
+    document.getElementById('reco-addr').value = `${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`;
+    drawRecoCircle();
+  });
+
+  // Heure par défaut = maintenant
+  const now = new Date();
+  document.getElementById('reco-time').value =
+    String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+}
+
+function drawRecoCircle() {
+  if (!recoMap || !recoPos) return;
+  const radius = parseInt(document.getElementById('reco-radius').value) || 750;
+  if (recoCircle) recoMap.removeLayer(recoCircle);
+  recoCircle = L.circle([recoPos.lat, recoPos.lng], {
+    radius, color:'#0071e3', fillColor:'#0071e3', fillOpacity:.06, weight:1.5,
+  }).addTo(recoMap);
+  recoMap.fitBounds(recoCircle.getBounds().pad(.1));
+}
+
+// Haversine distance en mètres
+function haversine(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = (lat2-lat1) * Math.PI/180;
+  const dLng = (lng2-lng1) * Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+async function geocodeReco() {
+  const addr = document.getElementById('reco-addr').value.trim();
+  if (!addr) return;
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr + ', Lyon, France')}&limit=1`);
+    const data = await r.json();
+    if (data.length) {
+      recoPos = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+      recoMap?.setView([recoPos.lat, recoPos.lng], 15);
+      drawRecoCircle();
+    }
+  } catch {}
+}
+
+async function computeReco() {
+  const results = document.getElementById('reco-results');
+  if (!recoPos) { results.innerHTML = '<div class="no-data">Cliquez sur la carte ou entrez une adresse.</div>'; return; }
+  results.innerHTML = '<div class="loader">Analyse…</div>';
+
+  const radius  = parseInt(document.getElementById('reco-radius').value) || 750;
+  const timeStr = document.getElementById('reco-time').value;
+  const wantBikes = document.getElementById('reco-type').value === 'bikes';
+
+  // Filtrer les stations dans le rayon
+  const nearby = allStations
+    .filter(st => st.lat && st.lng)
+    .map(st => ({
+      ...st,
+      dist: haversine(recoPos.lat, recoPos.lng, st.lat, st.lng),
+    }))
+    .filter(st => st.dist <= radius)
+    .sort((a,b) => a.dist - b.dist);
+
+  if (!nearby.length) {
+    results.innerHTML = '<div class="no-data">Aucune station dans ce rayon. Augmentez la distance.</div>';
+    return;
+  }
+
+  // Charger l'historique des 30 derniers jours, filtré par même jour de semaine
+  // pour comparer lundi→lundi, mardi→mardi, etc.
+  const targetH   = parseInt(timeStr?.split(':')[0] ?? new Date().getHours());
+  const targetDow = today.getDay(); // 0=dim, 1=lun…
+  const dayPromises = [];
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    // Charger tous les jours, le filtre jour-de-semaine se fait en aval
+    dayPromises.push(fetchDay(d.toISOString().slice(0,10)));
+  }
+  const allDays = await Promise.all(dayPromises);
+
+  // Pour chaque station proche, calculer le % moyen de dispo à cette heure
+  const scored = nearby.map(st => {
+    const vals = [];
+    allDays.forEach(snaps => {
+      if (!snaps) return;
+      snaps.forEach(snap => {
+        const t = new Date(getSnapshotTs(snap));
+        const h = (t.getUTCHours() + 2) % 24; // Paris approx
+        if (h !== targetH) return;
+        // Ne garder que le même jour de semaine (lundi=lundi, etc.)
+        if (t.getDay() !== targetDow) return;
+        const sts = getSnapshotStations(snap);
+        const s = sts.find(x => x.number === st.number);
+        if (!s || !s.bike_stands) return;
+        if (wantBikes) vals.push(s.available_bikes / s.bike_stands * 100);
+        else           vals.push(s.available_bike_stands / s.bike_stands * 100);
+      });
+    });
+    const avgPct = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : (wantBikes ? st.available_bikes : st.available_bike_stands) / (st.bike_stands||1) * 100;
+    const now = wantBikes ? st.available_bikes : st.available_bike_stands;
+    return { ...st, avgPct, now, samples: vals.length };
+  });
+
+  // Score composite : 70% prédiction historique + 30% état actuel, pénalité distance
+  scored.forEach(st => {
+    const currentPct = st.bike_stands ? st.now / st.bike_stands * 100 : 0;
+    const distPenalty = 1 - (st.dist / radius) * 0.3; // 0.7 au bord → 1.0 au centre
+    st.score = (st.avgPct * 0.7 + currentPct * 0.3) * distPenalty;
+  });
+  scored.sort((a,b) => b.score - a.score);
+
+  // Afficher marqueurs sur la carte
+  if (recoMarkers) recoMap.removeLayer(recoMarkers);
+  recoMarkers = L.layerGroup().addTo(recoMap);
+
+  scored.slice(0, 10).forEach((st, i) => {
+    const col = i === 0 ? '#28cd41' : i < 3 ? '#0071e3' : '#aeaeb2';
+    const m = L.circleMarker([st.lat, st.lng], {
+      radius: i===0 ? 12 : 8, fillColor:col, color:'#fff', weight:2, fillOpacity:.9,
+    });
+    m.bindPopup(`<b>${cleanName(st.name)}</b><br>${wantBikes?'Vélos':'Places'} actuellement : ${st.now}<br>Prédiction ${targetH}h : ${Math.round(st.avgPct)}%`);
+    recoMarkers.addLayer(m);
+  });
+
+  // Résultats texte
+  const typeLabel = wantBikes ? 'vélo' : 'place';
+  results.innerHTML = scored.slice(0, 10).map((st, i) => {
+    const distTxt = st.dist < 1000 ? `${Math.round(st.dist)} m` : `${(st.dist/1000).toFixed(1)} km`;
+    const walkMin = Math.round(st.dist / 80); // ~80m/min = 4.8km/h
+    const pctCol = st.avgPct >= 50 ? 'color:#28cd41' : st.avgPct >= 25 ? 'color:#ff9f0a' : 'color:#ff3b30';
+    return `<div class="reco-card">
+      <div class="reco-rank">${i+1}</div>
+      <div class="reco-info">
+        <div class="reco-name">${cleanName(st.name)}</div>
+        <div class="reco-meta">
+          ${wantBikes ? `⚡${st.electrical_bikes} 🔧${st.mechanical_bikes}` : `🅿️ ${st.available_bike_stands} places`}
+          · ${st.now} ${typeLabel}${st.now>1?'s':''} maintenant
+          ${st.samples ? `· basé sur ${st.samples} mesures` : ''}
+        </div>
+      </div>
+      <div class="reco-score">
+        <div class="reco-pct" style="${pctCol}">${Math.round(st.avgPct)}%</div>
+        <div class="reco-dist">${distTxt} · ${walkMin} min 🚶</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 /* ── BOOT ───────────────────────────────────────────────── */
