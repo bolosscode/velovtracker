@@ -86,6 +86,7 @@ main{max-width:1500px;margin:auto;padding:20px}
   <div class="tab" data-tab="courbes">📈 Courbes</div>
   <div class="tab" data-tab="leaderboard">🏆 Leaderboard</div>
   <div class="tab" data-tab="reco">📍 Recommandation</div>
+  <div class="tab" data-tab="trajet">🚴 Trajet</div>
 </nav>
 
 <main>
@@ -172,6 +173,60 @@ main{max-width:1500px;margin:auto;padding:20px}
   </div>
 </div>
 
+
+<!-- ═══ TRAJET ═══ -->
+<div class="panel" id="tab-trajet">
+  <div class="card">
+    <div class="card-title">Analyser un trajet régulier</div>
+    <p style="font-size:13px;color:var(--sub);margin-bottom:18px;line-height:1.6">
+      Choisissez deux stations et une durée de trajet. L'algorithme croise l'historique des 30 derniers jours (même jour de semaine) pour calculer la probabilité de trouver un vélo ⚡ au départ <em>et</em> une place à l'arrivée, selon l'heure de départ.
+    </p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div>
+        <div class="card-title">🟢 Station départ</div>
+        <div class="search-wrap">
+          <input id="tj-from-search" class="search" type="text" placeholder="Station de départ…" autocomplete="off"/>
+          <div class="dropdown" id="tj-from-dd"></div>
+        </div>
+      </div>
+      <div>
+        <div class="card-title">🔴 Station arrivée</div>
+        <div class="search-wrap">
+          <input id="tj-to-search" class="search" type="text" placeholder="Station d'arrivée…" autocomplete="off"/>
+          <div class="dropdown" id="tj-to-dd"></div>
+        </div>
+      </div>
+    </div>
+    <div class="range" style="margin-bottom:18px">
+      <label>Durée trajet</label>
+      <select id="tj-duration" style="padding:8px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none">
+        <option value="5">5 min</option>
+        <option value="10" selected>10 min</option>
+        <option value="15">15 min</option>
+        <option value="20">20 min</option>
+        <option value="30">30 min</option>
+        <option value="45">45 min</option>
+      </select>
+      <label>Type vélo</label>
+      <select id="tj-type" style="padding:8px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none">
+        <option value="elec">⚡ Électrique</option>
+        <option value="meca">🔧 Mécanique</option>
+        <option value="any">Tous types</option>
+      </select>
+      <label>Historique</label>
+      <select id="tj-days" style="padding:8px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none">
+        <option value="7">7 jours</option>
+        <option value="14">14 jours</option>
+        <option value="30" selected>30 jours</option>
+      </select>
+      <button class="btn" onclick="computeTrajet()">Analyser</button>
+    </div>
+  </div>
+
+  <div id="tj-map" style="height:360px;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);margin-bottom:14px"></div>
+  <div id="trajet-content"><div class="no-data">Sélectionnez deux stations puis cliquez Analyser.</div></div>
+</div>
+
 </main>
 <script>
 'use strict';
@@ -200,6 +255,7 @@ document.querySelectorAll('.tab').forEach(tab=>{
     setTimeout(()=>{ map?.invalidateSize(); recoMap?.invalidateSize(); },150);
     if(tab.dataset.tab==='leaderboard') quickLeaderboard();
     if(tab.dataset.tab==='reco') initRecoMap();
+    if(tab.dataset.tab==='trajet') initTrajetSearch();
   };
 });
 
@@ -672,6 +728,195 @@ async function computeReco(){
 }
 
 /* ═══ BOOT ════════════════════════════════════════════ */
+
+/* ═══ TRAJET ════════════════════════════════════════════ */
+let tjFrom=null, tjTo=null, chartTj=null, tjSearchInit=false;
+let tjMap=null, tjRoute=null, tjMarkers=null;
+
+function buildDropdownGeneric(inputId,ddId,onSelect){
+  const input=document.getElementById(inputId),dd=document.getElementById(ddId);
+  if(!input||!dd) return;
+  input.addEventListener('input',()=>{
+    const q=input.value.toLowerCase().trim(); dd.innerHTML='';
+    if(!q){dd.classList.remove('open');return;}
+    allStations.filter(s=>cleanName(s.name).toLowerCase().includes(q)).slice(0,12).forEach(st=>{
+      const el=document.createElement('div');el.className='opt';el.textContent=cleanName(st.name);
+      el.onclick=()=>{input.value=cleanName(st.name);dd.classList.remove('open');onSelect(st);};
+      dd.appendChild(el);
+    });
+    dd.classList.add('open');
+  });
+  document.addEventListener('click',e=>{
+    if(!input.contains(e.target)&&!dd.contains(e.target)) dd.classList.remove('open');
+  });
+}
+
+function initTrajetSearch(){
+  if(tjSearchInit) return; tjSearchInit=true;
+  buildDropdownGeneric('tj-from-search','tj-from-dd',st=>{ tjFrom=st; drawTjRoute(); });
+  buildDropdownGeneric('tj-to-search','tj-to-dd',   st=>{ tjTo=st;   drawTjRoute(); });
+  // Init carte
+  if(!tjMap){
+    const el=document.getElementById('tj-map');
+    el.style.display='block';
+    tjMap=L.map('tj-map').setView([45.757,4.832],13);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+      {attribution:'© OpenStreetMap © CARTO'}).addTo(tjMap);
+  }
+}
+
+async function drawTjRoute(){
+  if(!tjMap||!tjFrom||!tjTo) return;
+
+  // Marqueurs départ/arrivée
+  if(tjMarkers) tjMap.removeLayer(tjMarkers);
+  tjMarkers=L.layerGroup().addTo(tjMap);
+  const mkMarker=(lat,lng,col,label)=>{
+    const m=L.circleMarker([lat,lng],{radius:10,fillColor:col,color:'#fff',weight:2,fillOpacity:.95});
+    m.bindTooltip(label,{permanent:true,direction:'top',offset:[0,-12]}).addTo(tjMarkers);
+  };
+  if(tjFrom.lat&&tjFrom.lng) mkMarker(tjFrom.lat,tjFrom.lng,'#28cd41',cleanName(tjFrom.name));
+  if(tjTo.lat&&tjTo.lng)     mkMarker(tjTo.lat,tjTo.lng,'#ff3b30',cleanName(tjTo.name));
+
+  if(tjRoute) tjMap.removeLayer(tjRoute);
+  if(window._tjInfo) { window._tjInfo.remove(); window._tjInfo=null; }
+
+  try{
+    // OSRM public API — profil vélo
+    const url=`https://router.project-osrm.org/route/v1/bicycle/${tjFrom.lng},${tjFrom.lat};${tjTo.lng},${tjTo.lat}?overview=full&geometries=geojson`;
+    const r=await fetch(url);
+    if(!r.ok) throw new Error(`OSRM ${r.status}`);
+    const data=await r.json();
+    const route=data.routes?.[0];
+    if(!route) throw new Error('no route');
+
+    tjRoute=L.geoJSON(route.geometry,{style:{color:'#0071e3',weight:4,opacity:.85}}).addTo(tjMap);
+
+    const km=(route.distance/1000).toFixed(1);
+    const min=Math.round(route.duration/60);
+    const info=L.control({position:'bottomleft'});
+    info.onAdd=()=>{
+      const d=L.DomUtil.create('div','');
+      d.style.cssText='background:rgba(255,255,255,.92);backdrop-filter:blur(8px);padding:8px 14px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.12)';
+      d.innerHTML=`🚴 ${km} km · ${min} min`;
+      return d;
+    };
+    info.addTo(tjMap);
+    window._tjInfo=info;
+    tjMap.fitBounds(tjRoute.getBounds().pad(.2));
+  }catch(e){
+    console.warn('OSRM error:',e.message);
+    // Fallback ligne droite
+    tjRoute=L.polyline([[tjFrom.lat,tjFrom.lng],[tjTo.lat,tjTo.lng]],
+      {color:'#0071e3',weight:2,dashArray:'6,5',opacity:.6}).addTo(tjMap);
+    tjMap.fitBounds(tjRoute.getBounds().pad(.3));
+  }
+}
+
+async function computeTrajet(){
+  const content=document.getElementById('trajet-content');
+  if(!tjFrom||!tjTo){content.innerHTML='<div class="no-data">Sélectionnez les deux stations.</div>';return;}
+  if(tjFrom.number===tjTo.number){content.innerHTML='<div class="no-data">Les stations doivent être différentes.</div>';return;}
+  content.innerHTML='<div class="loader">Analyse…</div>';
+
+  const durationMin=parseInt(document.getElementById('tj-duration').value);
+  const bikeType=document.getElementById('tj-type').value;
+  const histDays=parseInt(document.getElementById('tj-days').value);
+  const today=new Date(), targetDow=today.getDay();
+
+  const promises=[];
+  for(let i=0;i<histDays;i++){
+    const d=new Date(today);d.setDate(d.getDate()-i);
+    if(d.getDay()===targetDow) promises.push(fetchDay(d.toISOString().slice(0,10)));
+  }
+  const allDays=(await Promise.all(promises)).filter(Boolean);
+  if(!allDays.length){content.innerHTML='<div class="no-data">Pas assez d'historique.</div>';return;}
+
+  const hourData=Array.from({length:24},()=>({dep:[],arr:[],joint:[]}));
+
+  allDays.forEach(snaps=>{
+    const byHour={};
+    snaps.forEach(snap=>{
+      const h=(new Date(getTs(snap)).getUTCHours()+2)%24;
+      if(!byHour[h]) byHour[h]=[];
+      byHour[h].push(snap);
+    });
+    for(let h=0;h<24;h++){
+      const arrH=Math.round((h*60+durationMin)/60)%24;
+      const dSnaps=byHour[h]||[], aSnaps=byHour[arrH]||[];
+      if(!dSnaps.length||!aSnaps.length) continue;
+      const avgPct=(snps,num,key)=>{
+        const vals=snps.map(s=>{const st=getSts(s).find(x=>x.number===num);return st?.bike_stands?(st[key]||0)/st.bike_stands*100:null;}).filter(v=>v!==null);
+        return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+      };
+      const depKey=bikeType==='elec'?'electrical_bikes':bikeType==='meca'?'mechanical_bikes':'available_bikes';
+      const dep=avgPct(dSnaps,tjFrom.number,depKey);
+      const arr=avgPct(aSnaps,tjTo.number,'available_bike_stands');
+      if(dep===null||arr===null) continue;
+      hourData[h].dep.push(dep);
+      hourData[h].arr.push(arr);
+      hourData[h].joint.push(Math.min(dep,arr));
+    }
+  });
+
+  const avg=a=>a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length):null;
+  const labels=[],depData=[],arrData=[],jointData=[];
+  for(let h=0;h<24;h++){
+    labels.push(String(h).padStart(2,'0')+'h');
+    depData.push(avg(hourData[h].dep));
+    arrData.push(avg(hourData[h].arr));
+    jointData.push(avg(hourData[h].joint));
+  }
+
+  let bestH=-1,bestScore=-1;
+  jointData.forEach((v,h)=>{if(v!==null&&v>bestScore){bestScore=v;bestH=h;}});
+
+  const fromName=cleanName(tjFrom.name),toName=cleanName(tjTo.name);
+  const bikeLabel=bikeType==='elec'?'⚡ élec':bikeType==='meca'?'🔧 méca':'🚲 tous';
+  const dow=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][targetDow];
+
+  content.innerHTML=`
+    <div class="card" style="background:linear-gradient(135deg,#f0f7ff,#fff);border:1px solid #c8e0ff;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--sub);margin-bottom:4px">Meilleur créneau (${dow})</div>
+          <div style="font-size:40px;font-weight:700;color:var(--blue);line-height:1">${bestH>=0?String(bestH).padStart(2,'0')+'h':'—'}</div>
+        </div>
+        <div style="flex:1;font-size:13px;line-height:2">
+          <span style="color:#28cd41;font-weight:600">${depData[bestH]??'—'}%</span> de chances d'avoir un vélo ${bikeLabel} à <b>${fromName}</b><br>
+          <span style="color:#0071e3;font-weight:600">${arrData[bestH]??'—'}%</span> de chances d'avoir une place à <b>${toName}</b> (+${durationMin} min)
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:11px;color:var(--sub)">Score conjoint</div>
+          <div style="font-size:36px;font-weight:700;color:var(--blue)">${bestScore}%</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">${fromName} → ${toName} · probabilité par heure (${dow}, ${allDays.length} semaines d'historique)</div>
+      <canvas id="tj-chart" height="90"></canvas>
+    </div>
+    <div class="card" style="font-size:12px;color:var(--sub);line-height:1.9">
+      <b style="color:var(--ink)">Lecture</b><br>
+      🟢 Vert : % de chances de trouver un vélo ${bikeLabel} à <b>${fromName}</b>.<br>
+      🔵 Bleu : % de chances de trouver une place à <b>${toName}</b> ${durationMin} min plus tard.<br>
+      ⚫ Pointillé : score conjoint = min(départ, arrivée) — le vrai indicateur du trajet.<br>
+      <span style="color:#aeaeb2">Basé sur ${allDays.length} ${dow} des ${histDays} derniers jours.</span>
+    </div>`;
+
+  drawTjRoute();
+  tjMap?.invalidateSize();
+  chartTj?.destroy();
+  chartTj=new Chart(document.getElementById('tj-chart'),{type:'line',
+    data:{labels,datasets:[
+      {label:'🚲 Vélo dispo au départ',data:depData,borderColor:'#28cd41',backgroundColor:'rgba(40,205,65,.08)',borderWidth:2,tension:0,pointRadius:3,spanGaps:true,fill:true},
+      {label:'🅿️ Place dispo à l'arrivée',data:arrData,borderColor:'#0071e3',backgroundColor:'rgba(0,113,227,.08)',borderWidth:2,tension:0,pointRadius:3,spanGaps:true,fill:true},
+      {label:'⚡ Score conjoint',data:jointData,borderColor:'#1d1d1f',backgroundColor:'rgba(29,29,31,.04)',borderWidth:2,tension:0,pointRadius:3,spanGaps:true,fill:true,borderDash:[5,3]},
+    ]},
+    options:{...chartOpts(),scales:{...chartOpts().scales,y:{...chartOpts().scales.y,max:100,ticks:{...chartOpts().scales.y.ticks,callback:v=>v+'%'}}}}
+  });
+}
+
 async function boot(){
   initRanges();
   allStations=await loadLatest();
