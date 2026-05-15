@@ -354,7 +354,7 @@ function toggleHeat(){
 function onHeatSlider(){
   const v = parseInt(document.getElementById('heat-slider').value);
   const lbl = document.getElementById('heat-slider-label');
-  if(v===1)      lbl.textContent='Aujourd'hui';
+  if(v===1)      lbl.textContent="Aujourd'hui";
   else if(v<=7)  lbl.textContent=`${v} jours`;
   else if(v<=30) lbl.textContent=`${Math.round(v/7)} sem.`;
   else if(v<=365)lbl.textContent=`${Math.round(v/30)} mois`;
