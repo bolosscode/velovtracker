@@ -179,7 +179,7 @@ main{max-width:1500px;margin:auto;padding:20px}
   <div class="card">
     <div class="card-title">Analyser un trajet régulier</div>
     <p style="font-size:13px;color:var(--sub);margin-bottom:18px;line-height:1.6">
-      Choisissez deux stations et une durée de trajet. L'algorithme croise l'historique des 30 derniers jours (même jour de semaine) pour calculer la probabilité de trouver un vélo ⚡ au départ <em>et</em> une place à l'arrivée, selon l'heure de départ.
+      Choisissez deux stations et une durée de trajet. L'algorithme croise l'historique des 30 derniers jours (même jour de semaine) pour calculer la probabilité de trouver un vélo ⚡ au départ <em>et</em> une place à l\'arrivée, selon l'heure de départ.
     </p>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
       <div>
@@ -415,7 +415,7 @@ function toggleHeat(){
 function onHeatSlider(){
   const v = parseInt(document.getElementById('heat-slider').value);
   const lbl = document.getElementById('heat-slider-label');
-  if(v===1)      lbl.textContent="Aujourd'hui";
+  if(v===1)      lbl.textContent="Aujourd\'hui";
   else if(v<=7)  lbl.textContent=`${v} jours`;
   else if(v<=30) lbl.textContent=`${Math.round(v/7)} sem.`;
   else if(v<=365)lbl.textContent=`${Math.round(v/30)} mois`;
@@ -490,7 +490,7 @@ function onCourbesSlider(){
   const v=parseInt(document.getElementById('courbes-slider').value);
   courbesSliderDays=v;
   const lbl=document.getElementById('courbes-slider-label');
-  if(v===1)       lbl.textContent="Aujourd'hui";
+  if(v===1)       lbl.textContent="Aujourd\'hui";
   else if(v<=7)   lbl.textContent=`${v} jours`;
   else if(v<=30)  lbl.textContent=`${Math.round(v/7)} sem.`;
   else if(v<=365) lbl.textContent=`${Math.round(v/30)} mois`;
@@ -830,7 +830,7 @@ async function computeTrajet(){
     if(d.getDay()===targetDow) promises.push(fetchDay(d.toISOString().slice(0,10)));
   }
   const allDays=(await Promise.all(promises)).filter(Boolean);
-  if(!allDays.length){content.innerHTML='<div class="no-data">Pas assez d'historique.</div>';return;}
+  if(!allDays.length){content.innerHTML='<div class="no-data">Pas assez d\'historique.</div>';return;}
 
   const hourData=Array.from({length:24},()=>({dep:[],arr:[],joint:[]}));
 
@@ -910,7 +910,7 @@ async function computeTrajet(){
   chartTj=new Chart(document.getElementById('tj-chart'),{type:'line',
     data:{labels,datasets:[
       {label:'🚲 Vélo dispo au départ',data:depData,borderColor:'#28cd41',backgroundColor:'rgba(40,205,65,.08)',borderWidth:2,tension:0,pointRadius:3,spanGaps:true,fill:true},
-      {label:'🅿️ Place dispo à l'arrivée',data:arrData,borderColor:'#0071e3',backgroundColor:'rgba(0,113,227,.08)',borderWidth:2,tension:0,pointRadius:3,spanGaps:true,fill:true},
+      {label:'🅿️ Place dispo à l\'arrivée',data:arrData,borderColor:'#0071e3',backgroundColor:'rgba(0,113,227,.08)',borderWidth:2,tension:0,pointRadius:3,spanGaps:true,fill:true},
       {label:'⚡ Score conjoint',data:jointData,borderColor:'#1d1d1f',backgroundColor:'rgba(29,29,31,.04)',borderWidth:2,tension:0,pointRadius:3,spanGaps:true,fill:true,borderDash:[5,3]},
     ]},
     options:{...chartOpts(),scales:{...chartOpts().scales,y:{...chartOpts().scales.y,max:100,ticks:{...chartOpts().scales.y.ticks,callback:v=>v+'%'}}}}
