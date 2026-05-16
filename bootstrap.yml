@@ -1,0 +1,50 @@
+name: Bootstrap historique Vélo'v
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'Nombre de jours à importer (0 = tout depuis 2023)'
+        required: false
+        default: '90'
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    name: Import historique
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install requests
+
+      - name: Import historique
+        env:
+          GL_USER:     ${{ secrets.GL_USER }}
+          GL_PASSWORD: ${{ secrets.GL_PASSWORD }}
+          DAYS:        ${{ github.event.inputs.days }}
+        run: |
+          ARGS=""
+          [ -n "$GL_USER" ]     && ARGS="$ARGS --user $GL_USER"
+          [ -n "$GL_PASSWORD" ] && ARGS="$ARGS --password $GL_PASSWORD"
+          [ "$DAYS" != "0" ]    && ARGS="$ARGS --days $DAYS"
+          python bootstrap.py $ARGS
+
+      - name: Commit & push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/history/
+          git diff --staged --quiet || git commit -m "bootstrap: historique Vélo'v $(date -u '+%Y-%m-%d')"
+          git push
