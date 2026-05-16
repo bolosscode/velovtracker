@@ -166,6 +166,16 @@ main{max-width:1500px;margin:auto;padding:20px}
       <select id="reco-radius"><option value="100">100 m</option><option value="250">250 m</option><option value="500">500 m</option><option value="750" selected>750 m</option><option value="1000">1 km</option><option value="1500">1.5 km</option></select>
       <label>Type</label>
       <select id="reco-type"><option value="bikes">Prendre un vélo (tous)</option><option value="elec">Prendre un vélo ⚡ élec</option><option value="meca">Prendre un vélo 🔧 méca</option><option value="stands">Déposer un vélo</option></select>
+      <label>Jour</label>
+      <select id="reco-dow" style="padding:8px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none">
+        <option value="1">Lundi</option>
+        <option value="2">Mardi</option>
+        <option value="3">Mercredi</option>
+        <option value="4">Jeudi</option>
+        <option value="5">Vendredi</option>
+        <option value="6">Samedi</option>
+        <option value="0">Dimanche</option>
+      </select>
       <button class="btn" onclick="computeReco()">Chercher</button>
     </div>
     <div id="reco-map"></div>
@@ -215,6 +225,16 @@ main{max-width:1500px;margin:auto;padding:20px}
         <option value="7">7 jours</option>
         <option value="14">14 jours</option>
         <option value="30" selected>30 jours</option>
+      </select>
+      <label>Jour</label>
+      <select id="tj-dow" style="padding:8px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none">
+        <option value="1">Lundi</option>
+        <option value="2">Mardi</option>
+        <option value="3">Mercredi</option>
+        <option value="4">Jeudi</option>
+        <option value="5">Vendredi</option>
+        <option value="6">Samedi</option>
+        <option value="0">Dimanche</option>
       </select>
       <button class="btn" onclick="computeTrajet()">Analyser</button>
     </div>
@@ -479,6 +499,12 @@ function initRanges(){
   document.getElementById('reco-time').value=h;
   const tjEl=document.getElementById('tj-deptime');
   if(tjEl) tjEl.value=h;
+  // Initialiser les selects jour avec le jour courant
+  const curDow=String(now.getDay());
+  const tjDow=document.getElementById('tj-dow');
+  const recoDow=document.getElementById('reco-dow');
+  if(tjDow) tjDow.value=curDow;
+  if(recoDow) recoDow.value=curDow;
 }
 
 /* ═══ COURBES ═════════════════════════════════════════ */
@@ -654,7 +680,7 @@ async function computeReco(){
   const wantStands=recoType==='stands';
   const targetH=parseInt(timeStr?.split(':')[0]??new Date().getHours());
   const today=new Date();
-  const targetDow=today.getDay();
+  const targetDow=parseInt(document.getElementById('reco-dow').value);
 
   // Stations dans le rayon
   const nearby=allStations.filter(st=>st.lat&&st.lng)
@@ -781,8 +807,8 @@ async function drawTjRoute(){
   if(window._tjInfo) { window._tjInfo.remove(); window._tjInfo=null; }
 
   try{
-    // OSRM profil cycling-regular via l'instance publique française
-    const osrmUrl=`https://router.project-osrm.org/route/v1/cycling/${tjFrom.lng},${tjFrom.lat};${tjTo.lng},${tjTo.lat}?overview=full&geometries=geojson`;
+    // OSRM profil foot — itinéraires praticables, évite axes rapides
+    const osrmUrl=`https://router.project-osrm.org/route/v1/foot/${tjFrom.lng},${tjFrom.lat};${tjTo.lng},${tjTo.lat}?overview=full&geometries=geojson`;
     const r=await fetch(osrmUrl);
     if(!r.ok) throw new Error(`OSRM ${r.status}`);
     const data=await r.json();
@@ -790,9 +816,9 @@ async function drawTjRoute(){
     if(!route) throw new Error('no route');
     tjRoute=L.geoJSON(route.geometry,{style:{color:'#0071e3',weight:4,opacity:.85}}).addTo(tjMap);
     const km=(route.distance/1000).toFixed(1);
-    // +35% pour feux, arrêts, trafic urbain réel (~20 km/h effective)
-    const minRaw=Math.round(route.duration/60);
-    const minCorrected=Math.round(minRaw*1.35);
+    // Vitesse réelle selon type de vélo sélectionné
+    const bikeSpeedKmh=document.getElementById('tj-type').value==='elec'?20:15;
+    const minCorrected=Math.round((route.distance/1000)/bikeSpeedKmh*60);
     const durInput=document.getElementById('tj-duration');
     if(durInput) durInput.value=minCorrected;
     const info=L.control({position:'bottomleft'});
@@ -824,8 +850,8 @@ async function computeTrajet(){
   const depTimeStr=document.getElementById('tj-deptime').value;
   const bikeType=document.getElementById('tj-type').value;
   const histDays=parseInt(document.getElementById('tj-days').value);
-  const today=new Date(), targetDow=today.getDay();
-  // Si heure de départ fournie, calculer l'heure d'arrivée cible
+  const today=new Date();
+  const targetDow=parseInt(document.getElementById('tj-dow').value);
   const depHourFixed=depTimeStr ? parseInt(depTimeStr.split(':')[0]) : null;
 
   const promises=[];
@@ -883,7 +909,8 @@ async function computeTrajet(){
 
   const fromName=cleanName(tjFrom.name),toName=cleanName(tjTo.name);
   const bikeLabel=bikeType==='elec'?'⚡ élec':bikeType==='meca'?'🔧 méca':'🚲 tous';
-  const dow=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][targetDow];
+  const DOW_NAMES=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  const dow=DOW_NAMES[targetDow];
 
   content.innerHTML=`
     <div class="card" style="background:linear-gradient(135deg,#f0f7ff,#fff);border:1px solid #c8e0ff;margin-bottom:14px">
