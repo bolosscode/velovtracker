@@ -154,11 +154,10 @@ main{max-width:1500px;margin:auto;padding:20px}
   <div class="card">
     <div class="card-title">Trouver la meilleure station</div>
     <p style="font-size:13px;color:var(--sub);margin-bottom:14px;line-height:1.6">
-      Cliquez sur la carte ou entrez une adresse. L'algorithme analyse 30 jours d'historique (même jour de semaine) pour prédire la disponibilité.
+      Cliquez sur la carte ou entrez une adresse — le calcul se lance automatiquement.
     </p>
     <div class="range">
-      <input id="reco-addr" class="search" type="text" placeholder="Adresse, lieu…" style="flex:1;min-width:200px" autocomplete="off"/>
-      <button class="btn" onclick="geocodeReco()">Localiser</button>
+      <input id="reco-addr" class="search" type="text" placeholder="Adresse, lieu… (Entrée pour valider)" style="flex:1;min-width:200px" autocomplete="off" onkeydown="if(event.key==='Enter') geocodeReco()"/>
     </div>
     <div class="range">
       <label>Heure</label><input type="time" id="reco-time"/>
@@ -176,7 +175,6 @@ main{max-width:1500px;margin:auto;padding:20px}
         <option value="6">Samedi</option>
         <option value="0">Dimanche</option>
       </select>
-      <button class="btn" onclick="computeReco()">Chercher</button>
     </div>
     <div id="reco-map"></div>
     <div id="reco-results"><div class="no-data">Cliquez sur la carte ou entrez une adresse.</div></div>
@@ -189,7 +187,7 @@ main{max-width:1500px;margin:auto;padding:20px}
   <div class="card">
     <div class="card-title">Analyser un trajet régulier</div>
     <p style="font-size:13px;color:var(--sub);margin-bottom:18px;line-height:1.6">
-      Choisissez deux stations et une durée de trajet. L'algorithme croise l'historique des 30 derniers jours (même jour de semaine) pour calculer la probabilité de trouver un vélo ⚡ au départ <em>et</em> une place à l\'arrivée, selon l'heure de départ.
+      Choisissez deux stations et une durée de trajet. L'algorithme utilise tout l'historique disponible (même jour de semaine) pour calculer la probabilité de trouver un vélo ⚡ au départ <em>et</em> une place à l\'arrivée, selon l'heure de départ.
     </p>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
       <div>
@@ -220,12 +218,7 @@ main{max-width:1500px;margin:auto;padding:20px}
         <option value="meca">🔧 Mécanique</option>
         <option value="any">Tous types</option>
       </select>
-      <label>Historique</label>
-      <select id="tj-days" style="padding:8px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none">
-        <option value="7">7 jours</option>
-        <option value="14">14 jours</option>
-        <option value="30" selected>30 jours</option>
-      </select>
+
       <label>Jour</label>
       <select id="tj-dow" style="padding:8px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none">
         <option value="1">Lundi</option>
@@ -643,6 +636,7 @@ function initRecoMap(){
     recoPos=e.latlng;
     document.getElementById('reco-addr').value=`${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`;
     drawRecoCircle();
+    computeReco();
   });
 }
 
@@ -664,6 +658,7 @@ async function geocodeReco(){
       recoPos={lat:parseFloat(data[0].lat),lng:parseFloat(data[0].lon)};
       recoMap?.setView([recoPos.lat,recoPos.lng],15);
       drawRecoCircle();
+      computeReco();
     }
   }catch{}
 }
@@ -688,9 +683,10 @@ async function computeReco(){
     .filter(st=>st.dist<=radius).sort((a,b)=>a.dist-b.dist);
   if(!nearby.length){results.innerHTML='<div class="no-data">Aucune station dans ce rayon.</div>';return;}
 
-  // Charger 30 jours — uniquement les jours du même DOW pour réduire les fetches
+  // Charger tout l'historique dispo — on essaie jusqu'à 52 semaines en arrière
+  // et on s'arrête dès qu'on n'a plus de données
   const dayPromises=[];
-  for(let i=0;i<30;i++){
+  for(let i=0;i<365;i++){
     const d=new Date(today);d.setDate(d.getDate()-i);
     if(d.getDay()===targetDow) dayPromises.push(fetchDay(d.toISOString().slice(0,10)));
   }
@@ -847,13 +843,12 @@ async function computeTrajet(){
   const durationMin=parseInt(document.getElementById('tj-duration').value)||15;
   const depTimeStr=document.getElementById('tj-deptime').value;
   const bikeType=document.getElementById('tj-type').value;
-  const histDays=parseInt(document.getElementById('tj-days').value);
   const today=new Date();
   const targetDow=parseInt(document.getElementById('tj-dow').value);
   const depHourFixed=depTimeStr ? parseInt(depTimeStr.split(':')[0]) : null;
 
   const promises=[];
-  for(let i=0;i<histDays;i++){
+  for(let i=0;i<365;i++){
     const d=new Date(today);d.setDate(d.getDate()-i);
     if(d.getDay()===targetDow) promises.push(fetchDay(d.toISOString().slice(0,10)));
   }
@@ -936,7 +931,7 @@ async function computeTrajet(){
       🟢 Vert : % de chances de trouver un vélo ${bikeLabel} à <b>${fromName}</b>.<br>
       🔵 Bleu : % de chances de trouver une place à <b>${toName}</b> ${durationMin} min plus tard.<br>
       ⚫ Pointillé : score conjoint = min(départ, arrivée) — le vrai indicateur du trajet.<br>
-      <span style="color:#aeaeb2">Basé sur ${allDays.length} ${dow} des ${histDays} derniers jours.</span>
+      <span style="color:#aeaeb2">Basé sur ${allDays.length} ${dow} dans l'historique disponible.</span>
     </div>`;
 
   drawTjRoute();
