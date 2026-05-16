@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 
 PAGE_SIZE = 10000
-WORKERS   = 30
+WORKERS   = 20
 
 BASE_URL = (
     "https://data.grandlyon.com/fr/datapusher/ws/timeseries"
@@ -156,11 +156,19 @@ with ThreadPoolExecutor(max_workers=WORKERS) as ex:
             print(f"  start={start:>12,} | dates={date_range} | kept={kept}/{len(rows)} | "
                   f"total={total_rows:>10,} | {rate:,.0f} l/s", flush=True)
 
-        # Flush RAM périodiquement pour éviter OOM
+        # Flush + commit intermédiaire toutes les 10 min
         now = time.time()
         if now - last_flush_time >= FLUSH_INTERVAL:
             buffer = flush_buffer(buffer, flushed_files)
             last_flush_time = now
+            import subprocess
+            subprocess.run(["git","add","data/history/"], check=False)
+            r = subprocess.run(["git","diff","--staged","--quiet"], check=False)
+            if r.returncode != 0:
+                subprocess.run(["git","commit","-m",
+                    f"bootstrap: {len(flushed_files)} jours"], check=False)
+                subprocess.run(["git","push","-f","origin","history-bootstrap"], check=False)
+                print(f"  → commit intermédiaire: {len(flushed_files)} jours", flush=True)
 
         if not has_next or not rows:
             finished = True
