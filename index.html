@@ -816,9 +816,7 @@ async function drawTjRoute(){
     if(!route) throw new Error('no route');
     tjRoute=L.geoJSON(route.geometry,{style:{color:'#0071e3',weight:4,opacity:.85}}).addTo(tjMap);
     const km=(route.distance/1000).toFixed(1);
-    // Vitesse réelle selon type de vélo sélectionné
-    const bikeSpeedKmh=document.getElementById('tj-type').value==='elec'?20:15;
-    const minCorrected=Math.round((route.distance/1000)/bikeSpeedKmh*60);
+    const minCorrected=Math.round(route.duration/60);
     const durInput=document.getElementById('tj-duration');
     if(durInput) durInput.value=minCorrected;
     const info=L.control({position:'bottomleft'});
@@ -863,8 +861,8 @@ async function computeTrajet(){
   if(!allDays.length){content.innerHTML='<div class="no-data">Pas assez d\'historique.</div>';return;}
 
   const hourData=Array.from({length:24},()=>({dep:[],arr:[],joint:[]}));
-  const hoursToAnalyze=depHourFixed!==null?[depHourFixed]:Array.from({length:24},(_,i)=>i);
-
+  // Toujours analyser les 24h pour la courbe complète
+  // Si heure fixe, on met juste en avant cette heure dans les résultats
   allDays.forEach(snaps=>{
     const byHour={};
     snaps.forEach(snap=>{
@@ -872,7 +870,7 @@ async function computeTrajet(){
       if(!byHour[h]) byHour[h]=[];
       byHour[h].push(snap);
     });
-    for(const h of hoursToAnalyze){
+    for(let h=0;h<24;h++){
       const arrH=Math.round((h*60+durationMin)/60)%24;
       const dSnaps=byHour[h]||[], aSnaps=byHour[arrH]||[];
       if(!dSnaps.length||!aSnaps.length) continue;
@@ -943,12 +941,16 @@ async function computeTrajet(){
 
   drawTjRoute();
   tjMap?.invalidateSize();
+  // Point radius plus grand sur l'heure sélectionnée
+  const ptRadius=(h)=> depHourFixed!==null && h===depHourFixed ? 6 : 2;
+  const ptRadii=labels.map((_,i)=>ptRadius(i));
+
   chartTj?.destroy();
   chartTj=new Chart(document.getElementById('tj-chart'),{type:'line',
     data:{labels,datasets:[
-      {label:'🚲 Vélo dispo au départ',data:depData,borderColor:'#28cd41',backgroundColor:'rgba(40,205,65,.08)',borderWidth:2,tension:0,pointRadius:3,spanGaps:true,fill:true},
-      {label:'🅿️ Place dispo à l\'arrivée',data:arrData,borderColor:'#0071e3',backgroundColor:'rgba(0,113,227,.08)',borderWidth:2,tension:0,pointRadius:3,spanGaps:true,fill:true},
-      {label:'⚡ Score conjoint',data:jointData,borderColor:'#1d1d1f',backgroundColor:'rgba(29,29,31,.04)',borderWidth:2,tension:0,pointRadius:3,spanGaps:true,fill:true,borderDash:[5,3]},
+      {label:'🚲 Vélo dispo au départ',data:depData,borderColor:'#28cd41',backgroundColor:'rgba(40,205,65,.08)',borderWidth:2,tension:0,pointRadius:ptRadii,spanGaps:true,fill:true},
+      {label:'🅿️ Place dispo à l\'arrivée',data:arrData,borderColor:'#0071e3',backgroundColor:'rgba(0,113,227,.08)',borderWidth:2,tension:0,pointRadius:ptRadii,spanGaps:true,fill:true},
+      {label:'⚡ Score conjoint',data:jointData,borderColor:'#1d1d1f',backgroundColor:'rgba(29,29,31,.04)',borderWidth:2,tension:0,pointRadius:ptRadii,spanGaps:true,fill:true,borderDash:[5,3]},
     ]},
     options:{...chartOpts(),scales:{...chartOpts().scales,y:{...chartOpts().scales.y,max:100,ticks:{...chartOpts().scales.y.ticks,callback:v=>v+'%'}}}}
   });
