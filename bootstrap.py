@@ -50,8 +50,9 @@ total_fetched = 0
 print("Téléchargement de l'historique…")
 while True:
     url = BASE_URL.format(start=start)
+    print(f"  Requête start={start}…", flush=True)
     try:
-        r = requests.get(url, auth=auth, timeout=60)
+        r = requests.get(url, auth=auth, timeout=30)
         r.raise_for_status()
         data = r.json()
     except Exception as e:
