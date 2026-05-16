@@ -414,7 +414,12 @@ function buildDropdown(inputId, ddId, opts){
       });
       geoResults.forEach(geo=>{
         const el=document.createElement('div'); el.className='opt';
-        el.innerHTML=`${geo.display_name.split(',').slice(0,2).join(',')} <span class="opt-type">📍 adresse</span>`;
+        const geoType=geo.type||geo.class||'';
+        const isShop=geoType==='shop'||geoType==='office'||geoType==='company'||geoType==='commercial'||(geo.extratags?.office)||(geo.extratags?.company);
+        const icon=isShop?'🏢':'📍';
+        const typeLabel=isShop?'entreprise':'adresse';
+        const shortName=geo.display_name.split(',').slice(0,2).join(',').trim();
+        el.innerHTML=`${shortName} <span class="opt-type">${icon} ${typeLabel}</span>`;
         el.onclick=()=>{
           input.value=geo.display_name.split(',').slice(0,2).join(',');
           dd.classList.remove('open');
@@ -434,7 +439,7 @@ function buildDropdown(inputId, ddId, opts){
     if(q.length>=3){
       _nominatimDebounce[inputId]=setTimeout(async()=>{
         try{
-          const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q+', Lyon, France')}&limit=4&addressdetails=0`);
+          const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q+', Lyon, France')}&limit=6&addressdetails=1&extratags=1`);
           const data=await r.json();
           render(data);
         }catch{}
@@ -710,22 +715,32 @@ async function showRoute(idx){
   const radius=parseInt(document.getElementById('plan-radius').value);
 
   if(planFromPos&&!planFromFixed){
-    L.circleMarker([planFromPos.lat,planFromPos.lng],{radius:8,fillColor:'#28cd41',color:'#fff',weight:2,fillOpacity:.9})
-      .bindTooltip('Départ',{permanent:true,direction:'top'}).addTo(planLayerGroup);
-    L.circle([planFromPos.lat,planFromPos.lng],{radius,color:'#28cd41',fillColor:'#28cd41',fillOpacity:.06,weight:1.5}).addTo(planLayerGroup);
-    // Stations dans le rayon départ
+    // Point départ — blanc avec bordure verte épaisse
+    L.circleMarker([planFromPos.lat,planFromPos.lng],{radius:9,fillColor:'#fff',color:'#1a9e3f',weight:3,fillOpacity:1})
+      .bindTooltip('<b>Départ</b>',{permanent:true,direction:'top'}).addTo(planLayerGroup);
+    // Cercle rayon — vert foncé, tirets
+    L.circle([planFromPos.lat,planFromPos.lng],{radius,color:'#1a9e3f',fillColor:'#1a9e3f',fillOpacity:.07,weight:2,dashArray:'6,4'}).addTo(planLayerGroup);
+    // Stations dans le rayon — carré vert vif
     allStations.filter(s=>s.lat&&s.lng&&haversine(planFromPos.lat,planFromPos.lng,s.lat,s.lng)<=radius)
-      .forEach(s=>L.circleMarker([s.lat,s.lng],{radius:5,fillColor:'#28cd41',color:'#fff',weight:1,fillOpacity:.6})
-        .bindTooltip(cleanName(s.name),{direction:'top'}).addTo(planLayerGroup));
+      .forEach(s=>{
+        const m=L.circleMarker([s.lat,s.lng],{radius:7,fillColor:'#1a9e3f',color:'#fff',weight:2,fillOpacity:.95});
+        m.bindTooltip('🟢 '+cleanName(s.name),{direction:'top'});
+        m.addTo(planLayerGroup);
+      });
   }
   if(planToPos&&!planToFixed){
-    L.circleMarker([planToPos.lat,planToPos.lng],{radius:8,fillColor:'#ff3b30',color:'#fff',weight:2,fillOpacity:.9})
-      .bindTooltip('Arrivée',{permanent:true,direction:'top'}).addTo(planLayerGroup);
-    L.circle([planToPos.lat,planToPos.lng],{radius,color:'#ff3b30',fillColor:'#ff3b30',fillOpacity:.06,weight:1.5}).addTo(planLayerGroup);
-    // Stations dans le rayon arrivée
+    // Point arrivée — blanc avec bordure rouge épaisse
+    L.circleMarker([planToPos.lat,planToPos.lng],{radius:9,fillColor:'#fff',color:'#c0001a',weight:3,fillOpacity:1})
+      .bindTooltip('<b>Arrivée</b>',{permanent:true,direction:'top'}).addTo(planLayerGroup);
+    // Cercle rayon — rouge foncé, tirets
+    L.circle([planToPos.lat,planToPos.lng],{radius,color:'#c0001a',fillColor:'#c0001a',fillOpacity:.07,weight:2,dashArray:'6,4'}).addTo(planLayerGroup);
+    // Stations dans le rayon — rouge vif
     allStations.filter(s=>s.lat&&s.lng&&haversine(planToPos.lat,planToPos.lng,s.lat,s.lng)<=radius)
-      .forEach(s=>L.circleMarker([s.lat,s.lng],{radius:5,fillColor:'#ff3b30',color:'#fff',weight:1,fillOpacity:.6})
-        .bindTooltip(cleanName(s.name),{direction:'top'}).addTo(planLayerGroup));
+      .forEach(s=>{
+        const m=L.circleMarker([s.lat,s.lng],{radius:7,fillColor:'#c0001a',color:'#fff',weight:2,fillOpacity:.95});
+        m.bindTooltip('🔴 '+cleanName(s.name),{direction:'top'});
+        m.addTo(planLayerGroup);
+      });
   }
 
   // Stations
