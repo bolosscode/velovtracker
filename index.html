@@ -209,12 +209,7 @@ main{max-width:1500px;margin:auto;padding:20px}
         <option value="750">750 m</option>
         <option value="1000">1 km</option>
       </select>
-      <label>Combos</label>
-      <select id="plan-top">
-        <option value="3">Top 3</option>
-        <option value="5" selected>Top 5</option>
-        <option value="10">Top 10</option>
-      </select>
+
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
       <button class="btn" onclick="computePlan()">🔍 Planifier</button>
@@ -667,7 +662,7 @@ async function computePlan(){
 
   const bikeType=document.getElementById('plan-type').value;
   const radius=parseInt(document.getElementById('plan-radius').value);
-  const topN=parseInt(document.getElementById('plan-top').value);
+  const topN=10; // calcule 10, affiche 3 par défaut
   const targetDow=parseInt(document.getElementById('plan-dow').value);
   const targetH=parseInt(document.getElementById('plan-hour').value);
   const bikeSpeedKmh=bikeType==='meca'?16:21;
@@ -747,28 +742,41 @@ async function computePlan(){
   document.getElementById('plan-results-title').textContent=
     `Top ${top.length} combinaisons · ${DOW_NAMES[targetDow]} ${String(targetH).padStart(2,'0')}h · ${bikeType==='elec'?'⚡ Élec':bikeType==='meca'?'🔧 Méca':'🚲 Tous'} · ${allDays.length} sem. d'historique`;
 
-  results.innerHTML=top.map((c,i)=>{
-    const cls=scoreColor(c.score);
-    const depDist=planFromFixed?'':` · ${Math.round(c.dep.dist||0)} m à pied`;
-    const arrDist=planToFixed?'':` · ${Math.round(c.arr.dist||0)} m à pied`;
-    return `<div class="combo-card${i===0?' selected':''}" onclick="showRoute(${i})" data-idx="${i}">
-      <div class="combo-rank">${i+1}</div>
-      <div class="combo-info">
-        <div class="combo-route">🟢 ${cleanName(c.dep.name)} → 🔴 ${cleanName(c.arr.name)}</div>
-        <div class="combo-meta">
-          Départ${depDist} · ${Math.round(c.dist/1000*10)/10} km · ~${c.rideMin} min<br>
-          ⚡ vélo dispo : <b>${c.depPct}%</b> · 🅿️ place dispo : <b>${c.arrPct}%</b>
-          ${c.samples?` · ${c.samples} mesures`:''}${arrDist}
+  // Afficher top 3 par défaut, bouton pour voir plus
+  const renderComboList=(limit)=>{
+    const shown=top.slice(0,limit);
+    const html=shown.map((combo,i)=>{
+      const cls=scoreColor(combo.score);
+      const depDist=planFromFixed?'':` · ${Math.round(combo.dep.dist||0)} m à pied`;
+      const arrDist=planToFixed?'':` · ${Math.round(combo.arr.dist||0)} m à pied`;
+      return `<div class="combo-card${i===0?' selected':''}" onclick="showRoute(${i})" data-idx="${i}">
+        <div class="combo-rank">${i+1}</div>
+        <div class="combo-info">
+          <div class="combo-route">🟢 ${cleanName(combo.dep.name)} → 🔴 ${cleanName(combo.arr.name)}</div>
+          <div class="combo-meta">
+            Départ${depDist} · ${Math.round(combo.dist/1000*10)/10} km · ~${combo.rideMin} min<br>
+            ⚡ vélo dispo : <b>${combo.depPct}%</b> · 🅿️ place dispo : <b>${combo.arrPct}%</b>
+            ${combo.samples?` · ${combo.samples} mesures`:''}${arrDist}
+          </div>
         </div>
-      </div>
-      <div class="combo-score">
-        <div class="combo-pct ${cls}">${c.score}%</div>
-        <div class="combo-detail">score conjoint</div>
-      </div>
-    </div>`;
-  }).join('');
-
-  // Stocker les combos pour le routing
+        <div class="combo-score">
+          <div class="combo-pct ${cls}">${combo.score}%</div>
+          <div class="combo-detail">score conjoint</div>
+        </div>
+      </div>`;
+    }).join('');
+    const more=top.length>limit
+      ?`<div style="text-align:center;padding:12px">
+          <button onclick="window._showMoreCombos()" style="padding:6px 18px;border-radius:20px;border:1px solid var(--border);background:var(--paper);font-size:12px;cursor:pointer;color:var(--sub)">
+            Voir les ${top.length-limit} autres combinaisons
+          </button></div>`:'';
+    return html+more;
+  };
+  // Afficher 3 par défaut, élargir auto si les scores sont faibles
+  const topScore=top[0]?.score??0;
+  const autoLimit=topScore<30 ? top.length : topScore<50 ? Math.min(5,top.length) : 3;
+  results.innerHTML=renderComboList(autoLimit);
+  window._showMoreCombos=()=>{ results.innerHTML=renderComboList(top.length); showRoute(0); };
   window._planCombos=top;
   showRoute(0);
 }
