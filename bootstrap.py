@@ -13,7 +13,7 @@ Pagination automatique sur tous les enregistrements disponibles.
 """
 
 import os, sys, json, argparse, time
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from collections import defaultdict
 import requests
 
@@ -27,15 +27,14 @@ BASE_URL = (
 parser = argparse.ArgumentParser()
 parser.add_argument("--user",     default="", help="login data.grandlyon.com")
 parser.add_argument("--password", default="", help="mot de passe data.grandlyon.com")
-parser.add_argument("--days",     type=int, default=0, help="limiter à N jours (0 = tout)")
+
 parser.add_argument("--out",      default="data/history", help="répertoire de sortie")
 args = parser.parse_args()
 
 auth = (args.user, args.password) if args.user else None
+# On importe tout — pas de filtre temporel
+# --days n'est plus utilisé (l'API retourne déjà les données disponibles)
 cutoff = None
-if args.days > 0:
-    cutoff = datetime.now(timezone.utc) - timedelta(days=args.days)
-    print(f"Cutoff : {cutoff.isoformat()} (--days {args.days})")
 
 os.makedirs(args.out, exist_ok=True)
 
@@ -47,13 +46,6 @@ os.makedirs(args.out, exist_ok=True)
 all_rows = []
 start = 1
 total_fetched = 0
-
-def _ts(ts_str):
-    try:
-        dt = datetime.fromisoformat(ts_str)
-        return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
-    except Exception:
-        return datetime.min.replace(tzinfo=timezone.utc)
 
 print("Téléchargement de l'historique…")
 while True:
@@ -70,9 +62,7 @@ while True:
     if not rows:
         break
 
-    # Filtrer par cutoff si demandé (garder tout >= cutoff)
-    if cutoff:
-        rows = [r for r in rows if _ts(r.get("horodate","")) >= cutoff]
+
 
     all_rows.extend(rows)
     total_fetched += len(rows)
