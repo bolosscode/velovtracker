@@ -14,10 +14,20 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # historique complet pour le merge
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
       - run: pip install requests
+
+      - name: Créer branche bootstrap
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b history-bootstrap
 
       - name: Import historique
         env:
@@ -29,10 +39,20 @@ jobs:
           [ -n "$GL_PASSWORD" ] && ARGS="$ARGS --password $GL_PASSWORD"
           python bootstrap.py $ARGS
 
-      - name: Commit & push
+      - name: Commit sur branche bootstrap
         run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/history/
-          git diff --staged --quiet || git commit -m "bootstrap: historique Vélo'v $(date -u '+%Y-%m-%d')"
-          git push
+          git diff --staged --quiet && echo "Rien à commiter" && exit 0
+          git commit -m "bootstrap: historique Vélo'v $(date -u '+%Y-%m-%d')"
+          git push -f origin history-bootstrap
+
+      - name: Merge dans main
+        run: |
+          git checkout main
+          git pull origin main
+          git merge history-bootstrap \
+            --no-ff \
+            -m "bootstrap: merge historique $(date -u '+%Y-%m-%d')" \
+            -X theirs    # en cas de conflit sur un même fichier, on garde le bootstrap
+          git push origin main
+          git push origin --delete history-bootstrap
