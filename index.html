@@ -786,6 +786,22 @@ function initTrajetSearch(){
   }
 }
 
+// Décodeur polyline6 (Valhalla utilise precision=6)
+function decodePolyline(encoded, precision=6){
+  let index=0, lat=0, lng=0;
+  const coords=[], factor=Math.pow(10,precision);
+  while(index<encoded.length){
+    let b, shift=0, result=0;
+    do{ b=encoded.charCodeAt(index++)-63; result|=(b&0x1f)<<shift; shift+=5; }while(b>=0x20);
+    lat+=(result&1)?~(result>>1):(result>>1);
+    shift=0; result=0;
+    do{ b=encoded.charCodeAt(index++)-63; result|=(b&0x1f)<<shift; shift+=5; }while(b>=0x20);
+    lng+=(result&1)?~(result>>1):(result>>1);
+    coords.push([lat/factor, lng/factor]);
+  }
+  return coords;
+}
+
 async function drawTjRoute(){
   if(!tjMap||!tjFrom||!tjTo) return;
 
@@ -803,16 +819,30 @@ async function drawTjRoute(){
   if(window._tjInfo) { window._tjInfo.remove(); window._tjInfo=null; }
 
   try{
-    // OSRM cycling — profil vélo sur OSM
-    const osrmUrl=`https://router.project-osrm.org/route/v1/cycling/${tjFrom.lng},${tjFrom.lat};${tjTo.lng},${tjTo.lat}?overview=full&geometries=geojson`;
-    const r=await fetch(osrmUrl);
-    if(!r.ok) throw new Error(`OSRM ${r.status}`);
+    // Valhalla OpenStreetMap.de — profil bicycle avec costing vélo urbain
+    const bikeSpeedKmh=document.getElementById('tj-type').value==='meca'?16:21;
+    const vhBody={
+      locations:[{lon:tjFrom.lng,lat:tjFrom.lat},{lon:tjTo.lng,lat:tjTo.lat}],
+      costing:'bicycle',
+      costing_options:{bicycle:{
+        bicycle_type:'Road',
+        cycling_speed:bikeSpeedKmh,
+        use_roads:0.4,
+        use_hills:0.2
+      }},
+      directions_type:'none'
+    };
+    const vhUrl=`https://valhalla1.openstreetmap.de/route?json=${encodeURIComponent(JSON.stringify(vhBody))}`;
+    const r=await fetch(vhUrl);
+    if(!r.ok) throw new Error(`Valhalla ${r.status}`);
     const data=await r.json();
-    const route=data.routes?.[0];
-    if(!route) throw new Error('no route');
-    tjRoute=L.geoJSON(route.geometry,{style:{color:'#0071e3',weight:4,opacity:.85}}).addTo(tjMap);
-    const km=(route.distance/1000).toFixed(1);
-    const minCorrected=Math.round(route.duration/60);
+    if(data.error) throw new Error(data.error);
+    const leg=data.trip?.legs?.[0];
+    if(!leg) throw new Error('no leg');
+    const coords=decodePolyline(leg.shape);
+    tjRoute=L.polyline(coords,{color:'#0071e3',weight:4,opacity:.85}).addTo(tjMap);
+    const km=leg.summary.length.toFixed(1);
+    const minCorrected=Math.round(leg.summary.length/bikeSpeedKmh*60);
     const durInput=document.getElementById('tj-duration');
     if(durInput) durInput.value=minCorrected;
     const info=L.control({position:'bottomleft'});
@@ -824,7 +854,7 @@ async function drawTjRoute(){
     };
     info.addTo(tjMap);
     window._tjInfo=info;
-    tjMap.fitBounds(tjRoute.getBounds().pad(.2));
+    tjMap.fitBounds(L.polyline(coords).getBounds().pad(.2));
   }catch(e){
     console.warn('OSRM error:',e.message);
     // Fallback ligne droite
