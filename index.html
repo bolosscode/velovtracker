@@ -185,15 +185,8 @@ main{max-width:1500px;margin:auto;padding:20px}
       </div>
     </div>
     <div class="params-row">
-      <label>Jour</label>
-      <select id="plan-dow">
-        <option value="1">Lundi</option><option value="2">Mardi</option>
-        <option value="3">Mercredi</option><option value="4">Jeudi</option>
-        <option value="5">Vendredi</option><option value="6">Samedi</option>
-        <option value="0">Dimanche</option>
-      </select>
-      <label>Heure</label>
-      <input type="time" id="plan-time"/>
+      <label>Date &amp; heure</label>
+      <input type="datetime-local" id="plan-datetime"/>
       <label>Type</label>
       <select id="plan-type">
         <option value="elec">⚡ Électrique</option>
@@ -581,8 +574,8 @@ function initPlanMap(){
 
   // Init heure et jour
   const now=new Date();
-  document.getElementById('plan-time').value=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-  document.getElementById('plan-dow').value=String(now.getDay());
+  const dtEl=document.getElementById('plan-datetime');
+  if(dtEl) dtEl.value=fmt(now);
 }
 
 
@@ -596,9 +589,10 @@ async function computePlan(){
   const bikeType=document.getElementById('plan-type').value;
   const radius=parseInt(document.getElementById('plan-radius').value);
   const topN=parseInt(document.getElementById('plan-top').value);
-  const targetDow=parseInt(document.getElementById('plan-dow').value);
-  const timeStr=document.getElementById('plan-time').value;
-  const targetH=parseInt(timeStr.split(':')[0]);
+  const planDt=document.getElementById('plan-datetime').value;
+  const planDate=planDt?new Date(planDt):new Date();
+  const targetDow=planDate.getDay();
+  const targetH=planDate.getHours();
   const bikeSpeedKmh=bikeType==='meca'?16:21;
 
   // Charger historique pour ce jour de semaine
@@ -713,13 +707,25 @@ async function showRoute(idx){
   planLayerGroup=L.layerGroup().addTo(planMap);
 
   // Marqueurs départ/arrivée réels
+  const radius=parseInt(document.getElementById('plan-radius').value);
+
   if(planFromPos&&!planFromFixed){
     L.circleMarker([planFromPos.lat,planFromPos.lng],{radius:8,fillColor:'#28cd41',color:'#fff',weight:2,fillOpacity:.9})
       .bindTooltip('Départ',{permanent:true,direction:'top'}).addTo(planLayerGroup);
+    L.circle([planFromPos.lat,planFromPos.lng],{radius,color:'#28cd41',fillColor:'#28cd41',fillOpacity:.06,weight:1.5}).addTo(planLayerGroup);
+    // Stations dans le rayon départ
+    allStations.filter(s=>s.lat&&s.lng&&haversine(planFromPos.lat,planFromPos.lng,s.lat,s.lng)<=radius)
+      .forEach(s=>L.circleMarker([s.lat,s.lng],{radius:5,fillColor:'#28cd41',color:'#fff',weight:1,fillOpacity:.6})
+        .bindTooltip(cleanName(s.name),{direction:'top'}).addTo(planLayerGroup));
   }
   if(planToPos&&!planToFixed){
     L.circleMarker([planToPos.lat,planToPos.lng],{radius:8,fillColor:'#ff3b30',color:'#fff',weight:2,fillOpacity:.9})
       .bindTooltip('Arrivée',{permanent:true,direction:'top'}).addTo(planLayerGroup);
+    L.circle([planToPos.lat,planToPos.lng],{radius,color:'#ff3b30',fillColor:'#ff3b30',fillOpacity:.06,weight:1.5}).addTo(planLayerGroup);
+    // Stations dans le rayon arrivée
+    allStations.filter(s=>s.lat&&s.lng&&haversine(planToPos.lat,planToPos.lng,s.lat,s.lng)<=radius)
+      .forEach(s=>L.circleMarker([s.lat,s.lng],{radius:5,fillColor:'#ff3b30',color:'#fff',weight:1,fillOpacity:.6})
+        .bindTooltip(cleanName(s.name),{direction:'top'}).addTo(planLayerGroup));
   }
 
   // Stations
@@ -751,11 +757,76 @@ async function showRoute(idx){
     }
   }catch{}
 
-  // Lignes en pointillés piéton depuis/vers les stations si adresse libre
+  // Lignes en pointillés piéton
   if(planFromPos&&!planFromFixed)
     L.polyline([[planFromPos.lat,planFromPos.lng],[combo.dep.lat,combo.dep.lng]],{color:'#6e6e73',weight:2,dashArray:'5,5',opacity:.7}).addTo(planLayerGroup);
   if(planToPos&&!planToFixed)
     L.polyline([[combo.arr.lat,combo.arr.lng],[planToPos.lat,planToPos.lng]],{color:'#6e6e73',weight:2,dashArray:'5,5',opacity:.7}).addTo(planLayerGroup);
+
+  // Courbes probabilité 24h pour cette combinaison
+  showComboCourbes(combo);
+}
+
+let _chartComboA=null, _chartComboB=null;
+
+async function showComboCourbes(combo){
+  // Récupérer ou créer la zone courbes
+  let zone=document.getElementById('plan-courbes-zone');
+  if(!zone){
+    zone=document.createElement('div');
+    zone.id='plan-courbes-zone';
+    const card=document.getElementById('plan-results-card');
+    card.appendChild(zone);
+  }
+  zone.innerHTML='<div class="loader">Chargement des courbes…</div>';
+
+  const targetDow=parseInt(document.getElementById('plan-datetime').value?new Date(document.getElementById('plan-datetime').value).getDay():new Date().getDay());
+  const today=new Date();
+  const promises=[];
+  for(let i=0;i<365;i++){
+    const d=new Date(today); d.setDate(d.getDate()-i);
+    if(d.getDay()===targetDow) promises.push(fetchDay(d.toISOString().slice(0,10)));
+  }
+  const allDays=(await Promise.all(promises)).filter(Boolean);
+
+  const bikeType=document.getElementById('plan-type').value;
+  const depKey=bikeType==='elec'?'electrical_bikes':bikeType==='meca'?'mechanical_bikes':'available_bikes';
+
+  const labels=[], depData=[], arrData=[];
+  for(let h=0;h<24;h++){
+    labels.push(String(h).padStart(2,'0')+'h');
+    const dv=[],av=[];
+    allDays.forEach(snaps=>{
+      snaps.forEach(snap=>{
+        const sh=(new Date(getTs(snap)).getUTCHours()+2)%24;
+        if(sh!==h) return;
+        const sts=getSts(snap);
+        const dep=sts.find(s=>s.number===combo.dep.number);
+        const arr=sts.find(s=>s.number===combo.arr.number);
+        if(dep?.bike_stands) dv.push((dep[depKey]||0)/dep.bike_stands*100);
+        if(arr?.bike_stands) av.push(arr.available_bike_stands/arr.bike_stands*100);
+      });
+    });
+    const avg=a=>a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length):null;
+    depData.push(avg(dv));
+    arrData.push(avg(av));
+  }
+
+  const bikeLabel=bikeType==='elec'?'⚡ Élec':bikeType==='meca'?'🔧 Méca':'🚲 Vélos';
+  zone.innerHTML=`
+    <div class="card" style="margin-top:0;border-top:none;border-radius:0 0 var(--radius) var(--radius)">
+      <div class="card-title">Probabilité sur 24h · ${DOW_NAMES[targetDow]} · ${cleanName(combo.dep.name)} → ${cleanName(combo.arr.name)}</div>
+      <canvas id="chart-combo" height="80"></canvas>
+    </div>`;
+
+  _chartComboA?.destroy();
+  _chartComboA=new Chart(document.getElementById('chart-combo'),{type:'line',
+    data:{labels,datasets:[
+      {label:`${bikeLabel} dispo au départ`,data:depData,borderColor:'#28cd41',backgroundColor:'rgba(40,205,65,.08)',borderWidth:2,tension:0,pointRadius:3,spanGaps:true,fill:true},
+      {label:'🅿️ Place dispo à l\'arrivée',data:arrData,borderColor:'#ff3b30',backgroundColor:'rgba(255,59,48,.06)',borderWidth:2,tension:0,pointRadius:3,spanGaps:true,fill:true},
+    ]},
+    options:{...chartOpts(),scales:{...chartOpts().scales,y:{...chartOpts().scales.y,max:100,ticks:{...chartOpts().scales.y.ticks,callback:v=>v+'%'}}}}
+  });
 }
 
 /* ═══ INIT ════════════════════════════════════════════ */
