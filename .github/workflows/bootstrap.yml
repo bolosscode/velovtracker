@@ -2,6 +2,9 @@ name: Bootstrap historique Vélo'v
 
 on:
   workflow_dispatch:
+  # Auto-relance via repository_dispatch émis par le job lui-même
+  repository_dispatch:
+    types: [bootstrap-continue]
 
 permissions:
   contents: write
@@ -10,12 +13,12 @@ jobs:
   bootstrap:
     name: Import historique
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 110  # légèrement sous la limite GitHub pour avoir le temps de push
 
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # historique complet pour le merge
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -23,27 +26,50 @@ jobs:
 
       - run: pip install requests
 
-      - name: Créer branche bootstrap
+      - name: Créer/rejoindre branche bootstrap
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b history-bootstrap
+          git fetch origin
+          if git ls-remote --exit-code --heads origin history-bootstrap; then
+            git checkout history-bootstrap
+            git pull origin history-bootstrap
+          else
+            git checkout -b history-bootstrap
+          fi
+
+      - name: Détecter la reprise (dernier fichier écrit)
+        id: resume
+        run: |
+          # Trouver la date du dernier fichier history existant pour reprendre après
+          LAST=$(ls data/history/*.json 2>/dev/null | sort | tail -1 | xargs basename | sed 's/.json//' || echo "")
+          echo "last_date=$LAST" >> $GITHUB_OUTPUT
+          echo "Reprise après : $LAST"
 
       - name: Import historique
+        id: import
         env:
           GL_USER:     ${{ secrets.GL_USER }}
           GL_PASSWORD: ${{ secrets.GL_PASSWORD }}
+          LAST_DATE:   ${{ steps.resume.outputs.last_date }}
         run: |
           ARGS=""
           [ -n "$GL_USER" ]     && ARGS="$ARGS --user $GL_USER"
           [ -n "$GL_PASSWORD" ] && ARGS="$ARGS --password $GL_PASSWORD"
+          [ -n "$LAST_DATE" ]   && ARGS="$ARGS --resume-after $LAST_DATE"
           python bootstrap.py $ARGS
+          # Le script écrit "DONE" dans done.txt s'il a tout terminé
+          if [ -f done.txt ]; then
+            echo "finished=true" >> $GITHUB_OUTPUT
+          else
+            echo "finished=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Commit sur branche bootstrap
         run: |
           git add data/history/
           git diff --staged --quiet && echo "Rien à commiter" && exit 0
-          git commit -m "bootstrap: historique Vélo'v $(date -u '+%Y-%m-%d')"
+          git commit -m "bootstrap: +$(ls data/history/*.json | wc -l) jours $(date -u '+%Y-%m-%d %H:%M')"
           git push -f origin history-bootstrap
 
       - name: Merge dans main
@@ -53,6 +79,15 @@ jobs:
           git merge history-bootstrap \
             --no-ff \
             -m "bootstrap: merge historique $(date -u '+%Y-%m-%d')" \
-            -X theirs    # en cas de conflit sur un même fichier, on garde le bootstrap
+            -X theirs
           git push origin main
-          git push origin --delete history-bootstrap
+
+      - name: Relance automatique si pas terminé
+        if: steps.import.outputs.finished == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Pas terminé — relance automatique dans 30s..."
+          sleep 30
+          gh api repos/${{ github.repository }}/dispatches \
+            -f event_type=bootstrap-continue
