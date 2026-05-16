@@ -10,8 +10,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#f5f5f7;--paper:#fff;--ink:#1d1d1f;--sub:#6e6e73;--dim:#aeaeb2;--border:#d2d2d7;--blue:#0071e3;--green:#28cd41;--orange:#ff9f0a;--red:#ff3b30;--radius:14px;--shadow:0 2px 14px rgba(0,0,0,.08)}
-body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px}
+:root{
+  --bg:#f5f5f7;--paper:#fff;--ink:#1d1d1f;--sub:#6e6e73;--dim:#aeaeb2;
+  --border:#d2d2d7;--blue:#0071e3;--green:#28cd41;--orange:#ff9f0a;--red:#ff3b30;
+  --radius:14px;--shadow:0 2px 14px rgba(0,0,0,.08);
+}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
 
 header{position:sticky;top:0;z-index:300;height:56px;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border-bottom:1px solid #ececec;display:flex;align-items:center;justify-content:space-between;padding:0 22px}
 .brand{font-weight:700;font-size:18px}.brand em{color:var(--blue);font-style:normal}
@@ -23,7 +27,7 @@ nav{position:sticky;top:56px;z-index:250;background:#fff;border-bottom:1px solid
 
 main{max-width:1500px;margin:auto;padding:20px}
 .panel{display:none}.panel.on{display:block}
-.card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:18px}
+.card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
 .card-title{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--sub);margin-bottom:14px}
 
 #map{height:calc(100vh - 140px);border-radius:var(--radius);overflow:hidden}
@@ -32,27 +36,53 @@ main{max-width:1500px;margin:auto;padding:20px}
 .map-btn.on{background:var(--blue);color:#fff}
 .map-rel{position:relative}
 
-.search-wrap{position:relative;margin-bottom:16px}
-.search{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);font-size:14px;outline:none}
+/* search */
+.loc-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+@media(max-width:640px){.loc-row{grid-template-columns:1fr}}
+.loc-box{position:relative}
+.loc-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--sub);margin-bottom:5px;display:flex;align-items:center;gap:6px}
+.loc-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.search{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none;transition:border-color .15s}
 .search:focus{border-color:var(--blue)}
-.dropdown{position:absolute;left:0;right:0;top:100%;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);display:none;z-index:50;max-height:280px;overflow-y:auto}
+.dropdown{position:absolute;left:0;right:0;top:100%;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);display:none;z-index:100;max-height:220px;overflow-y:auto}
 .dropdown.open{display:block}
-.opt{padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0f0}
+.opt{padding:9px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0f0}
 .opt:last-child{border-bottom:none}
 .opt:hover{background:#f0f7ff}
+.opt-type{font-size:10px;color:var(--dim);float:right}
 
-.range{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
-.range input,.range select{padding:8px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none}
-.range input:focus{border-color:var(--blue)}
-.btn{padding:8px 18px;border-radius:10px;border:none;background:var(--blue);color:#fff;font-size:13px;font-weight:600;cursor:pointer}
-.btn:hover{opacity:.85}
-.btn-sec{background:#fff;color:var(--ink);border:1px solid var(--border);box-shadow:var(--shadow)}
+/* params row */
+.params-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.params-row label{font-size:11px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.params-row select,.params-row input{padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none}
+.params-row select:focus,.params-row input:focus{border-color:var(--blue)}
 
-.loader,.no-data{padding:40px;text-align:center;color:var(--dim)}
+/* plan map */
+#plan-map{height:380px;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);margin-bottom:16px}
 
-/* TABLE */
+/* results */
+.combo-card{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background .15s}
+.combo-card:hover{background:#f8f9ff}
+.combo-card.selected{background:#f0f7ff;border-left:3px solid var(--blue)}
+.combo-card:last-child{border-bottom:none}
+.combo-rank{font-size:22px;font-weight:700;color:var(--blue);min-width:32px;text-align:center}
+.combo-info{flex:1}
+.combo-route{font-weight:600;font-size:13px;margin-bottom:3px}
+.combo-meta{font-size:11px;color:var(--sub);line-height:1.7}
+.combo-score{text-align:right;flex-shrink:0}
+.combo-pct{font-size:22px;font-weight:700}
+.combo-detail{font-size:11px;color:var(--dim)}
+.score-high{color:var(--green)}
+.score-med{color:var(--orange)}
+.score-low{color:var(--red)}
+
+/* courbes */
+.search-wrap{position:relative;margin-bottom:14px}
+.search-wrap .search{padding-left:12px}
+
+/* table leaderboard */
 #lb-table{width:100%;border-collapse:collapse;font-size:13px}
-#lb-table th{text-align:left;padding:10px 12px;border-bottom:2px solid var(--border);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--sub);position:sticky;top:0;background:#fff}
+#lb-table th{text-align:left;padding:10px 12px;border-bottom:2px solid var(--border);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--sub);background:#fff}
 #lb-table td{padding:9px 12px;border-bottom:1px solid #f0f0f0;font-variant-numeric:tabular-nums}
 #lb-table tr:hover td{background:#f8f8fa}
 .rank-cell{font-weight:700;color:var(--blue);width:40px}
@@ -62,16 +92,11 @@ main{max-width:1500px;margin:auto;padding:20px}
 .fill-med{background:rgba(255,159,10,.12);color:#a56800}
 .fill-low{background:rgba(255,59,48,.12);color:#c0392b}
 
-/* RECO */
-#reco-map{height:400px;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);margin-bottom:14px}
-.reco-card{display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid #f0f0f0}
-.reco-card:last-child{border-bottom:none}
-.reco-rank{font-size:22px;font-weight:700;color:var(--blue);min-width:36px;text-align:center}
-.reco-info{flex:1}.reco-name{font-weight:600;margin-bottom:3px}
-.reco-meta{font-size:12px;color:var(--sub)}
-.reco-score{text-align:right}
-.reco-pct{font-size:20px;font-weight:700}
-.reco-dist{font-size:11px;color:var(--dim)}
+.loader,.no-data{padding:40px;text-align:center;color:var(--dim)}
+.range{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+.range select,.range input{padding:8px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none}
+.btn{padding:8px 18px;border-radius:10px;border:none;background:var(--blue);color:#fff;font-size:13px;font-weight:600;cursor:pointer}
+.btn:hover{opacity:.85}
 </style>
 </head>
 <body>
@@ -85,19 +110,13 @@ main{max-width:1500px;margin:auto;padding:20px}
   <div class="tab on" data-tab="map">🗺 Carte</div>
   <div class="tab" data-tab="courbes">📈 Courbes</div>
   <div class="tab" data-tab="leaderboard">🏆 Leaderboard</div>
-  <div class="tab" data-tab="reco">📍 Recommandation</div>
-  <div class="tab" data-tab="trajet">🚴 Trajet</div>
+  <div class="tab" data-tab="plan">🚴 Planifier</div>
 </nav>
 
 <main>
 
-<!-- ═══ CARTE + HEATMAP FUSIONNÉE ═══ -->
+<!-- ═══ CARTE ═══ -->
 <div class="panel on" id="tab-map">
-  <div id="heat-controls" style="display:none;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 18px;margin-bottom:12px;display:none;align-items:center;gap:14px;flex-wrap:wrap">
-    <span style="font-size:12px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.04em">Période heatmap</span>
-    <input type="range" id="heat-slider" min="1" max="365" value="1" style="flex:1;min-width:120px;max-width:300px;accent-color:var(--blue)" oninput="onHeatSlider()">
-    <span id="heat-slider-label" style="font-size:13px;font-weight:600;color:var(--blue);min-width:80px">Aujourd'hui</span>
-  </div>
   <div class="map-rel">
     <div class="map-ctrl">
       <button class="map-btn" id="btn-heat" onclick="toggleHeat()">🔥 Heatmap</button>
@@ -149,92 +168,63 @@ main{max-width:1500px;margin:auto;padding:20px}
   </div>
 </div>
 
-<!-- ═══ RECOMMANDATION ═══ -->
-<div class="panel" id="tab-reco">
+<!-- ═══ PLANIFIER ═══ -->
+<div class="panel" id="tab-plan">
   <div class="card">
-    <div class="card-title">Trouver la meilleure station</div>
-    <p style="font-size:13px;color:var(--sub);margin-bottom:14px;line-height:1.6">
-      Cliquez sur la carte ou entrez une adresse — le calcul se lance automatiquement.
-    </p>
-    <div class="range">
-      <input id="reco-addr" class="search" type="text" placeholder="Adresse, lieu… (Entrée pour valider)" style="flex:1;min-width:200px" autocomplete="off" onkeydown="if(event.key==='Enter') geocodeReco()"/>
+    <div class="card-title">Planifier un trajet</div>
+    <div class="loc-row">
+      <div class="loc-box">
+        <div class="loc-label"><span class="loc-dot" style="background:var(--green)"></span>Point de départ</div>
+        <input id="plan-from" class="search" type="text" placeholder="Adresse ou station de départ…" autocomplete="off"/>
+        <div class="dropdown" id="plan-from-dd"></div>
+      </div>
+      <div class="loc-box">
+        <div class="loc-label"><span class="loc-dot" style="background:var(--red)"></span>Point d'arrivée</div>
+        <input id="plan-to" class="search" type="text" placeholder="Adresse ou station d'arrivée…" autocomplete="off"/>
+        <div class="dropdown" id="plan-to-dd"></div>
+      </div>
     </div>
-    <div class="range">
-      <label>Heure</label><input type="time" id="reco-time"/>
-      <label>Rayon</label>
-      <select id="reco-radius"><option value="100">100 m</option><option value="250">250 m</option><option value="500">500 m</option><option value="750" selected>750 m</option><option value="1000">1 km</option><option value="1500">1.5 km</option></select>
-      <label>Type</label>
-      <select id="reco-type"><option value="bikes">Prendre un vélo (tous)</option><option value="elec">Prendre un vélo ⚡ élec</option><option value="meca">Prendre un vélo 🔧 méca</option><option value="stands">Déposer un vélo</option></select>
+    <div class="params-row">
       <label>Jour</label>
-      <select id="reco-dow" style="padding:8px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none">
-        <option value="1">Lundi</option>
-        <option value="2">Mardi</option>
-        <option value="3">Mercredi</option>
-        <option value="4">Jeudi</option>
-        <option value="5">Vendredi</option>
-        <option value="6">Samedi</option>
+      <select id="plan-dow">
+        <option value="1">Lundi</option><option value="2">Mardi</option>
+        <option value="3">Mercredi</option><option value="4">Jeudi</option>
+        <option value="5">Vendredi</option><option value="6">Samedi</option>
         <option value="0">Dimanche</option>
       </select>
-    </div>
-    <div id="reco-map"></div>
-    <div id="reco-results"><div class="no-data">Cliquez sur la carte ou entrez une adresse.</div></div>
-  </div>
-</div>
-
-
-<!-- ═══ TRAJET ═══ -->
-<div class="panel" id="tab-trajet">
-  <div class="card">
-    <div class="card-title">Analyser un trajet régulier</div>
-    <p style="font-size:13px;color:var(--sub);margin-bottom:18px;line-height:1.6">
-      Choisissez deux stations et une durée de trajet. L'algorithme utilise tout l'historique disponible (même jour de semaine) pour calculer la probabilité de trouver un vélo ⚡ au départ <em>et</em> une place à l\'arrivée, selon l'heure de départ.
-    </p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-      <div>
-        <div class="card-title">🟢 Station départ</div>
-        <div class="search-wrap">
-          <input id="tj-from-search" class="search" type="text" placeholder="Station de départ…" autocomplete="off"/>
-          <div class="dropdown" id="tj-from-dd"></div>
-        </div>
-      </div>
-      <div>
-        <div class="card-title">🔴 Station arrivée</div>
-        <div class="search-wrap">
-          <input id="tj-to-search" class="search" type="text" placeholder="Station d'arrivée…" autocomplete="off"/>
-          <div class="dropdown" id="tj-to-dd"></div>
-        </div>
-      </div>
-    </div>
-    <div class="range" style="margin-bottom:18px">
-      <label>Heure départ</label>
-      <input type="time" id="tj-deptime" style="padding:8px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none">
-      <label>Durée (min)</label>
-      <input type="number" id="tj-duration" value="15" min="1" max="120"
-        style="width:70px;padding:8px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none"
-        title="Modifiable après calcul de l'itinéraire">
-      <label>Type vélo</label>
-      <select id="tj-type" style="padding:8px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none">
+      <label>Heure</label>
+      <input type="time" id="plan-time"/>
+      <label>Type</label>
+      <select id="plan-type">
         <option value="elec">⚡ Électrique</option>
         <option value="meca">🔧 Mécanique</option>
-        <option value="any">Tous types</option>
+        <option value="any">Tous</option>
       </select>
-
-      <label>Jour</label>
-      <select id="tj-dow" style="padding:8px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none">
-        <option value="1">Lundi</option>
-        <option value="2">Mardi</option>
-        <option value="3">Mercredi</option>
-        <option value="4">Jeudi</option>
-        <option value="5">Vendredi</option>
-        <option value="6">Samedi</option>
-        <option value="0">Dimanche</option>
+      <label>Rayon stations</label>
+      <select id="plan-radius">
+        <option value="250">250 m</option>
+        <option value="500" selected>500 m</option>
+        <option value="750">750 m</option>
+        <option value="1000">1 km</option>
       </select>
-      <button class="btn" onclick="computeTrajet()">Analyser</button>
+      <label>Combos</label>
+      <select id="plan-top">
+        <option value="3">Top 3</option>
+        <option value="5" selected>Top 5</option>
+        <option value="10">Top 10</option>
+      </select>
     </div>
+    <p style="font-size:12px;color:var(--dim);margin-bottom:4px">
+      Entrée pour valider l'adresse · Cliquez sur un résultat pour afficher son tracé
+    </p>
   </div>
 
-  <div id="tj-map" style="height:360px;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);margin-bottom:14px"></div>
-  <div id="trajet-content"><div class="no-data">Sélectionnez deux stations puis cliquez Analyser.</div></div>
+  <div id="plan-map"></div>
+
+  <div class="card" id="plan-results-card" style="display:none">
+    <div class="card-title" id="plan-results-title">Meilleures combinaisons</div>
+    <div id="plan-results"></div>
+  </div>
 </div>
 
 </main>
@@ -242,19 +232,17 @@ main{max-width:1500px;margin:auto;padding:20px}
 'use strict';
 
 /* ═══ STATE ═══════════════════════════════════════════ */
-let allStations=[], map=null, markers=null;
-let heatLayer=null, heatOn=false;
-let selectedStation=null;
-let chartElec=null, chartMeca=null;
-let todayMv={};
-let recoMap=null, recoMarkers=null, recoCircle=null, recoPos=null;
-let lbMvCache={};
+let allStations=[], map=null, markers=null, heatLayer=null, heatOn=false;
+let selectedStation=null, chartElec=null, chartMeca=null, chartFlux=null;
+let todayMv={}, lbMvCache={}, courbesSliderDays=1;
+let planMap=null, planRoutes=[], planFromPos=null, planToPos=null;
+let planFromFixed=null, planToFixed=null; // station fixée si l'user en a choisi une
 
 const fmt = d => d.toISOString().slice(0,16);
-const DAYS = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+const DOW_NAMES = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
 
 /* ═══ CLOCK & TABS ════════════════════════════════════ */
-setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('fr-FR')},1000);
+setInterval(()=>{ document.getElementById('clock').textContent=new Date().toLocaleTimeString('fr-FR'); },1000);
 
 document.querySelectorAll('.tab').forEach(tab=>{
   tab.onclick=()=>{
@@ -262,10 +250,9 @@ document.querySelectorAll('.tab').forEach(tab=>{
     document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
     tab.classList.add('on');
     document.getElementById('tab-'+tab.dataset.tab).classList.add('on');
-    setTimeout(()=>{ map?.invalidateSize(); recoMap?.invalidateSize(); },150);
+    setTimeout(()=>{ map?.invalidateSize(); planMap?.invalidateSize(); },150);
     if(tab.dataset.tab==='leaderboard') quickLeaderboard();
-    if(tab.dataset.tab==='reco') initRecoMap();
-    if(tab.dataset.tab==='trajet') initTrajetSearch();
+    if(tab.dataset.tab==='plan') initPlanMap();
   };
 });
 
@@ -282,10 +269,23 @@ function chartOpts(){
              y:{beginAtZero:true,ticks:{color:'#6e6e73'},grid:{color:'#f0f0f5'}} }};
 }
 function haversine(lat1,lng1,lat2,lng2){
-  const R=6371000,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
-  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  const R=6371000,dl=(lat2-lat1)*Math.PI/180,dg=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dl/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dg/2)**2;
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
+function decodePolyline(encoded,precision=6){
+  let i=0,lat=0,lng=0; const coords=[],f=Math.pow(10,precision);
+  while(i<encoded.length){
+    let b,s=0,r=0;
+    do{b=encoded.charCodeAt(i++)-63;r|=(b&0x1f)<<s;s+=5;}while(b>=0x20);
+    lat+=(r&1)?~(r>>1):(r>>1); s=0;r=0;
+    do{b=encoded.charCodeAt(i++)-63;r|=(b&0x1f)<<s;s+=5;}while(b>=0x20);
+    lng+=(r&1)?~(r>>1):(r>>1);
+    coords.push([lat/f,lng/f]);
+  }
+  return coords;
+}
+function scoreColor(pct){ return pct>=60?'score-high':pct>=30?'score-med':'score-low'; }
 
 /* ═══ DATA ════════════════════════════════════════════ */
 function parseStation(r){
@@ -297,11 +297,11 @@ function parseStation(r){
       const d=JSON.parse(s); elec=d?.availabilities?.electricalBikes??0; meca=d?.availabilities?.mechanicalBikes??(r.available_bikes||0);
     }
   }catch{}
-  return { number:r.number, name:r.name||'', available_bikes:r.available_bikes||0,
-    available_bike_stands:r.available_bike_stands||0, bike_stands:r.bike_stands||0,
-    electrical_bikes:elec, mechanical_bikes:meca, lat:r.lat, lng:r.lng };
+  return { number:r.number,name:r.name||'',
+    available_bikes:r.available_bikes||0, available_bike_stands:r.available_bike_stands||0,
+    bike_stands:r.bike_stands||0, electrical_bikes:elec, mechanical_bikes:meca,
+    lat:r.lat, lng:r.lng };
 }
-
 async function loadLatest(){
   try{
     const r=await fetch('https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov/all.json?maxfeatures=-1&start=1',{signal:AbortSignal.timeout(8000)});
@@ -310,11 +310,9 @@ async function loadLatest(){
     const r=await fetch('data/latest.json'); const d=await r.json(); return d.stations||[];
   }
 }
-
 async function fetchDay(date){
   try{ const r=await fetch(`data/history/${date}.json`); return r.ok?r.json():null; }catch{ return null; }
 }
-
 function getTs(snap){ return snap.timestamp||snap.t||''; }
 function getSts(snap){
   let a=[];
@@ -323,12 +321,10 @@ function getSts(snap){
   else if(Array.isArray(snap?.s)) a=snap.s;
   return a.map(st=>{
     if(st.number!==undefined) return st;
-    return { number:st.n, available_bikes:st.b??0, available_bike_stands:st.s??0,
-      bike_stands:st.c??0, electrical_bikes:st.e??0, mechanical_bikes:st.m??0,
-      status:st.st||'OPEN', lat:st.la, lng:st.ln };
+    return {number:st.n,available_bikes:st.b??0,available_bike_stands:st.s??0,
+      bike_stands:st.c??0,electrical_bikes:st.e??0,mechanical_bikes:st.m??0,lat:st.la,lng:st.ln};
   });
 }
-
 async function fetchRange(startMs,endMs){
   const days=Math.ceil((endMs-startMs)/86400e3);
   const step=days<=14?1:days<=30?1:days<=90?3:days<=180?5:10;
@@ -337,19 +333,16 @@ async function fetchRange(startMs,endMs){
   dates.add(new Date(endMs).toISOString().slice(0,10));
   const results=await Promise.all([...dates].map(fetchDay));
   const all=[];
-  results.forEach(s=>{ if(s?.length) all.push(...s); });
+  results.forEach(s=>{if(s?.length)all.push(...s);});
   return all.filter(s=>{const t=new Date(getTs(s)).getTime();return t>=startMs&&t<=endMs;})
     .sort((a,b)=>new Date(getTs(a))-new Date(getTs(b)));
 }
-
-// Calcule les mouvements par station sur un tableau de snapshots
 function calcMvFromSnaps(snaps){
   const mv={};
   for(let i=1;i<snaps.length;i++){
     const prev=getSts(snaps[i-1]),curr=getSts(snaps[i]);
     curr.forEach(c=>{
-      const p=prev.find(s=>s.number===c.number);
-      if(!p) return;
+      const p=prev.find(s=>s.number===c.number); if(!p) return;
       const d=Math.abs(c.available_bikes-p.available_bikes);
       if(d>0) mv[c.number]=(mv[c.number]||0)+d;
     });
@@ -357,7 +350,7 @@ function calcMvFromSnaps(snaps){
   return mv;
 }
 
-/* ═══ MOVEMENTS (today) ═══════════════════════════════ */
+/* ═══ MOVEMENTS ═══════════════════════════════════════ */
 async function computeMovements(){
   todayMv={};
   const snaps=await fetchDay(new Date().toISOString().slice(0,10));
@@ -365,12 +358,12 @@ async function computeMovements(){
   todayMv=calcMvFromSnaps(snaps);
 }
 
-/* ═══ MAP + HEATMAP FUSIONNÉE ═════════════════════════ */
+/* ═══ MAP ═════════════════════════════════════════════ */
 function initMap(){
   map=L.map('map').setView([45.757,4.832],13);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap © CARTO'}).addTo(map);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    {attribution:'© OpenStreetMap © CARTO',maxZoom:20}).addTo(map);
 }
-
 function renderStations(){
   if(markers) markers.clearLayers();
   markers=L.layerGroup().addTo(map);
@@ -378,391 +371,64 @@ function renderStations(){
     if(!st.lat||!st.lng) return;
     const mv=todayMv[st.number]||0;
     const m=L.circleMarker([st.lat,st.lng],{radius:8,fillColor:stationColor(st),color:'#fff',weight:1.5,fillOpacity:.9});
-    m.bindPopup(`<div style="min-width:200px;font-family:-apple-system,sans-serif">
-      <div style="font-weight:700;margin-bottom:10px;font-size:14px">${cleanName(st.name)}</div>
-      ⚡ Électriques : <b>${st.electrical_bikes}</b><br>
-      🔧 Mécaniques : <b>${st.mechanical_bikes}</b><br>
-      🚲 Total : <b>${st.available_bikes}</b><br>
-      🅿️ Places : <b>${st.available_bike_stands}</b><br><br>
-      ↕ Mouvements aujourd'hui : <b>${mv}</b></div>`);
+    m.bindPopup(`<div style="min-width:190px;font-family:-apple-system,sans-serif">
+      <b style="font-size:14px">${cleanName(st.name)}</b><br><br>
+      ⚡ ${st.electrical_bikes} · 🔧 ${st.mechanical_bikes} · 🚲 ${st.available_bikes}<br>
+      🅿️ ${st.available_bike_stands} places · ↕ ${mv} mvts/j</div>`);
     markers.addLayer(m);
   });
   buildHeatLayer();
 }
-
-function buildHeatLayer(mvData){
-  mvData = mvData || todayMv;
+function buildHeatLayer(){
   if(heatLayer) map.removeLayer(heatLayer);
-  const maxMv=Math.max(1,...Object.values(mvData));
-  const pts=allStations.filter(s=>s.lat&&s.lng).map(s=>{
-    const mv=mvData[s.number]||0;
-    return [s.lat,s.lng,mv/maxMv];
-  }).filter(p=>p[2]>0);
-  heatLayer=L.heatLayer(pts,{
-    radius:20,      // plus petit = chaque station garde son aura distincte
-    blur:12,        // moins de diffusion entre stations proches
-    maxZoom:17,
-    minOpacity:.4,
-    gradient:{0:'#2c7bb6',0.25:'#00ccbc',0.5:'#90eb9d',0.75:'#f9d057',1:'#d7191c'}
-  });
+  const maxMv=Math.max(1,...Object.values(todayMv));
+  const pts=allStations.filter(s=>s.lat&&s.lng).map(s=>[s.lat,s.lng,(todayMv[s.number]||0)/maxMv]).filter(p=>p[2]>0);
+  heatLayer=L.heatLayer(pts,{radius:20,blur:12,maxZoom:17,minOpacity:.4,
+    gradient:{0:'#2c7bb6',0.3:'#00ccbc',0.6:'#90eb9d',0.8:'#f9d057',1:'#d7191c'}});
   if(heatOn) heatLayer.addTo(map);
 }
-
 function toggleHeat(){
   heatOn=!heatOn;
   const btn=document.getElementById('btn-heat');
-  const ctrl=document.getElementById('heat-controls');
-  if(heatOn){
-    heatLayer?.addTo(map); btn.classList.add('on');
-    ctrl.style.display='flex';
-  } else {
-    if(heatLayer) map.removeLayer(heatLayer);
-    btn.classList.remove('on');
-    ctrl.style.display='none';
-  }
+  if(heatOn){ heatLayer?.addTo(map); btn.classList.add('on'); }
+  else{ if(heatLayer) map.removeLayer(heatLayer); btn.classList.remove('on'); }
 }
 
-function onHeatSlider(){
-  const v = parseInt(document.getElementById('heat-slider').value);
-  const lbl = document.getElementById('heat-slider-label');
-  if(v===1)      lbl.textContent="Aujourd\'hui";
-  else if(v<=7)  lbl.textContent=`${v} jours`;
-  else if(v<=30) lbl.textContent=`${Math.round(v/7)} sem.`;
-  else if(v<=365)lbl.textContent=`${Math.round(v/30)} mois`;
-  computeAndBuildHeatLayer(v);
-}
-
-// Cache des mouvements par période (nombre de jours)
-let heatMvCache = {};
-let heatSliderDebounce = null;
-
-async function computeAndBuildHeatLayer(days){
-  clearTimeout(heatSliderDebounce);
-  heatSliderDebounce = setTimeout(async()=>{
-    if(days===1){
-      buildHeatLayer(todayMv); return;
-    }
-    const key=days;
-    if(heatMvCache[key]){
-      buildHeatLayer(heatMvCache[key]); return;
-    }
-    // Charger la période avec échantillonnage
-    const step=days<=7?1:days<=30?2:days<=90?3:days<=180?5:10;
-    const today=new Date();
-    const dates=new Set();
-    for(let i=0;i<days;i+=step){
-      const d=new Date(today);d.setDate(d.getDate()-i);
-      dates.add(d.toISOString().slice(0,10));
-    }
-    const results=await Promise.all([...dates].map(fetchDay));
-    const allSnaps=[];
-    results.forEach(s=>{if(s?.length)allSnaps.push(...s);});
-    const mv=calcMvFromSnaps(allSnaps);
-    heatMvCache[key]=mv;
-    buildHeatLayer(mv);
-  }, 300);
-}
-
-/* ═══ SEARCH ══════════════════════════════════════════ */
-function buildSearch(){
-  const input=document.getElementById('station-search'),dd=document.getElementById('station-dd');
+/* ═══ DROPDOWN GÉNÉRIQUE ═══════════════════════════════ */
+function buildDropdown(inputId, ddId, opts){
+  // opts.onStation(st) appelé si station choisie
+  // opts.onGeocode(query) appelé sur Entrée si pas de station
+  // opts.onPos(latlng) — callback position finale
+  const input=document.getElementById(inputId), dd=document.getElementById(ddId);
   input.addEventListener('input',()=>{
     const q=input.value.toLowerCase().trim(); dd.innerHTML='';
-    if(!q){dd.classList.remove('open');return;}
-    allStations.filter(s=>cleanName(s.name).toLowerCase().includes(q)).slice(0,12).forEach(st=>{
-      const el=document.createElement('div');el.className='opt';el.textContent=cleanName(st.name);
-      el.onclick=()=>{input.value=cleanName(st.name);dd.classList.remove('open');selectedStation=st;renderCourbes();};
+    if(!q){ dd.classList.remove('open'); return; }
+    const matches=allStations.filter(s=>cleanName(s.name).toLowerCase().includes(q)).slice(0,8);
+    matches.forEach(st=>{
+      const el=document.createElement('div'); el.className='opt';
+      el.innerHTML=`${cleanName(st.name)} <span class="opt-type">station</span>`;
+      el.onclick=()=>{ input.value=cleanName(st.name); dd.classList.remove('open'); opts.onStation?.(st); };
       dd.appendChild(el);
     });
     dd.classList.add('open');
   });
-  document.addEventListener('click',e=>{if(!input.contains(e.target)&&!dd.contains(e.target))dd.classList.remove('open');});
-}
-
-/* ═══ RANGE ═══════════════════════════════════════════ */
-function getRange(sId,eId){
-  const s=document.getElementById(sId).value,e=document.getElementById(eId).value;
-  return (s&&e)?{startMs:new Date(s).getTime(),endMs:new Date(e).getTime()}:null;
-}
-function initRanges(){
-  const now=new Date();
-  document.getElementById('lb-start').value=fmt(new Date(now-24*3600e3));
-  document.getElementById('lb-end').value=fmt(now);
-  const h=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-  document.getElementById('reco-time').value=h;
-  const tjEl=document.getElementById('tj-deptime');
-  if(tjEl) tjEl.value=h;
-  // Initialiser les selects jour avec le jour courant
-  const curDow=String(now.getDay());
-  const tjDow=document.getElementById('tj-dow');
-  const recoDow=document.getElementById('reco-dow');
-  if(tjDow) tjDow.value=curDow;
-  if(recoDow) recoDow.value=curDow;
+  input.addEventListener('keydown', e=>{
+    if(e.key==='Enter'){ dd.classList.remove('open'); opts.onGeocode?.(input.value); }
+  });
+  document.addEventListener('click',e=>{
+    if(!input.contains(e.target)&&!dd.contains(e.target)) dd.classList.remove('open');
+  });
 }
 
 /* ═══ COURBES ═════════════════════════════════════════ */
-let chartFlux=null;
-let courbesSliderDays=1;
-
-function onCourbesSlider(){
-  const v=parseInt(document.getElementById('courbes-slider').value);
-  courbesSliderDays=v;
-  const lbl=document.getElementById('courbes-slider-label');
-  if(v===1)       lbl.textContent="Aujourd\'hui";
-  else if(v<=7)   lbl.textContent=`${v} jours`;
-  else if(v<=30)  lbl.textContent=`${Math.round(v/7)} sem.`;
-  else if(v<=365) lbl.textContent=`${Math.round(v/30)} mois`;
-}
-
-async function renderCourbes(){
-  const content=document.getElementById('courbes-content');
-  if(!selectedStation) return;
-  content.innerHTML='<div class="loader">Chargement…</div>';
-
-  const days=courbesSliderDays;
-  const endMs=Date.now();
-  const startMs=endMs-days*86400e3;
-  const snaps=await fetchRange(startMs,endMs);
-  if(!snaps.length){content.innerHTML='<div class="no-data">Aucune donnée pour cette période.</div>';return;}
-
-  const id=selectedStation.number;
-  const labels=[],dataElec=[],dataMeca=[],dataFluxH=[];
-
-  // Flux/h : on agrège les départs par heure glissante
-  // D'abord collecter les deltas bruts par timestamp
-  const rawDeltas=[]; // {ms, delta}
-  snaps.forEach((snap,i)=>{
-    if(i===0) return;
-    const prev=getSts(snaps[i-1]),curr=getSts(snap);
-    const st=curr.find(s=>s.number===id),pst=prev.find(s=>s.number===id);
-    if(!st||!pst) return;
-    const d=pst.available_bikes-st.available_bikes; // >0 = départs
-    rawDeltas.push({ms:new Date(getTs(snap)).getTime(), delta:d>0?d:0});
-  });
-
-  snaps.forEach(snap=>{
-    const sts=getSts(snap),st=sts.find(s=>s.number===id);
-    if(!st) return;
-    const t=new Date(getTs(snap));
-    const ms=t.getTime();
-    labels.push(days<=1
-      ? t.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})
-      : t.toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}));
-    dataElec.push(st.electrical_bikes||0);
-    dataMeca.push(st.mechanical_bikes||0);
-    // Flux/h = somme des départs dans la fenêtre [ms-3600e3, ms]
-    const windowMs=3600e3;
-    const fluxH=rawDeltas.filter(d=>d.ms>ms-windowMs&&d.ms<=ms).reduce((a,d)=>a+d.delta,0);
-    dataFluxH.push(fluxH);
-  });
-
-  content.innerHTML=`
-    <div class="card"><div class="card-title">⚡ Électriques disponibles</div><canvas id="elec-chart" height="80"></canvas></div>
-    <div class="card"><div class="card-title">🔧 Mécaniques disponibles</div><canvas id="meca-chart" height="80"></canvas></div>
-    <div class="card"><div class="card-title">↕ Flux de départs / heure glissante</div><canvas id="flux-chart" height="60"></canvas></div>`;
-
-  chartElec?.destroy();chartMeca?.destroy();chartFlux?.destroy();
-  const pr=days<=1?0:2;
-  const mk=(cid,data,color,label)=>new Chart(document.getElementById(cid),{type:'line',
-    data:{labels,datasets:[{label,data,borderColor:color,backgroundColor:color+'18',borderWidth:1.8,tension:0,pointRadius:pr,spanGaps:true,fill:true}]},
-    options:chartOpts()});
-  chartElec=mk('elec-chart',dataElec,'#28cd41','⚡ Électriques');
-  chartMeca=mk('meca-chart',dataMeca,'#0071e3','🔧 Mécaniques');
-  chartFlux=new Chart(document.getElementById('flux-chart'),{type:'bar',
-    data:{labels,datasets:[{label:'Départs/h',data:dataFluxH,
-      backgroundColor:dataFluxH.map(v=>v>5?'rgba(255,59,48,.65)':v>2?'rgba(255,159,10,.6)':'rgba(0,113,227,.5)'),
-      borderWidth:0}]},
-    options:{...chartOpts(),scales:{...chartOpts().scales,y:{...chartOpts().scales.y,title:{display:true,text:'départs / heure',color:'#aeaeb2',font:{size:10}}}}}
-  });
-}
-
-/* ═══ LEADERBOARD ═════════════════════════════════════ */
-function quickLeaderboard(){
-  // Rendu rapide avec todayMv, sans refetch
-  renderLbTable(todayMv);
-}
-
-async function computeLeaderboard(){
-  const content=document.getElementById('lb-content');
-  content.innerHTML='<div class="loader">Calcul des mouvements…</div>';
-  const range=getRange('lb-start','lb-end');
-  if(!range){content.innerHTML='<div class="no-data">Sélectionnez une période.</div>';return;}
-  const snaps=await fetchRange(range.startMs,range.endMs);
-  if(!snaps.length){content.innerHTML='<div class="no-data">Aucune donnée.</div>';return;}
-  lbMvCache=calcMvFromSnaps(snaps);
-  content.innerHTML='<div style="overflow-x:auto"><table id="lb-table"><thead id="lb-head"></thead><tbody id="lb-body"></tbody></table></div>';
-  renderLbTable(lbMvCache);
-}
-
-function renderLbTable(mvData){
-  const head=document.getElementById('lb-head'),body=document.getElementById('lb-body');
-  if(!head||!body) return;
-  head.innerHTML='<tr><th>#</th><th>Station</th><th>⚡ Élec</th><th>🔧 Méca</th><th>Total</th><th>Places</th><th>↕ Mvts</th><th>Remplissage</th></tr>';
-  const sortKey=document.getElementById('lb-sort').value;
-  const maxMv=Math.max(1,...Object.values(mvData));
-  const rows=allStations.map(st=>{
-    const mv=mvData[st.number]||0;
-    const fill=st.bike_stands?st.available_bikes/st.bike_stands:0;
-    const rot=st.bike_stands?mv/st.bike_stands:0;
-    return {...st,mv,fill,rot};
-  });
-  const sorters={mv:(a,b)=>b.mv-a.mv,rotation:(a,b)=>b.rot-a.rot,bikes:(a,b)=>b.available_bikes-a.available_bikes,
-    elec:(a,b)=>b.electrical_bikes-a.electrical_bikes,meca:(a,b)=>b.mechanical_bikes-a.mechanical_bikes,
-    stands:(a,b)=>b.available_bike_stands-a.available_bike_stands,fill:(a,b)=>b.fill-a.fill};
-  rows.sort(sorters[sortKey]||sorters.mv);
-  body.innerHTML=rows.map((st,i)=>{
-    const pct=Math.round(st.fill*100);
-    const cls=pct>=50?'fill-high':pct>=25?'fill-med':'fill-low';
-    const bw=Math.round(st.mv/maxMv*60);
-    return `<tr><td class="rank-cell">${i+1}</td><td>${cleanName(st.name)}</td>
-      <td>⚡ ${st.electrical_bikes}</td><td>🔧 ${st.mechanical_bikes}</td>
-      <td><b>${st.available_bikes}</b></td><td>${st.available_bike_stands}</td>
-      <td>${st.mv}<span class="mv-bar" style="width:${bw}px"></span></td>
-      <td><span class="fill-pill ${cls}">${pct}%</span></td></tr>`;
-  }).join('');
-}
-
-document.getElementById('lb-sort').addEventListener('change',()=>{
-  renderLbTable(Object.keys(lbMvCache).length?lbMvCache:todayMv);
-});
-
-/* ═══ RECOMMANDATION ══════════════════════════════════ */
-function initRecoMap(){
-  if(recoMap){recoMap.invalidateSize();return;}
-  recoMap=L.map('reco-map').setView([45.757,4.832],14);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-    {attribution:'© OpenStreetMap © CARTO'}).addTo(recoMap);
-  recoMap.on('click',e=>{
-    recoPos=e.latlng;
-    document.getElementById('reco-addr').value=`${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`;
-    drawRecoCircle();
-    computeReco();
-  });
-}
-
-function drawRecoCircle(){
-  if(!recoMap||!recoPos) return;
-  const r=parseInt(document.getElementById('reco-radius').value)||750;
-  if(recoCircle) recoMap.removeLayer(recoCircle);
-  recoCircle=L.circle([recoPos.lat,recoPos.lng],{radius:r,color:'#0071e3',fillColor:'#0071e3',fillOpacity:.06,weight:1.5}).addTo(recoMap);
-  recoMap.fitBounds(recoCircle.getBounds().pad(.1));
-}
-
-async function geocodeReco(){
-  const addr=document.getElementById('reco-addr').value.trim();
-  if(!addr) return;
-  try{
-    const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr+', Lyon, France')}&limit=1`);
-    const data=await r.json();
-    if(data.length){
-      recoPos={lat:parseFloat(data[0].lat),lng:parseFloat(data[0].lon)};
-      recoMap?.setView([recoPos.lat,recoPos.lng],15);
-      drawRecoCircle();
-      computeReco();
-    }
-  }catch{}
-}
-
-async function computeReco(){
-  const results=document.getElementById('reco-results');
-  if(!recoPos){results.innerHTML='<div class="no-data">Cliquez sur la carte ou entrez une adresse.</div>';return;}
-  results.innerHTML='<div class="loader">Analyse de 30 jours…</div>';
-
-  const radius=parseInt(document.getElementById('reco-radius').value)||750;
-  const timeStr=document.getElementById('reco-time').value;
-  const recoType=document.getElementById('reco-type').value;
-  const wantBikes=recoType==='bikes'||recoType==='elec'||recoType==='meca';
-  const wantStands=recoType==='stands';
-  const targetH=parseInt(timeStr?.split(':')[0]??new Date().getHours());
-  const today=new Date();
-  const targetDow=parseInt(document.getElementById('reco-dow').value);
-
-  // Stations dans le rayon
-  const nearby=allStations.filter(st=>st.lat&&st.lng)
-    .map(st=>({...st,dist:haversine(recoPos.lat,recoPos.lng,st.lat,st.lng)}))
-    .filter(st=>st.dist<=radius).sort((a,b)=>a.dist-b.dist);
-  if(!nearby.length){results.innerHTML='<div class="no-data">Aucune station dans ce rayon.</div>';return;}
-
-  // Charger tout l'historique dispo — on essaie jusqu'à 52 semaines en arrière
-  // et on s'arrête dès qu'on n'a plus de données
-  const dayPromises=[];
-  for(let i=0;i<365;i++){
-    const d=new Date(today);d.setDate(d.getDate()-i);
-    if(d.getDay()===targetDow) dayPromises.push(fetchDay(d.toISOString().slice(0,10)));
-  }
-  const allDays=(await Promise.all(dayPromises)).filter(Boolean);
-
-  if(!allDays.length){results.innerHTML='<div class="no-data">Pas assez d\'historique (collecte trop récente).</div>';return;}
-
-  // Score par station
-  const scored=nearby.map(st=>{
-    const vals=[];
-    allDays.forEach(snaps=>{
-      snaps.forEach(snap=>{
-        const t=new Date(getTs(snap));
-        const h=(t.getUTCHours()+2)%24;
-        if(h!==targetH) return;
-        const sts=getSts(snap);
-        const s=sts.find(x=>x.number===st.number);
-        if(!s||!s.bike_stands) return;
-        let v;
-        if(recoType==='elec')      v=s.electrical_bikes/s.bike_stands*100;
-        else if(recoType==='meca') v=s.mechanical_bikes/s.bike_stands*100;
-        else if(recoType==='bikes')v=s.available_bikes/s.bike_stands*100;
-        else                       v=s.available_bike_stands/s.bike_stands*100;
-        vals.push(v);
-      });
-    });
-    const fallback = recoType==='elec'?st.electrical_bikes:recoType==='meca'?st.mechanical_bikes:wantBikes?st.available_bikes:st.available_bike_stands;
-    const avgPct=vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : fallback/(st.bike_stands||1)*100;
-    const now=recoType==='elec'?st.electrical_bikes:recoType==='meca'?st.mechanical_bikes:wantBikes?st.available_bikes:st.available_bike_stands;
-    const currentPct=st.bike_stands?now/st.bike_stands*100:0;
-    const distPenalty=1-(st.dist/radius)*.3;
-    return {...st,avgPct,now,samples:vals.length,score:(avgPct*.7+currentPct*.3)*distPenalty};
-  });
-  scored.sort((a,b)=>b.score-a.score);
-
-  // Marqueurs
-  if(recoMarkers) recoMap.removeLayer(recoMarkers);
-  recoMarkers=L.layerGroup().addTo(recoMap);
-  scored.slice(0,10).forEach((st,i)=>{
-    const col=i===0?'#28cd41':i<3?'#0071e3':'#aeaeb2';
-    const m=L.circleMarker([st.lat,st.lng],{radius:i===0?12:8,fillColor:col,color:'#fff',weight:2,fillOpacity:.9});
-    m.bindPopup(`<b>${cleanName(st.name)}</b><br>${wantBikes?'Vélos':'Places'} : ${st.now}<br>Prédiction ${targetH}h : ${Math.round(st.avgPct)}%`);
-    recoMarkers.addLayer(m);
-  });
-
-  const typeLabel=recoType==='elec'?'vélo élec':recoType==='meca'?'vélo méca':wantBikes?'vélo':'place';
-  results.innerHTML=scored.slice(0,10).map((st,i)=>{
-    const dist=st.dist<1000?`${Math.round(st.dist)} m`:`${(st.dist/1000).toFixed(1)} km`;
-    const walk=Math.round(st.dist/80);
-    const col=st.avgPct>=50?'color:#28cd41':st.avgPct>=25?'color:#ff9f0a':'color:#ff3b30';
-    return `<div class="reco-card">
-      <div class="reco-rank">${i+1}</div>
-      <div class="reco-info">
-        <div class="reco-name">${cleanName(st.name)}</div>
-        <div class="reco-meta">${recoType==='stands'?`🅿️ ${st.available_bike_stands} places`:recoType==='elec'?`⚡ ${st.electrical_bikes} élec dispo`:recoType==='meca'?`🔧 ${st.mechanical_bikes} méca dispo`:`⚡${st.electrical_bikes} 🔧${st.mechanical_bikes}`} · ${st.now} ${typeLabel}${st.now>1?'s':''} maintenant${st.samples?` · ${st.samples} mesures`:''}</div>
-      </div>
-      <div class="reco-score"><div class="reco-pct" style="${col}">${Math.round(st.avgPct)}%</div><div class="reco-dist">${dist} · ${walk} min 🚶</div></div>
-    </div>`;
-  }).join('');
-}
-
-/* ═══ BOOT ════════════════════════════════════════════ */
-
-/* ═══ TRAJET ════════════════════════════════════════════ */
-let tjFrom=null, tjTo=null, chartTj=null, tjSearchInit=false;
-let tjMap=null, tjRoute=null, tjMarkers=null;
-
-function buildDropdownGeneric(inputId,ddId,onSelect){
-  const input=document.getElementById(inputId),dd=document.getElementById(ddId);
-  if(!input||!dd) return;
+function buildStationSearch(){
+  const input=document.getElementById('station-search'), dd=document.getElementById('station-dd');
   input.addEventListener('input',()=>{
     const q=input.value.toLowerCase().trim(); dd.innerHTML='';
-    if(!q){dd.classList.remove('open');return;}
+    if(!q){ dd.classList.remove('open'); return; }
     allStations.filter(s=>cleanName(s.name).toLowerCase().includes(q)).slice(0,12).forEach(st=>{
-      const el=document.createElement('div');el.className='opt';el.textContent=cleanName(st.name);
-      el.onclick=()=>{input.value=cleanName(st.name);dd.classList.remove('open');onSelect(st);};
+      const el=document.createElement('div'); el.className='opt'; el.textContent=cleanName(st.name);
+      el.onclick=()=>{ input.value=cleanName(st.name); dd.classList.remove('open'); selectedStation=st; };
       dd.appendChild(el);
     });
     dd.classList.add('open');
@@ -771,233 +437,326 @@ function buildDropdownGeneric(inputId,ddId,onSelect){
     if(!input.contains(e.target)&&!dd.contains(e.target)) dd.classList.remove('open');
   });
 }
-
-function initTrajetSearch(){
-  if(tjSearchInit) return; tjSearchInit=true;
-  buildDropdownGeneric('tj-from-search','tj-from-dd',st=>{ tjFrom=st; drawTjRoute(); });
-  buildDropdownGeneric('tj-to-search','tj-to-dd',   st=>{ tjTo=st;   drawTjRoute(); });
-  // Init carte
-  if(!tjMap){
-    const el=document.getElementById('tj-map');
-    el.style.display='block';
-    tjMap=L.map('tj-map').setView([45.757,4.832],13);
-    // CartoDB Voyager — fond clair propre, labels lisibles
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
-      attribution:'© OpenStreetMap © CARTO', maxZoom:20
-    }).addTo(tjMap);
-    // Surcouche CyclOSM semi-transparente pour voir les pistes cyclables
-    L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm-lite/{z}/{x}/{y}.png',{
-      attribution:'CyclOSM', maxZoom:20, opacity:0.6
-    }).addTo(tjMap);
-  }
+function onCourbesSlider(){
+  const v=parseInt(document.getElementById('courbes-slider').value);
+  courbesSliderDays=v;
+  const lbl=document.getElementById('courbes-slider-label');
+  if(v===1) lbl.textContent="Aujourd'hui";
+  else if(v<=7) lbl.textContent=`${v} jours`;
+  else if(v<=30) lbl.textContent=`${Math.round(v/7)} sem.`;
+  else lbl.textContent=`${Math.round(v/30)} mois`;
+}
+async function renderCourbes(){
+  const content=document.getElementById('courbes-content');
+  if(!selectedStation) return;
+  content.innerHTML='<div class="loader">Chargement…</div>';
+  const days=courbesSliderDays, endMs=Date.now(), startMs=endMs-days*86400e3;
+  const snaps=await fetchRange(startMs,endMs);
+  if(!snaps.length){ content.innerHTML='<div class="no-data">Aucune donnée.</div>'; return; }
+  const id=selectedStation.number;
+  const labels=[],dataElec=[],dataMeca=[],dataFluxH=[];
+  const rawDeltas=[];
+  snaps.forEach((snap,i)=>{
+    if(i===0) return;
+    const prev=getSts(snaps[i-1]),curr=getSts(snap);
+    const st=curr.find(s=>s.number===id),pst=prev.find(s=>s.number===id);
+    if(st&&pst){ const d=pst.available_bikes-st.available_bikes; rawDeltas.push({ms:new Date(getTs(snap)).getTime(),delta:d>0?d:0}); }
+  });
+  snaps.forEach(snap=>{
+    const st=getSts(snap).find(s=>s.number===id); if(!st) return;
+    const t=new Date(getTs(snap)), ms=t.getTime();
+    labels.push(days<=1?t.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):t.toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}));
+    dataElec.push(st.electrical_bikes||0); dataMeca.push(st.mechanical_bikes||0);
+    dataFluxH.push(rawDeltas.filter(d=>d.ms>ms-3600e3&&d.ms<=ms).reduce((a,d)=>a+d.delta,0));
+  });
+  content.innerHTML=`
+    <div class="card"><div class="card-title">⚡ Électriques</div><canvas id="elec-chart" height="80"></canvas></div>
+    <div class="card"><div class="card-title">🔧 Mécaniques</div><canvas id="meca-chart" height="80"></canvas></div>
+    <div class="card"><div class="card-title">↕ Départs/heure glissante</div><canvas id="flux-chart" height="60"></canvas></div>`;
+  chartElec?.destroy(); chartMeca?.destroy(); chartFlux?.destroy();
+  const pr=days<=1?0:2;
+  const mk=(cid,data,color,label)=>new Chart(document.getElementById(cid),{type:'line',
+    data:{labels,datasets:[{label,data,borderColor:color,backgroundColor:color+'18',borderWidth:1.8,tension:0,pointRadius:pr,spanGaps:true,fill:true}]},
+    options:chartOpts()});
+  chartElec=mk('elec-chart',dataElec,'#28cd41','⚡ Électriques');
+  chartMeca=mk('meca-chart',dataMeca,'#0071e3','🔧 Mécaniques');
+  chartFlux=new Chart(document.getElementById('flux-chart'),{type:'bar',
+    data:{labels,datasets:[{label:'Départs/h',data:dataFluxH,
+      backgroundColor:dataFluxH.map(v=>v>5?'rgba(255,59,48,.65)':v>2?'rgba(255,159,10,.6)':'rgba(0,113,227,.5)'),borderWidth:0}]},
+    options:chartOpts()});
 }
 
-// Décodeur polyline6 (Valhalla utilise precision=6)
-function decodePolyline(encoded, precision=6){
-  let index=0, lat=0, lng=0;
-  const coords=[], factor=Math.pow(10,precision);
-  while(index<encoded.length){
-    let b, shift=0, result=0;
-    do{ b=encoded.charCodeAt(index++)-63; result|=(b&0x1f)<<shift; shift+=5; }while(b>=0x20);
-    lat+=(result&1)?~(result>>1):(result>>1);
-    shift=0; result=0;
-    do{ b=encoded.charCodeAt(index++)-63; result|=(b&0x1f)<<shift; shift+=5; }while(b>=0x20);
-    lng+=(result&1)?~(result>>1):(result>>1);
-    coords.push([lat/factor, lng/factor]);
-  }
-  return coords;
+/* ═══ LEADERBOARD ═════════════════════════════════════ */
+function quickLeaderboard(){ renderLbTable(todayMv); }
+async function computeLeaderboard(){
+  const content=document.getElementById('lb-content');
+  content.innerHTML='<div class="loader">Calcul…</div>';
+  const s=document.getElementById('lb-start').value, e=document.getElementById('lb-end').value;
+  if(!s||!e){ content.innerHTML='<div class="no-data">Sélectionnez une période.</div>'; return; }
+  const snaps=await fetchRange(new Date(s).getTime(),new Date(e).getTime());
+  if(!snaps.length){ content.innerHTML='<div class="no-data">Aucune donnée.</div>'; return; }
+  lbMvCache=calcMvFromSnaps(snaps);
+  content.innerHTML='<div style="overflow-x:auto"><table id="lb-table"><thead id="lb-head"></thead><tbody id="lb-body"></tbody></table></div>';
+  renderLbTable(lbMvCache);
 }
-
-async function drawTjRoute(){
-  if(!tjMap||!tjFrom||!tjTo) return;
-
-  // Marqueurs départ/arrivée
-  if(tjMarkers) tjMap.removeLayer(tjMarkers);
-  tjMarkers=L.layerGroup().addTo(tjMap);
-  const mkMarker=(lat,lng,col,label)=>{
-    const m=L.circleMarker([lat,lng],{radius:10,fillColor:col,color:'#fff',weight:2,fillOpacity:.95});
-    m.bindTooltip(label,{permanent:true,direction:'top',offset:[0,-12]}).addTo(tjMarkers);
-  };
-  if(tjFrom.lat&&tjFrom.lng) mkMarker(tjFrom.lat,tjFrom.lng,'#28cd41',cleanName(tjFrom.name));
-  if(tjTo.lat&&tjTo.lng)     mkMarker(tjTo.lat,tjTo.lng,'#ff3b30',cleanName(tjTo.name));
-
-  if(tjRoute) tjMap.removeLayer(tjRoute);
-  if(window._tjInfo) { window._tjInfo.remove(); window._tjInfo=null; }
-
-  try{
-    // Valhalla OpenStreetMap.de — profil bicycle avec costing vélo urbain
-    const bikeSpeedKmh=document.getElementById('tj-type').value==='meca'?16:21;
-    const vhBody={
-      locations:[{lon:tjFrom.lng,lat:tjFrom.lat},{lon:tjTo.lng,lat:tjTo.lat}],
-      costing:'bicycle',
-      costing_options:{bicycle:{
-        bicycle_type:'Road',
-        cycling_speed:bikeSpeedKmh,
-        use_roads:0.4,
-        use_hills:0.2
-      }},
-      directions_type:'none'
-    };
-    const vhUrl=`https://valhalla1.openstreetmap.de/route?json=${encodeURIComponent(JSON.stringify(vhBody))}`;
-    const r=await fetch(vhUrl);
-    if(!r.ok) throw new Error(`Valhalla ${r.status}`);
-    const data=await r.json();
-    if(data.error) throw new Error(data.error);
-    const leg=data.trip?.legs?.[0];
-    if(!leg) throw new Error('no leg');
-    const coords=decodePolyline(leg.shape);
-    const routeColor=document.getElementById('tj-type').value==='meca'?'#e8001c':'#28cd41';
-    tjRoute=L.polyline(coords,{color:routeColor,weight:5,opacity:.9}).addTo(tjMap);
-    const km=leg.summary.length.toFixed(1);
-    const minCorrected=Math.round(leg.summary.length/bikeSpeedKmh*60);
-    const durInput=document.getElementById('tj-duration');
-    if(durInput) durInput.value=minCorrected;
-    const info=L.control({position:'bottomleft'});
-    info.onAdd=()=>{
-      const d=L.DomUtil.create('div','');
-      d.style.cssText='background:rgba(255,255,255,.92);backdrop-filter:blur(8px);padding:8px 14px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.12)';
-      d.innerHTML=`🚴 ${km} km · ~${minCorrected} min <span style="font-weight:400;font-size:11px;color:#6e6e73">(modifiable)</span>`;
-      return d;
-    };
-    info.addTo(tjMap);
-    window._tjInfo=info;
-    tjMap.fitBounds(L.polyline(coords).getBounds().pad(.2));
-  }catch(e){
-    console.warn('OSRM error:',e.message);
-    // Fallback ligne droite
-    tjRoute=L.polyline([[tjFrom.lat,tjFrom.lng],[tjTo.lat,tjTo.lng]],
-      {color:'#0071e3',weight:2,dashArray:'6,5',opacity:.6}).addTo(tjMap);
-    tjMap.fitBounds(tjRoute.getBounds().pad(.3));
-  }
+function renderLbTable(mvData){
+  const head=document.getElementById('lb-head'), body=document.getElementById('lb-body');
+  if(!head||!body) return;
+  head.innerHTML='<tr><th>#</th><th>Station</th><th>⚡ Élec</th><th>🔧 Méca</th><th>Total</th><th>Places</th><th>↕ Mvts</th><th>Remplissage</th></tr>';
+  const sortKey=document.getElementById('lb-sort').value;
+  const maxMv=Math.max(1,...Object.values(mvData));
+  const rows=allStations.map(st=>{
+    const mv=mvData[st.number]||0, fill=st.bike_stands?st.available_bikes/st.bike_stands:0, rot=st.bike_stands?mv/st.bike_stands:0;
+    return {...st,mv,fill,rot};
+  });
+  const sorters={mv:(a,b)=>b.mv-a.mv,rotation:(a,b)=>b.rot-a.rot,bikes:(a,b)=>b.available_bikes-a.available_bikes,
+    elec:(a,b)=>b.electrical_bikes-a.electrical_bikes,meca:(a,b)=>b.mechanical_bikes-a.mechanical_bikes,
+    stands:(a,b)=>b.available_bike_stands-a.available_bike_stands,fill:(a,b)=>b.fill-a.fill};
+  rows.sort(sorters[sortKey]||sorters.mv);
+  body.innerHTML=rows.map((st,i)=>{
+    const pct=Math.round(st.fill*100), cls=pct>=50?'fill-high':pct>=25?'fill-med':'fill-low';
+    const bw=Math.round(st.mv/maxMv*60);
+    return `<tr><td class="rank-cell">${i+1}</td><td>${cleanName(st.name)}</td>
+      <td>⚡ ${st.electrical_bikes}</td><td>🔧 ${st.mechanical_bikes}</td>
+      <td><b>${st.available_bikes}</b></td><td>${st.available_bike_stands}</td>
+      <td>${st.mv}<span class="mv-bar" style="width:${bw}px"></span></td>
+      <td><span class="fill-pill ${cls}">${pct}%</span></td></tr>`;
+  }).join('');
 }
+document.getElementById('lb-sort').addEventListener('change',()=>renderLbTable(Object.keys(lbMvCache).length?lbMvCache:todayMv));
 
-async function computeTrajet(){
-  const content=document.getElementById('trajet-content');
-  if(!tjFrom||!tjTo){content.innerHTML='<div class="no-data">Sélectionnez les deux stations.</div>';return;}
-  if(tjFrom.number===tjTo.number){content.innerHTML='<div class="no-data">Les stations doivent être différentes.</div>';return;}
-  content.innerHTML='<div class="loader">Analyse…</div>';
+/* ═══ PLANIFIER ════════════════════════════════════════ */
+let planHeatMvCache={};
 
-  const durationMin=parseInt(document.getElementById('tj-duration').value)||15;
-  const depTimeStr=document.getElementById('tj-deptime').value;
-  const bikeType=document.getElementById('tj-type').value;
-  const today=new Date();
-  const targetDow=parseInt(document.getElementById('tj-dow').value);
-  const depHourFixed=depTimeStr ? parseInt(depTimeStr.split(':')[0]) : null;
+function initPlanMap(){
+  if(planMap){ planMap.invalidateSize(); return; }
+  planMap=L.map('plan-map').setView([45.757,4.832],13);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    {attribution:'© OpenStreetMap © CARTO',maxZoom:20}).addTo(planMap);
+  L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm-lite/{z}/{x}/{y}.png',
+    {maxZoom:20,opacity:0.5}).addTo(planMap);
 
-  const promises=[];
-  for(let i=0;i<365;i++){
-    const d=new Date(today);d.setDate(d.getDate()-i);
-    if(d.getDay()===targetDow) promises.push(fetchDay(d.toISOString().slice(0,10)));
-  }
-  const allDays=(await Promise.all(promises)).filter(Boolean);
-  if(!allDays.length){content.innerHTML='<div class="no-data">Pas assez d\'historique.</div>';return;}
-
-  const hourData=Array.from({length:24},()=>({dep:[],arr:[],joint:[]}));
-  // Toujours analyser les 24h pour la courbe complète
-  // Si heure fixe, on met juste en avant cette heure dans les résultats
-  allDays.forEach(snaps=>{
-    const byHour={};
-    snaps.forEach(snap=>{
-      const h=(new Date(getTs(snap)).getUTCHours()+2)%24;
-      if(!byHour[h]) byHour[h]=[];
-      byHour[h].push(snap);
-    });
-    for(let h=0;h<24;h++){
-      const arrH=Math.round((h*60+durationMin)/60)%24;
-      const dSnaps=byHour[h]||[], aSnaps=byHour[arrH]||[];
-      if(!dSnaps.length||!aSnaps.length) continue;
-      const avgPct=(snps,num,key)=>{
-        const vals=snps.map(s=>{const st=getSts(s).find(x=>x.number===num);return st?.bike_stands?(st[key]||0)/st.bike_stands*100:null;}).filter(v=>v!==null);
-        return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
-      };
-      const depKey=bikeType==='elec'?'electrical_bikes':bikeType==='meca'?'mechanical_bikes':'available_bikes';
-      const dep=avgPct(dSnaps,tjFrom.number,depKey);
-      const arr=avgPct(aSnaps,tjTo.number,'available_bike_stands');
-      if(dep===null||arr===null) continue;
-      hourData[h].dep.push(dep);
-      hourData[h].arr.push(arr);
-      hourData[h].joint.push(Math.min(dep,arr));
-    }
+  buildDropdown('plan-from','plan-from-dd',{
+    onStation: st=>{ planFromFixed=st; planFromPos={lat:st.lat,lng:st.lng}; triggerPlan(); },
+    onGeocode: q=>geocodePlan(q,'from'),
+  });
+  buildDropdown('plan-to','plan-to-dd',{
+    onStation: st=>{ planToFixed=st; planToPos={lat:st.lat,lng:st.lng}; triggerPlan(); },
+    onGeocode: q=>geocodePlan(q,'to'),
   });
 
-  const avg=a=>a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length):null;
-  const labels=[],depData=[],arrData=[],jointData=[];
-  for(let h=0;h<24;h++){
-    labels.push(String(h).padStart(2,'0')+'h');
-    depData.push(avg(hourData[h].dep));
-    arrData.push(avg(hourData[h].arr));
-    jointData.push(avg(hourData[h].joint));
+  // Init heure et jour
+  const now=new Date();
+  document.getElementById('plan-time').value=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('plan-dow').value=String(now.getDay());
+}
+
+async function geocodePlan(addr,which){
+  if(!addr.trim()) return;
+  try{
+    const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr+', Lyon, France')}&limit=1`);
+    const data=await r.json();
+    if(!data.length) return;
+    const pos={lat:parseFloat(data[0].lat),lng:parseFloat(data[0].lon)};
+    if(which==='from'){ planFromPos=pos; planFromFixed=null; }
+    else              { planToPos=pos;   planToFixed=null; }
+    triggerPlan();
+  }catch{}
+}
+
+function triggerPlan(){
+  if(planFromPos&&planToPos) computePlan();
+}
+
+async function computePlan(){
+  const resultsCard=document.getElementById('plan-results-card');
+  const results=document.getElementById('plan-results');
+  resultsCard.style.display='';
+  results.innerHTML='<div class="loader">Analyse de l\'historique…</div>';
+
+  const bikeType=document.getElementById('plan-type').value;
+  const radius=parseInt(document.getElementById('plan-radius').value);
+  const topN=parseInt(document.getElementById('plan-top').value);
+  const targetDow=parseInt(document.getElementById('plan-dow').value);
+  const timeStr=document.getElementById('plan-time').value;
+  const targetH=parseInt(timeStr.split(':')[0]);
+  const bikeSpeedKmh=bikeType==='meca'?16:21;
+
+  // Charger historique pour ce jour de semaine
+  const today=new Date();
+  const dayPromises=[];
+  for(let i=0;i<365;i++){
+    const d=new Date(today); d.setDate(d.getDate()-i);
+    if(d.getDay()===targetDow) dayPromises.push(fetchDay(d.toISOString().slice(0,10)));
+  }
+  const allDays=(await Promise.all(dayPromises)).filter(Boolean);
+
+  // Stations proches du départ (si pas de station fixe)
+  const depStations = planFromFixed
+    ? [planFromFixed]
+    : allStations.filter(s=>s.lat&&s.lng).map(s=>({...s,dist:haversine(planFromPos.lat,planFromPos.lng,s.lat,s.lng)})).filter(s=>s.dist<=radius).sort((a,b)=>a.dist-b.dist).slice(0,5);
+
+  // Stations proches de l'arrivée (si pas de station fixe)
+  const arrStations = planToFixed
+    ? [planToFixed]
+    : allStations.filter(s=>s.lat&&s.lng).map(s=>({...s,dist:haversine(planToPos.lat,planToPos.lng,s.lat,s.lng)})).filter(s=>s.dist<=radius).sort((a,b)=>a.dist-b.dist).slice(0,5);
+
+  if(!depStations.length||!arrStations.length){
+    results.innerHTML='<div class="no-data">Aucune station dans ce rayon. Augmentez le rayon.</div>';
+    return;
   }
 
-  let bestH=-1,bestScore=-1;
-  if(depHourFixed!==null){
-    bestH=depHourFixed;
-    bestScore=jointData[depHourFixed]??-1;
-  } else {
-    jointData.forEach((v,h)=>{if(v!==null&&v>bestScore){bestScore=v;bestH=h;}});
+  // Calculer proba pour chaque station sur l'heure cible
+  const stationProba={}; // number → {dep:%, arr:%}
+  const allIds=new Set([...depStations.map(s=>s.number),...arrStations.map(s=>s.number)]);
+
+  allIds.forEach(num=>{
+    const depVals=[],arrVals=[];
+    allDays.forEach(snaps=>{
+      snaps.forEach(snap=>{
+        const h=(new Date(getTs(snap)).getUTCHours()+2)%24;
+        if(h!==targetH) return;
+        const sts=getSts(snap), st=sts.find(s=>s.number===num);
+        if(!st||!st.bike_stands) return;
+        const depKey=bikeType==='elec'?'electrical_bikes':bikeType==='meca'?'mechanical_bikes':'available_bikes';
+        depVals.push((st[depKey]||0)/st.bike_stands*100);
+        arrVals.push(st.available_bike_stands/st.bike_stands*100);
+      });
+    });
+    const avg=a=>a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length):null;
+    stationProba[num]={dep:avg(depVals),arr:avg(arrVals),samples:depVals.length};
+  });
+
+  // Générer toutes les combinaisons dep × arr
+  const combos=[];
+  for(const dep of depStations){
+    for(const arr of arrStations){
+      if(dep.number===arr.number) continue;
+      const pd=stationProba[dep.number], pa=stationProba[arr.number];
+      const depPct=pd?.dep??null, arrPct=pa?.arr??null;
+      if(depPct===null||arrPct===null) continue;
+      // Distance vélo entre les deux stations
+      const dist=haversine(dep.lat,dep.lng,arr.lat,arr.lng);
+      const rideMin=Math.round(dist/1000/bikeSpeedKmh*60);
+      // Score = 60% proba départ + 40% proba arrivée
+      const score=Math.round(depPct*0.6+arrPct*0.4);
+      combos.push({dep,arr,depPct,arrPct,score,dist,rideMin,samples:pd?.samples??0});
+    }
   }
 
-  const fromName=cleanName(tjFrom.name),toName=cleanName(tjTo.name);
-  const bikeLabel=bikeType==='elec'?'⚡ élec':bikeType==='meca'?'🔧 méca':'🚲 tous';
-  const DOW_NAMES=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
-  const dow=DOW_NAMES[targetDow];
+  combos.sort((a,b)=>b.score-a.score);
+  const top=combos.slice(0,topN);
 
-  content.innerHTML=`
-    <div class="card" style="background:linear-gradient(135deg,#f0f7ff,#fff);border:1px solid #c8e0ff;margin-bottom:14px">
-      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
-        <div>
-          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--sub);margin-bottom:4px">Meilleur créneau (${dow})</div>
-          <div style="font-size:40px;font-weight:700;color:var(--blue);line-height:1">${bestH>=0?String(bestH).padStart(2,'0')+'h':'—'}</div>
-        </div>
-        <div style="flex:1;font-size:13px;line-height:2">
-          <span style="color:#28cd41;font-weight:600">${depData[bestH]??'—'}%</span> de chances d'avoir un vélo ${bikeLabel} à <b>${fromName}</b><br>
-          <span style="color:#0071e3;font-weight:600">${arrData[bestH]??'—'}%</span> de chances d'avoir une place à <b>${toName}</b> (+${durationMin} min)
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:11px;color:var(--sub)">Score conjoint</div>
-          <div style="font-size:36px;font-weight:700;color:var(--blue)">${bestScore>=0?bestScore+'%':'—'}</div>
+  if(!top.length){
+    results.innerHTML='<div class="no-data">Pas assez de données historiques pour ces stations.</div>';
+    return;
+  }
+
+  document.getElementById('plan-results-title').textContent=
+    `Top ${top.length} combinaisons · ${DOW_NAMES[targetDow]} ${targetH}h · ${bikeType==='elec'?'⚡ Élec':bikeType==='meca'?'🔧 Méca':'🚲 Tous'}`;
+
+  results.innerHTML=top.map((c,i)=>{
+    const cls=scoreColor(c.score);
+    const depDist=planFromFixed?'':` · ${Math.round(c.dep.dist||0)} m à pied`;
+    const arrDist=planToFixed?'':` · ${Math.round(c.arr.dist||0)} m à pied`;
+    return `<div class="combo-card${i===0?' selected':''}" onclick="showRoute(${i})" data-idx="${i}">
+      <div class="combo-rank">${i+1}</div>
+      <div class="combo-info">
+        <div class="combo-route">🟢 ${cleanName(c.dep.name)} → 🔴 ${cleanName(c.arr.name)}</div>
+        <div class="combo-meta">
+          Départ${depDist} · ${Math.round(c.dist/1000*10)/10} km · ~${c.rideMin} min<br>
+          ⚡ vélo dispo : <b>${c.depPct}%</b> · 🅿️ place dispo : <b>${c.arrPct}%</b>
+          ${c.samples?` · ${c.samples} mesures`:''}${arrDist}
         </div>
       </div>
-    </div>
-    <div class="card">
-      <div class="card-title">${fromName} → ${toName} · probabilité par heure (${dow}, ${allDays.length} semaines d'historique)</div>
-      <canvas id="tj-chart" height="90"></canvas>
-    </div>
-    <div class="card" style="font-size:12px;color:var(--sub);line-height:1.9">
-      <b style="color:var(--ink)">Lecture</b><br>
-      🟢 Vert : % de chances de trouver un vélo ${bikeLabel} à <b>${fromName}</b>.<br>
-      🔵 Bleu : % de chances de trouver une place à <b>${toName}</b> ${durationMin} min plus tard.<br>
-      ⚫ Pointillé : score conjoint = min(départ, arrivée) — le vrai indicateur du trajet.<br>
-      <span style="color:#aeaeb2">Basé sur ${allDays.length} ${dow} dans l'historique disponible.</span>
+      <div class="combo-score">
+        <div class="combo-pct ${cls}">${c.score}%</div>
+        <div class="combo-detail">score conjoint</div>
+      </div>
     </div>`;
+  }).join('');
 
-  drawTjRoute();
-  tjMap?.invalidateSize();
-  // Point radius plus grand sur l'heure sélectionnée
-  const ptRadius=(h)=> depHourFixed!==null && h===depHourFixed ? 6 : 2;
-  const ptRadii=labels.map((_,i)=>ptRadius(i));
-
-  chartTj?.destroy();
-  chartTj=new Chart(document.getElementById('tj-chart'),{type:'line',
-    data:{labels,datasets:[
-      {label:'🚲 Vélo dispo au départ',data:depData,borderColor:'#28cd41',backgroundColor:'rgba(40,205,65,.08)',borderWidth:2,tension:0,pointRadius:ptRadii,spanGaps:true,fill:true},
-      {label:'🅿️ Place dispo à l\'arrivée',data:arrData,borderColor:'#0071e3',backgroundColor:'rgba(0,113,227,.08)',borderWidth:2,tension:0,pointRadius:ptRadii,spanGaps:true,fill:true},
-      {label:'⚡ Score conjoint',data:jointData,borderColor:'#1d1d1f',backgroundColor:'rgba(29,29,31,.04)',borderWidth:2,tension:0,pointRadius:ptRadii,spanGaps:true,fill:true,borderDash:[5,3]},
-    ]},
-    options:{...chartOpts(),scales:{...chartOpts().scales,y:{...chartOpts().scales.y,max:100,ticks:{...chartOpts().scales.y.ticks,callback:v=>v+'%'}}}}
-  });
+  // Stocker les combos pour le routing
+  window._planCombos=top;
+  showRoute(0);
 }
 
+let planLayerGroup=null;
+
+async function showRoute(idx){
+  // Highlight carte
+  document.querySelectorAll('.combo-card').forEach((el,i)=>{
+    el.classList.toggle('selected',i===idx);
+  });
+
+  const combo=window._planCombos?.[idx]; if(!combo) return;
+  if(planLayerGroup) planLayerGroup.clearLayers();
+  planLayerGroup=L.layerGroup().addTo(planMap);
+
+  // Marqueurs départ/arrivée réels
+  if(planFromPos&&!planFromFixed){
+    L.circleMarker([planFromPos.lat,planFromPos.lng],{radius:8,fillColor:'#28cd41',color:'#fff',weight:2,fillOpacity:.9})
+      .bindTooltip('Départ',{permanent:true,direction:'top'}).addTo(planLayerGroup);
+  }
+  if(planToPos&&!planToFixed){
+    L.circleMarker([planToPos.lat,planToPos.lng],{radius:8,fillColor:'#ff3b30',color:'#fff',weight:2,fillOpacity:.9})
+      .bindTooltip('Arrivée',{permanent:true,direction:'top'}).addTo(planLayerGroup);
+  }
+
+  // Stations
+  L.circleMarker([combo.dep.lat,combo.dep.lng],{radius:10,fillColor:'#28cd41',color:'#fff',weight:2,fillOpacity:.95})
+    .bindTooltip(cleanName(combo.dep.name),{permanent:true,direction:'top'}).addTo(planLayerGroup);
+  L.circleMarker([combo.arr.lat,combo.arr.lng],{radius:10,fillColor:'#ff3b30',color:'#fff',weight:2,fillOpacity:.95})
+    .bindTooltip(cleanName(combo.arr.name),{permanent:true,direction:'top'}).addTo(planLayerGroup);
+
+  // Routing Valhalla entre les deux stations
+  const bikeType=document.getElementById('plan-type').value;
+  const speed=bikeType==='meca'?16:21;
+  const routeColor=bikeType==='meca'?'#e8001c':'#28cd41';
+  try{
+    const body={
+      locations:[{lon:combo.dep.lng,lat:combo.dep.lat},{lon:combo.arr.lng,lat:combo.arr.lat}],
+      costing:'bicycle',
+      costing_options:{bicycle:{bicycle_type:'Road',cycling_speed:speed,use_roads:0.4,use_hills:0.2}},
+      directions_type:'none'
+    };
+    const r=await fetch(`https://valhalla1.openstreetmap.de/route?json=${encodeURIComponent(JSON.stringify(body))}`);
+    if(r.ok){
+      const data=await r.json();
+      const leg=data.trip?.legs?.[0];
+      if(leg){
+        const coords=decodePolyline(leg.shape);
+        L.polyline(coords,{color:routeColor,weight:5,opacity:.9}).addTo(planLayerGroup);
+        planMap.fitBounds(L.polyline(coords).getBounds().pad(.2));
+      }
+    }
+  }catch{}
+
+  // Lignes en pointillés piéton depuis/vers les stations si adresse libre
+  if(planFromPos&&!planFromFixed)
+    L.polyline([[planFromPos.lat,planFromPos.lng],[combo.dep.lat,combo.dep.lng]],{color:'#6e6e73',weight:2,dashArray:'5,5',opacity:.7}).addTo(planLayerGroup);
+  if(planToPos&&!planToFixed)
+    L.polyline([[combo.arr.lat,combo.arr.lng],[planToPos.lat,planToPos.lng]],{color:'#6e6e73',weight:2,dashArray:'5,5',opacity:.7}).addTo(planLayerGroup);
+}
+
+/* ═══ INIT ════════════════════════════════════════════ */
+function initRanges(){
+  const now=new Date();
+  document.getElementById('lb-start').value=fmt(new Date(now-24*3600e3));
+  document.getElementById('lb-end').value=fmt(now);
+}
+
+/* ═══ BOOT ════════════════════════════════════════════ */
 async function boot(){
   initRanges();
   allStations=await loadLatest();
   await computeMovements();
   initMap();
   renderStations();
-  buildSearch();
+  buildStationSearch();
 }
 boot();
-setInterval(async()=>{allStations=await loadLatest();await computeMovements();renderStations();},5*60*1000);
+setInterval(async()=>{ allStations=await loadLatest(); await computeMovements(); renderStations(); },5*60*1000);
 </script>
 </body>
 </html>
