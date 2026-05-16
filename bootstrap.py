@@ -9,8 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 
 PAGE_SIZE = 10000
-WORKERS   = 20
-FLUSH_EVERY_ROWS = 50_000   # flush tous les 50k lignes (~30s)
+WORKERS   = 30
 
 BASE_URL = (
     "https://data.grandlyon.com/fr/datapusher/ws/timeseries"
@@ -114,10 +113,11 @@ if resume_date:
 buffer = defaultdict(lambda: defaultdict(dict))
 flushed_files = set()
 total_rows = 0
-rows_since_flush = 0
 finished = False
 
 t0 = time.time()
+last_flush_time = t0
+FLUSH_INTERVAL = 600  # flush RAM toutes les 10 min
 
 with ThreadPoolExecutor(max_workers=WORKERS) as ex:
     # Soumettre les WORKERS premières pages
@@ -137,20 +137,30 @@ with ThreadPoolExecutor(max_workers=WORKERS) as ex:
         start, rows, has_next = done_fut.result()
 
         if rows:
+            dates_in_page = set()
+            kept = 0
             for row in rows:
                 date_str, slot_str = slot(row.get("horodate", ""))
                 if not date_str:
                     continue
+                dates_in_page.add(date_str)
                 if resume_date and date_str <= resume_date:
                     continue
                 buffer[date_str][slot_str][row.get("number")] = row
+                kept += 1
             total_rows += len(rows)
-            rows_since_flush += len(rows)
 
             elapsed = time.time() - t0
             rate = total_rows / elapsed if elapsed > 0 else 0
-            print(f"  start={start:>12,} → {len(rows):,} lignes | "
-                  f"total={total_rows:>10,} | {rate:,.0f} lignes/s", flush=True)
+            date_range = f"{min(dates_in_page)}…{max(dates_in_page)}" if dates_in_page else "?"
+            print(f"  start={start:>12,} | dates={date_range} | kept={kept}/{len(rows)} | "
+                  f"total={total_rows:>10,} | {rate:,.0f} l/s", flush=True)
+
+        # Flush RAM périodiquement pour éviter OOM
+        now = time.time()
+        if now - last_flush_time >= FLUSH_INTERVAL:
+            buffer = flush_buffer(buffer, flushed_files)
+            last_flush_time = now
 
         if not has_next or not rows:
             finished = True
@@ -166,10 +176,7 @@ with ThreadPoolExecutor(max_workers=WORKERS) as ex:
             pending[fut] = next_start
             next_start += PAGE_SIZE
 
-        # Flush si buffer trop grand
-        if rows_since_flush >= FLUSH_EVERY_ROWS:
-            buffer = flush_buffer(buffer, flushed_files)
-            rows_since_flush = 0
+
 
 # Flush final
 buffer = flush_buffer(buffer, flushed_files)
