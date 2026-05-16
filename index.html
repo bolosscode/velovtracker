@@ -118,7 +118,7 @@ main{max-width:1500px;margin:auto;padding:20px}
 <div class="panel on" id="tab-map">
   <div class="map-rel">
     <div class="map-ctrl">
-      <button class="map-btn" id="btn-heat" onclick="toggleHeat()">🔥 Heatmap</button>
+      <button class="map-btn" id="btn-heat" onclick="toggleHeat()">🔥 Flux du jour</button>
     </div>
     <div id="map"></div>
   </div>
@@ -391,10 +391,28 @@ function renderStations(){
 }
 function buildHeatLayer(){
   if(heatLayer) map.removeLayer(heatLayer);
-  const maxMv=Math.max(1,...Object.values(todayMv));
-  const pts=allStations.filter(s=>s.lat&&s.lng).map(s=>[s.lat,s.lng,(todayMv[s.number]||0)/maxMv]).filter(p=>p[2]>0);
-  heatLayer=L.heatLayer(pts,{radius:20,blur:12,maxZoom:17,minOpacity:.4,
-    gradient:{0:'#2c7bb6',0.3:'#00ccbc',0.6:'#90eb9d',0.8:'#f9d057',1:'#d7191c'}});
+  const vals=Object.values(todayMv).filter(v=>v>0);
+  if(!vals.length) return;
+  const maxMv=Math.max(...vals);
+  // Seuil : seulement les stations ayant eu au moins 1 mouvement
+  const pts=allStations
+    .filter(s=>s.lat&&s.lng&&todayMv[s.number]>0)
+    .map(s=>[s.lat, s.lng, todayMv[s.number]/maxMv]);
+  heatLayer=L.heatLayer(pts,{
+    radius:35,        // aura lisible au zoom 13
+    blur:20,
+    maxZoom:18,
+    minOpacity:.1,    // faible pour que les différences soient visibles
+    max:1.0,
+    gradient:{
+      0.0: '#313695',  // bleu foncé = peu de mouvements
+      0.3: '#4575b4',
+      0.5: '#74add1',
+      0.7: '#fdae61',
+      0.85:'#f46d43',
+      1.0: '#d73027',  // rouge vif = beaucoup de mouvements
+    }
+  });
   if(heatOn) heatLayer.addTo(map);
 }
 function toggleHeat(){
