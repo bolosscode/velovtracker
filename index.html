@@ -186,8 +186,17 @@ main{max-width:1500px;margin:auto;padding:20px}
       </div>
     </div>
     <div class="params-row">
-      <label>Date &amp; heure</label>
-      <input type="datetime-local" id="plan-datetime"/>
+      <label>Jour</label>
+      <select id="plan-dow">
+        <option value="1">Lundi</option><option value="2">Mardi</option>
+        <option value="3">Mercredi</option><option value="4">Jeudi</option>
+        <option value="5">Vendredi</option><option value="6">Samedi</option>
+        <option value="0">Dimanche</option>
+      </select>
+      <label>Heure</label>
+      <select id="plan-hour">
+        <option value="0">00h</option><option value="1">01h</option><option value="2">02h</option><option value="3">03h</option><option value="4">04h</option><option value="5">05h</option><option value="6">06h</option><option value="7">07h</option><option value="8">08h</option><option value="9">09h</option><option value="10">10h</option><option value="11">11h</option><option value="12">12h</option><option value="13">13h</option><option value="14">14h</option><option value="15">15h</option><option value="16">16h</option><option value="17">17h</option><option value="18">18h</option><option value="19">19h</option><option value="20">20h</option><option value="21">21h</option><option value="22">22h</option><option value="23">23h</option>
+      </select>
       <label>Type</label>
       <select id="plan-type">
         <option value="elec">⚡ Électrique</option>
@@ -581,8 +590,10 @@ function initPlanMap(){
 
   // Init heure et jour
   const now=new Date();
-  const dtEl=document.getElementById('plan-datetime');
-  if(dtEl) dtEl.value=fmt(now);
+  const dowEl=document.getElementById('plan-dow');
+  const hourEl=document.getElementById('plan-hour');
+  if(dowEl) dowEl.value=String(now.getDay());
+  if(hourEl) hourEl.value=String(now.getHours());
 }
 
 
@@ -596,10 +607,8 @@ async function computePlan(){
   const bikeType=document.getElementById('plan-type').value;
   const radius=parseInt(document.getElementById('plan-radius').value);
   const topN=parseInt(document.getElementById('plan-top').value);
-  const planDt=document.getElementById('plan-datetime').value;
-  const planDate=planDt?new Date(planDt):new Date();
-  const targetDow=planDate.getDay();
-  const targetH=planDate.getHours();
+  const targetDow=parseInt(document.getElementById('plan-dow').value);
+  const targetH=parseInt(document.getElementById('plan-hour').value);
   const bikeSpeedKmh=bikeType==='meca'?16:21;
 
   // Charger historique pour ce jour de semaine
@@ -610,6 +619,7 @@ async function computePlan(){
     if(d.getDay()===targetDow) dayPromises.push(fetchDay(d.toISOString().slice(0,10)));
   }
   const allDays=(await Promise.all(dayPromises)).filter(Boolean);
+
 
   // Stations proches du départ (si pas de station fixe)
   const depStations = planFromFixed
@@ -673,7 +683,7 @@ async function computePlan(){
   }
 
   document.getElementById('plan-results-title').textContent=
-    `Top ${top.length} combinaisons · ${DOW_NAMES[targetDow]} ${targetH}h · ${bikeType==='elec'?'⚡ Élec':bikeType==='meca'?'🔧 Méca':'🚲 Tous'}`;
+    `Top ${top.length} combinaisons · ${DOW_NAMES[targetDow]} ${String(targetH).padStart(2,'0')}h · ${bikeType==='elec'?'⚡ Élec':bikeType==='meca'?'🔧 Méca':'🚲 Tous'} · ${allDays.length} sem. d'historique`;
 
   results.innerHTML=top.map((c,i)=>{
     const cls=scoreColor(c.score);
@@ -797,7 +807,8 @@ async function showComboCourbes(combo){
   }
   zone.innerHTML='<div class="loader">Chargement des courbes…</div>';
 
-  const targetDow=parseInt(document.getElementById('plan-datetime').value?new Date(document.getElementById('plan-datetime').value).getDay():new Date().getDay());
+  const targetDow=parseInt(document.getElementById('plan-dow').value);
+  const targetH2=parseInt(document.getElementById('plan-hour').value);
   const today=new Date();
   const promises=[];
   for(let i=0;i<365;i++){
