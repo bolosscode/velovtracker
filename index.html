@@ -214,9 +214,10 @@ main{max-width:1500px;margin:auto;padding:20px}
         <option value="10">Top 10</option>
       </select>
     </div>
-    <p style="font-size:12px;color:var(--dim);margin-bottom:4px">
-      Entrée pour valider l'adresse · Cliquez sur un résultat pour afficher son tracé
-    </p>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+      <button class="btn" onclick="computePlan()">🔍 Planifier</button>
+      <p style="font-size:12px;color:var(--dim)">Sélectionnez dans les suggestions ou cliquez Planifier</p>
+    </div>
   </div>
 
   <div id="plan-map"></div>
@@ -395,26 +396,59 @@ function toggleHeat(){
 }
 
 /* ═══ DROPDOWN GÉNÉRIQUE ═══════════════════════════════ */
+let _nominatimDebounce={};
+
 function buildDropdown(inputId, ddId, opts){
-  // opts.onStation(st) appelé si station choisie
-  // opts.onGeocode(query) appelé sur Entrée si pas de station
-  // opts.onPos(latlng) — callback position finale
   const input=document.getElementById(inputId), dd=document.getElementById(ddId);
+
   input.addEventListener('input',()=>{
-    const q=input.value.toLowerCase().trim(); dd.innerHTML='';
+    const q=input.value.trim();
+    dd.innerHTML='';
     if(!q){ dd.classList.remove('open'); return; }
-    const matches=allStations.filter(s=>cleanName(s.name).toLowerCase().includes(q)).slice(0,8);
-    matches.forEach(st=>{
-      const el=document.createElement('div'); el.className='opt';
-      el.innerHTML=`${cleanName(st.name)} <span class="opt-type">station</span>`;
-      el.onclick=()=>{ input.value=cleanName(st.name); dd.classList.remove('open'); opts.onStation?.(st); };
-      dd.appendChild(el);
-    });
-    dd.classList.add('open');
+
+    // Stations locales (instantané)
+    const stMatches=allStations
+      .filter(s=>cleanName(s.name).toLowerCase().includes(q.toLowerCase()))
+      .slice(0,5);
+
+    const render=(geoResults=[])=>{
+      dd.innerHTML='';
+      stMatches.forEach(st=>{
+        const el=document.createElement('div'); el.className='opt';
+        el.innerHTML=`${cleanName(st.name)} <span class="opt-type">🚲 station</span>`;
+        el.onclick=()=>{ input.value=cleanName(st.name); dd.classList.remove('open'); opts.onStation?.(st); };
+        dd.appendChild(el);
+      });
+      geoResults.forEach(geo=>{
+        const el=document.createElement('div'); el.className='opt';
+        el.innerHTML=`${geo.display_name.split(',').slice(0,2).join(',')} <span class="opt-type">📍 adresse</span>`;
+        el.onclick=()=>{
+          input.value=geo.display_name.split(',').slice(0,2).join(',');
+          dd.classList.remove('open');
+          const pos={lat:parseFloat(geo.lat),lng:parseFloat(geo.lon)};
+          opts.onGeoPos?.(pos);
+        };
+        dd.appendChild(el);
+      });
+      if(stMatches.length||geoResults.length) dd.classList.add('open');
+      else dd.classList.remove('open');
+    };
+
+    render(); // afficher les stations tout de suite
+
+    // Géocodage Nominatim avec debounce 400ms
+    clearTimeout(_nominatimDebounce[inputId]);
+    if(q.length>=3){
+      _nominatimDebounce[inputId]=setTimeout(async()=>{
+        try{
+          const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q+', Lyon, France')}&limit=4&addressdetails=0`);
+          const data=await r.json();
+          render(data);
+        }catch{}
+      },400);
+    }
   });
-  input.addEventListener('keydown', e=>{
-    if(e.key==='Enter'){ dd.classList.remove('open'); opts.onGeocode?.(input.value); }
-  });
+
   document.addEventListener('click',e=>{
     if(!input.contains(e.target)&&!dd.contains(e.target)) dd.classList.remove('open');
   });
@@ -537,12 +571,12 @@ function initPlanMap(){
     {maxZoom:20,opacity:0.5}).addTo(planMap);
 
   buildDropdown('plan-from','plan-from-dd',{
-    onStation: st=>{ planFromFixed=st; planFromPos={lat:st.lat,lng:st.lng}; triggerPlan(); },
-    onGeocode: q=>geocodePlan(q,'from'),
+    onStation: st=>{ planFromFixed=st; planFromPos={lat:st.lat,lng:st.lng}; },
+    onGeoPos:  pos=>{ planFromPos=pos; planFromFixed=null; },
   });
   buildDropdown('plan-to','plan-to-dd',{
-    onStation: st=>{ planToFixed=st; planToPos={lat:st.lat,lng:st.lng}; triggerPlan(); },
-    onGeocode: q=>geocodePlan(q,'to'),
+    onStation: st=>{ planToFixed=st; planToPos={lat:st.lat,lng:st.lng}; },
+    onGeoPos:  pos=>{ planToPos=pos; planToFixed=null; },
   });
 
   // Init heure et jour
@@ -551,22 +585,7 @@ function initPlanMap(){
   document.getElementById('plan-dow').value=String(now.getDay());
 }
 
-async function geocodePlan(addr,which){
-  if(!addr.trim()) return;
-  try{
-    const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr+', Lyon, France')}&limit=1`);
-    const data=await r.json();
-    if(!data.length) return;
-    const pos={lat:parseFloat(data[0].lat),lng:parseFloat(data[0].lon)};
-    if(which==='from'){ planFromPos=pos; planFromFixed=null; }
-    else              { planToPos=pos;   planToFixed=null; }
-    triggerPlan();
-  }catch{}
-}
 
-function triggerPlan(){
-  if(planFromPos&&planToPos) computePlan();
-}
 
 async function computePlan(){
   const resultsCard=document.getElementById('plan-results-card');
