@@ -781,8 +781,11 @@ function initTrajetSearch(){
     const el=document.getElementById('tj-map');
     el.style.display='block';
     tjMap=L.map('tj-map').setView([45.757,4.832],13);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-      {attribution:'© OpenStreetMap © CARTO'}).addTo(tjMap);
+    // CyclOSM : fond de carte spécialisé vélo, montre toutes les pistes cyclables
+    L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',{
+      maxZoom:20,
+      attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> | <a href="https://github.com/cyclosm/cyclosm-cartocss-style/releases">CyclOSM</a>'
+    }).addTo(tjMap);
   }
 }
 
