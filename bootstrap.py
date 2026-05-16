@@ -48,6 +48,13 @@ all_rows = []
 start = 1
 total_fetched = 0
 
+def _ts(ts_str):
+    try:
+        dt = datetime.fromisoformat(ts_str)
+        return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    except Exception:
+        return datetime.min.replace(tzinfo=timezone.utc)
+
 print("Téléchargement de l'historique…")
 while True:
     url = BASE_URL.format(start=start)
@@ -63,26 +70,9 @@ while True:
     if not rows:
         break
 
-    # Filtrer par cutoff si demandé
+    # Filtrer par cutoff si demandé (garder tout >= cutoff)
     if cutoff:
-        filtered = []
-        stop = False
-        for row in rows:
-            ts_str = row.get("horodate", "")
-            try:
-                ts = datetime.fromisoformat(ts_str)
-                if ts.tzinfo is None:
-                    ts = ts.replace(tzinfo=timezone.utc)
-                if ts < cutoff:
-                    stop = True
-                    continue
-            except Exception:
-                pass
-            filtered.append(row)
-        rows = filtered
-        if stop and not rows:
-            print(f"Cutoff atteint à start={start}")
-            break
+        rows = [r for r in rows if _ts(r.get("horodate","")) >= cutoff]
 
     all_rows.extend(rows)
     total_fetched += len(rows)
