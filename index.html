@@ -130,8 +130,7 @@ main{max-width:1500px;margin:auto;padding:20px}
   <div class="card">
     <div class="card-title">Période &amp; tri</div>
     <div class="range">
-      <label>Du</label><input type="datetime-local" id="lb-start"/>
-      <label>au</label><input type="datetime-local" id="lb-end"/>
+      <label>Date</label><input type="date" id="lb-date"/>
       <select id="lb-sort">
         <option value="mv">Mouvements ↕</option>
         <option value="rotation">Taux de rotation</option>
@@ -540,9 +539,9 @@ function quickLeaderboard(){ renderLbTable(todayMv); }
 async function computeLeaderboard(){
   const content=document.getElementById('lb-content');
   content.innerHTML='<div class="loader">Calcul…</div>';
-  const s=document.getElementById('lb-start').value, e=document.getElementById('lb-end').value;
-  if(!s||!e){ content.innerHTML='<div class="no-data">Sélectionnez une période.</div>'; return; }
-  const snaps=await fetchRange(new Date(s).getTime(),new Date(e).getTime());
+  const d=document.getElementById('lb-date').value;
+  if(!d){ content.innerHTML='<div class="no-data">Sélectionnez une date.</div>'; return; }
+  const snaps=await fetchDay(d)||[];
   if(!snaps.length){ content.innerHTML='<div class="no-data">Aucune donnée.</div>'; return; }
   lbMvCache=calcMvFromSnaps(snaps);
   content.innerHTML='<div style="overflow-x:auto"><table id="lb-table"><thead id="lb-head"></thead><tbody id="lb-body"></tbody></table></div>';
@@ -905,8 +904,7 @@ async function showComboCourbes(combo){
 /* ═══ INIT ════════════════════════════════════════════ */
 function initRanges(){
   const now=new Date();
-  document.getElementById('lb-start').value=fmt(new Date(now-24*3600e3));
-  document.getElementById('lb-end').value=fmt(now);
+  document.getElementById('lb-date').value=now.toISOString().slice(0,10);
 }
 
 
@@ -938,11 +936,10 @@ async function showStationDetail(number){
     </div>`;
 
   // Période depuis les inputs globaux
-  const s=document.getElementById('lb-start').value;
-  const e=document.getElementById('lb-end').value;
-  if(!s||!e){ detail.querySelector('#sd-elec').closest('.card').querySelector('.card-title').textContent+=' — sélectionnez une période'; return; }
-  const startMs=new Date(s).getTime(), endMs=new Date(e).getTime();
-  const snaps=await fetchRange(startMs, endMs);
+  const d=document.getElementById('lb-date').value;
+  if(!d){ return; }
+  const snaps=await fetchDay(d)||[];
+  const startMs=new Date(d).getTime(), endMs=startMs+86400e3;
 
   const labels=[],dataElec=[],dataMeca=[];
   const days=(endMs-startMs)/86400e3;
@@ -979,18 +976,18 @@ async function showStationDetail(number){
 
   // buckets[dow][hour] = mouvements
   const bk=Array.from({length:7},()=>Array.from({length:24},()=>0));
-  weekSnaps.forEach(snaps=>{
+  for(const snaps of weekSnaps){
     for(let i=1;i<snaps.length;i++){
       const prev=getSts(snaps[i-1]), curr=getSts(snaps[i]);
       const cst=curr.find(s=>s.number===number), pst=prev.find(s=>s.number===number);
-      if(!cst||!pst) return;
-      const delta=Math.abs(cst.available_bikes-pst.available_bikes);
-      if(!delta) return;
+      if(!cst||!pst) continue;
+      const delta=Math.abs((cst.available_bikes??cst.b??0)-(pst.available_bikes??pst.b??0));
+      if(!delta) continue;
       const t=new Date(getTs(snaps[i]));
       const h=(t.getUTCHours()+2)%24, dow=t.getDay();
       bk[dow][h]+=delta;
     }
-  });
+  }
 
   const maxMv=Math.max(1,...bk.flat());
   const DAYS=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
