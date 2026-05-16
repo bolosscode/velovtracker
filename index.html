@@ -846,7 +846,8 @@ async function drawTjRoute(){
     const leg=data.trip?.legs?.[0];
     if(!leg) throw new Error('no leg');
     const coords=decodePolyline(leg.shape);
-    tjRoute=L.polyline(coords,{color:'#0071e3',weight:4,opacity:.85}).addTo(tjMap);
+    const routeColor=document.getElementById('tj-type').value==='meca'?'#e8001c':'#28cd41';
+    tjRoute=L.polyline(coords,{color:routeColor,weight:5,opacity:.9}).addTo(tjMap);
     const km=leg.summary.length.toFixed(1);
     const minCorrected=Math.round(leg.summary.length/bikeSpeedKmh*60);
     const durInput=document.getElementById('tj-duration');
