@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-bootstrap.py — Import historique Vélo'v, fetch parallèle par chunks.
+bootstrap.py — Import historique Vélo'v, pipeline continu 20 workers.
 """
 import os, sys, json, argparse, time
 from datetime import datetime, timezone
@@ -8,13 +8,15 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 
+PAGE_SIZE = 10000
+WORKERS   = 20
+FLUSH_EVERY_ROWS = 50_000   # flush tous les 50k lignes (~30s)
+
 BASE_URL = (
     "https://data.grandlyon.com/fr/datapusher/ws/timeseries"
     "/jcd_jcdecaux.historiquevelov/all.json"
-    "?compact=false&maxfeatures=5000&start={start}"
+    "?compact=false&maxfeatures={size}&start={start}"
 )
-WORKERS   = 10   # requêtes parallèles
-PAGE_SIZE = 5000
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--user",         default="")
@@ -28,7 +30,6 @@ os.makedirs(args.out, exist_ok=True)
 resume_date = args.resume_after
 print(f"Reprise après : {resume_date or 'début'}", flush=True)
 
-# ── helpers ────────────────────────────────────────────────────────────────────
 def slot(ts_str):
     try:
         dt = datetime.fromisoformat(ts_str)
@@ -52,83 +53,22 @@ def parse_row(row):
             "c": cap, "e": elec, "m": meca, "st": row.get("status", "OPEN")}
 
 def fetch_page(start):
-    """Fetche une page, retourne (start, rows) ou (start, None) si erreur."""
-    url = BASE_URL.format(start=start)
+    url = BASE_URL.format(size=PAGE_SIZE, start=start)
     for attempt in range(3):
         try:
             r = requests.get(url, auth=auth, timeout=30)
             r.raise_for_status()
             data = r.json()
-            return start, data.get("values", []), bool(data.get("next"))
+            rows = data.get("values", [])
+            has_next = bool(data.get("next")) and len(rows) == PAGE_SIZE
+            return start, rows, has_next
         except Exception as e:
             if attempt == 2:
                 print(f"  ERREUR start={start}: {e}", flush=True)
                 return start, [], False
-            time.sleep(2)
+            time.sleep(1)
 
-# ── Phase 1 : découverte du nombre total de pages ─────────────────────────────
-print("Découverte du volume total…", flush=True)
-_, first_rows, _ = fetch_page(1)
-if not first_rows:
-    print("API vide ou inaccessible.", file=sys.stderr)
-    sys.exit(1)
-
-# Estimer le total via une requête de la dernière page connue
-# On fait une binary search approx : on teste des offsets croissants
-total_pages = 1
-probe = PAGE_SIZE
-while True:
-    _, rows, has_next = fetch_page(probe + 1)
-    if not rows:
-        break
-    total_pages = probe // PAGE_SIZE + 1
-    if not has_next:
-        break
-    probe *= 2
-    if probe > 50_000_000:
-        break
-
-# Liste de tous les starts à fetcher
-all_starts = list(range(1, probe + PAGE_SIZE, PAGE_SIZE))
-print(f"{len(all_starts)} pages estimées (~{len(all_starts)*PAGE_SIZE:,} lignes)", flush=True)
-
-# ── Phase 2 : filtrer les pages déjà traitées (resume) ───────────────────────
-# En mode reprise, on skip les pages dont toutes les dates sont <= resume_date
-# Pour ça on scan séquentiellement les premières pages jusqu'à trouver la bonne
-
-skip_until = 0  # index de page à partir duquel on fetch vraiment
-if resume_date:
-    print(f"Recherche du point de reprise (après {resume_date})…", flush=True)
-    # Scan binaire : trouver la première page avec date > resume_date
-    lo, hi = 0, len(all_starts) - 1
-    while lo < hi:
-        mid = (lo + hi) // 2
-        _, rows, _ = fetch_page(all_starts[mid])
-        if not rows:
-            hi = mid
-            continue
-        dates = [slot(r.get("horodate",""))[0] for r in rows if r.get("horodate")]
-        dates = [d for d in dates if d]
-        if dates and max(dates) <= resume_date:
-            lo = mid + 1
-        else:
-            hi = mid
-        time.sleep(0.2)
-    skip_until = lo
-    print(f"Reprise à la page index {skip_until} (start={all_starts[skip_until]})", flush=True)
-
-starts_to_fetch = all_starts[skip_until:]
-print(f"{len(starts_to_fetch)} pages à fetcher avec {WORKERS} workers", flush=True)
-
-# ── Phase 3 : fetch parallèle + flush incrémental ────────────────────────────
-FLUSH_EVERY = 50  # flush tous les 50 lots de WORKERS pages
-buffer = defaultdict(lambda: defaultdict(dict))
-total_rows = 0
-flushed_files = set()
-finished = False
-
-def flush_buffer():
-    global buffer
+def flush_buffer(buffer, flushed_files):
     written = 0
     for date_str, slots in buffer.items():
         path = os.path.join(args.out, f"{date_str}.json")
@@ -143,8 +83,8 @@ def flush_buffer():
                 existing = []
         existing_ts = {s.get("timestamp") or s.get("t") for s in existing}
         new_snaps = [
-            {"t": slot_str, "s": [parse_row(r) for r in stations_dict.values()]}
-            for slot_str, stations_dict in sorted(slots.items())
+            {"t": slot_str, "s": [parse_row(r) for r in sd.values()]}
+            for slot_str, sd in sorted(slots.items())
             if slot_str not in existing_ts
         ]
         if new_snaps:
@@ -154,53 +94,89 @@ def flush_buffer():
                 json.dump(merged, f, ensure_ascii=False, separators=(",",":"))
             flushed_files.add(date_str)
             written += 1
-    buffer = defaultdict(lambda: defaultdict(dict))
     print(f"  → flush : {written} nouveaux jours ({len(flushed_files)} total)", flush=True)
+    return defaultdict(lambda: defaultdict(dict))
 
-batch_num = 0
-i = 0
-while i < len(starts_to_fetch):
-    batch = starts_to_fetch[i:i+WORKERS]
-    i += WORKERS
-    batch_num += 1
+# ── Estimer le point de départ ─────────────────────────────────────────────────
+start_offset = 1
+if resume_date:
+    try:
+        d0 = datetime(2023, 4, 6)
+        d1 = datetime.strptime(resume_date, "%Y-%m-%d")
+        days = (d1 - d0).days
+        estimated_rows = days * 65000
+        start_offset = max(1, (estimated_rows // PAGE_SIZE - 20) * PAGE_SIZE + 1)
+        print(f"Démarrage estimé à start={start_offset:,}", flush=True)
+    except Exception:
+        pass
 
-    results = {}
-    with ThreadPoolExecutor(max_workers=WORKERS) as ex:
-        futures = {ex.submit(fetch_page, s): s for s in batch}
-        for fut in as_completed(futures):
-            start, rows, has_next = fut.result()
-            results[start] = (rows, has_next)
+# ── Pipeline continu ────────────────────────────────────────────────────────────
+buffer = defaultdict(lambda: defaultdict(dict))
+flushed_files = set()
+total_rows = 0
+rows_since_flush = 0
+finished = False
 
-    batch_rows = 0
-    all_empty = True
-    for start in sorted(results):
-        rows, has_next = results[start]
-        if not rows:
-            continue
-        all_empty = False
-        for row in rows:
-            date_str, slot_str = slot(row.get("horodate", ""))
-            if not date_str:
-                continue
-            if resume_date and date_str <= resume_date:
-                continue
-            buffer[date_str][slot_str][row.get("number")] = row
-        batch_rows += len(rows)
-        total_rows += len(rows)
-        if not has_next:
+t0 = time.time()
+
+with ThreadPoolExecutor(max_workers=WORKERS) as ex:
+    # Soumettre les WORKERS premières pages
+    pending = {}
+    next_start = start_offset
+    
+    # Remplir la queue initiale
+    for _ in range(WORKERS):
+        fut = ex.submit(fetch_page, next_start)
+        pending[fut] = next_start
+        next_start += PAGE_SIZE
+
+    while pending:
+        # Traiter le premier futur qui se termine
+        done_fut = next(as_completed(pending))
+        submitted_start = pending.pop(done_fut)
+        start, rows, has_next = done_fut.result()
+
+        if rows:
+            for row in rows:
+                date_str, slot_str = slot(row.get("horodate", ""))
+                if not date_str:
+                    continue
+                if resume_date and date_str <= resume_date:
+                    continue
+                buffer[date_str][slot_str][row.get("number")] = row
+            total_rows += len(rows)
+            rows_since_flush += len(rows)
+
+            elapsed = time.time() - t0
+            rate = total_rows / elapsed if elapsed > 0 else 0
+            print(f"  start={start:>12,} → {len(rows):,} lignes | "
+                  f"total={total_rows:>10,} | {rate:,.0f} lignes/s", flush=True)
+
+        if not has_next or not rows:
             finished = True
+            # Annuler les futures en cours si on a fini
+            for f in list(pending):
+                f.cancel()
+                pending.pop(f)
+            break
 
-    print(f"  batch {batch_num} ({batch[0]}…{batch[-1]}) → {batch_rows} lignes | total={total_rows:,}", flush=True)
+        # Soumettre la prochaine page
+        if has_next:
+            fut = ex.submit(fetch_page, next_start)
+            pending[fut] = next_start
+            next_start += PAGE_SIZE
 
-    if all_empty:
-        finished = True
-        break
+        # Flush si buffer trop grand
+        if rows_since_flush >= FLUSH_EVERY_ROWS:
+            buffer = flush_buffer(buffer, flushed_files)
+            rows_since_flush = 0
 
-    if batch_num % FLUSH_EVERY == 0:
-        flush_buffer()
+# Flush final
+buffer = flush_buffer(buffer, flushed_files)
 
-flush_buffer()
-print(f"\n✓ {total_rows:,} lignes → {len(flushed_files)} jours dans {args.out}/", flush=True)
+elapsed = time.time() - t0
+print(f"\n✓ {total_rows:,} lignes en {elapsed:.0f}s "
+      f"({total_rows/elapsed:.0f} lignes/s) → {len(flushed_files)} jours", flush=True)
 
 if finished:
     print("TERMINÉ.", flush=True)
