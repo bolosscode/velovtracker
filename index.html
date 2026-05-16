@@ -221,6 +221,13 @@ main{max-width:1500px;margin:auto;padding:20px}
       <button class="btn" onclick="computePlan()">🔍 Planifier</button>
       <p style="font-size:12px;color:var(--dim)">Sélectionnez dans les suggestions ou cliquez Planifier</p>
     </div>
+    <div id="plan-meteo" style="display:none;align-items:center;gap:10px;padding:10px 14px;background:var(--bg);border-radius:10px;margin-top:8px;font-size:13px">
+      <span id="plan-meteo-icon" style="font-size:24px"></span>
+      <div>
+        <div id="plan-meteo-label" style="font-weight:600;color:var(--ink)"></div>
+        <div id="plan-meteo-sub" style="font-size:11px;color:var(--sub)"></div>
+      </div>
+    </div>
   </div>
 
   <div id="plan-map"></div>
@@ -598,11 +605,48 @@ function initPlanMap(){
 
 
 
+// WMO weather codes → emoji + label
+function meteoFromCode(code, rain){
+  if(rain || code>=51) return {icon:'🌧️', label:'Pluvieux', rainy:true};
+  if(code>=45)         return {icon:'🌫️', label:'Brouillard', rainy:false};
+  if(code>=3)          return {icon:'☁️',  label:'Nuageux', rainy:false};
+  if(code>=1)          return {icon:'⛅',  label:'Peu nuageux', rainy:false};
+  return                      {icon:'☀️',  label:'Ensoleillé', rainy:false};
+}
+
+async function fetchCurrentMeteo(){
+  try{
+    const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude=45.75&longitude=4.83&current=precipitation,rain,weathercode&timezone=Europe%2FParis');
+    if(!r.ok) return null;
+    const d=await r.json();
+    const cur=d.current||{};
+    return {
+      precipitation: cur.precipitation||0,
+      rain: (cur.precipitation||0)>0.1,
+      weathercode: cur.weathercode||0,
+    };
+  }catch{ return null; }
+}
+
 async function computePlan(){
   const resultsCard=document.getElementById('plan-results-card');
   const results=document.getElementById('plan-results');
   resultsCard.style.display='';
   results.innerHTML='<div class="loader">Analyse de l\'historique…</div>';
+
+  // Météo actuelle
+  const meteo=await fetchCurrentMeteo();
+  const meteoEl=document.getElementById('plan-meteo');
+  if(meteo&&meteoEl){
+    const m=meteoFromCode(meteo.weathercode, meteo.rain);
+    document.getElementById('plan-meteo-icon').textContent=m.icon;
+    document.getElementById('plan-meteo-label').textContent=`${m.label}${meteo.precipitation>0?' — '+meteo.precipitation.toFixed(1)+' mm/h':''}`;
+    document.getElementById('plan-meteo-sub').textContent=
+      meteo.rain ? 'Conditions pluvieuses — usage vélo potentiellement réduit' : 'Conditions favorables au vélo';
+    meteoEl.style.display='flex';
+    meteoEl.style.background=meteo.rain?'rgba(0,113,227,.06)':'rgba(40,205,65,.06)';
+  }
+  const isRainy=meteo?.rain??false;
 
   const bikeType=document.getElementById('plan-type').value;
   const radius=parseInt(document.getElementById('plan-radius').value);
@@ -682,6 +726,7 @@ async function computePlan(){
     return;
   }
 
+  const meteoNote=isRainy?' 🌧️ (conditions pluvieuses)':'';
   document.getElementById('plan-results-title').textContent=
     `Top ${top.length} combinaisons · ${DOW_NAMES[targetDow]} ${String(targetH).padStart(2,'0')}h · ${bikeType==='elec'?'⚡ Élec':bikeType==='meca'?'🔧 Méca':'🚲 Tous'} · ${allDays.length} sem. d'historique`;
 
