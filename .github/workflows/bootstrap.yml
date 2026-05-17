@@ -67,17 +67,3 @@ jobs:
             -m "bootstrap: merge $(date -u '+%Y-%m-%d')" \
             -X theirs
           git push origin main
-
-      - name: Relance si pas terminé
-        if: always()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if [ ! -f done.txt ]; then
-            STATE=$(python3 -c "import json;s=json.load(open('data/bootstrap_state.json'));print(s.get('finished',False))" 2>/dev/null || echo "False")
-            if [ "$STATE" != "True" ]; then
-              echo "Relance dans 60s…"
-              sleep 60
-              gh api repos/${{ github.repository }}/dispatches -f event_type=bootstrap-continue
-            fi
-          fi
