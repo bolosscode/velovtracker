@@ -45,7 +45,7 @@ jobs:
           GL_USER:     ${{ secrets.GL_USER }}
           GL_PASSWORD: ${{ secrets.GL_PASSWORD }}
         run: |
-          ARGS="--max-minutes 100"
+          ARGS="--max-minutes 90"
           [ -n "$GL_USER" ]     && ARGS="$ARGS --user $GL_USER"
           [ -n "$GL_PASSWORD" ] && ARGS="$ARGS --password $GL_PASSWORD"
           python bootstrap.py $ARGS
