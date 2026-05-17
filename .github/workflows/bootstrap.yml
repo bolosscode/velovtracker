@@ -12,7 +12,7 @@ jobs:
   bootstrap:
     name: Import historique
     runs-on: ubuntu-latest
-    timeout-minutes: 110
+    timeout-minutes: 120
 
     steps:
       - uses: actions/checkout@v4
@@ -30,7 +30,7 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Créer/rejoindre branche bootstrap
+      - name: Rejoindre/créer branche bootstrap
         run: |
           git fetch origin
           if git ls-remote --exit-code --heads origin history-bootstrap; then
@@ -40,37 +40,19 @@ jobs:
             git checkout -b history-bootstrap
           fi
 
-      - name: Détecter la reprise
-        id: resume
-        run: |
-          # Chercher le dernier fichier BOOTSTRAPPÉ (avant 2026, collect.py écrit les fichiers récents)
-          # On prend le dernier fichier antérieur à 2026 pour éviter de skipper à cause des fichiers collect
-          LAST=$(ls data/history/2023-*.json data/history/2024-*.json data/history/2025-*.json 2>/dev/null | sort | tail -1 | xargs -I{} basename {} .json || true)
-          echo "last_date=${LAST}" >> $GITHUB_OUTPUT
-          echo "Dernier fichier bootstrappé : ${LAST:-aucun}"
-
-      - name: Import historique
-        id: import
+      - name: Import historique (100 min max)
         env:
           GL_USER:     ${{ secrets.GL_USER }}
           GL_PASSWORD: ${{ secrets.GL_PASSWORD }}
         run: |
-          ARGS=""
-          [ -n "${{ secrets.GL_USER }}" ]     && ARGS="$ARGS --user ${{ secrets.GL_USER }}"
-          [ -n "${{ secrets.GL_PASSWORD }}" ] && ARGS="$ARGS --password ${{ secrets.GL_PASSWORD }}"
-          LAST="${{ steps.resume.outputs.last_date }}"
-          [ -n "$LAST" ] && ARGS="$ARGS --resume-after $LAST"
-          echo "Lancement : python bootstrap.py $ARGS"
+          ARGS="--max-minutes 100"
+          [ -n "$GL_USER" ]     && ARGS="$ARGS --user $GL_USER"
+          [ -n "$GL_PASSWORD" ] && ARGS="$ARGS --password $GL_PASSWORD"
           python bootstrap.py $ARGS
-          if [ -f done.txt ]; then
-            echo "finished=true" >> $GITHUB_OUTPUT
-          else
-            echo "finished=false" >> $GITHUB_OUTPUT
-          fi
 
-      - name: Commit sur branche bootstrap
+      - name: Commit & push sur branche bootstrap
         run: |
-          git add data/history/
+          git add data/history/ data/bootstrap_state.json || true
           git diff --staged --quiet && echo "Rien à commiter" && exit 0
           COUNT=$(ls data/history/*.json 2>/dev/null | wc -l || echo 0)
           git commit -m "bootstrap: ${COUNT} jours $(date -u '+%Y-%m-%d %H:%M')"
@@ -87,10 +69,15 @@ jobs:
           git push origin main
 
       - name: Relance si pas terminé
-        if: steps.import.outputs.finished == 'false'
+        if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          sleep 30
-          gh api repos/${{ github.repository }}/dispatches \
-            -f event_type=bootstrap-continue
+          if [ ! -f done.txt ]; then
+            STATE=$(python3 -c "import json;s=json.load(open('data/bootstrap_state.json'));print(s.get('finished',False))" 2>/dev/null || echo "False")
+            if [ "$STATE" != "True" ]; then
+              echo "Relance dans 60s…"
+              sleep 60
+              gh api repos/${{ github.repository }}/dispatches -f event_type=bootstrap-continue
+            fi
+          fi
