@@ -1,34 +1,35 @@
 #!/usr/bin/env python3
 """
-bootstrap.py — Import historique Vélo'v, pipeline continu 20 workers.
+bootstrap.py — Import historique Vélo'v avec reprise via état persistant.
+Lit data/bootstrap_state.json pour reprendre, écrit l'état à la fin.
+Se coupe proprement avant la limite GitHub Actions (timeout paramétrable).
 """
-import os, sys, json, argparse, time
-from datetime import datetime, timezone
+import os, sys, json, argparse, time, signal
+from datetime import datetime, timezone, date
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 
-PAGE_SIZE = 10000
-WORKERS   = 20
-
-BASE_URL = (
-    "https://data.grandlyon.com/fr/datapusher/ws/timeseries"
-    "/jcd_jcdecaux.historiquevelov/all.json"
-    "?compact=false&maxfeatures={size}&start={start}"
-)
+PAGE_SIZE   = 5000
+WORKERS     = 10
+CUTOFF_DATE = '2023-01-01'  # ne garder que depuis 2023
+STATE_FILE  = 'data/bootstrap_state.json'
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--user",         default="")
-parser.add_argument("--password",     default="")
-parser.add_argument("--out",          default="data/history")
-parser.add_argument("--resume-after", default="", dest="resume_after")
+parser.add_argument("--user",       default="")
+parser.add_argument("--password",   default="")
+parser.add_argument("--out",        default="data/history")
+parser.add_argument("--max-minutes", type=int, default=100,
+                    help="Arrêt propre après N minutes (défaut 100)")
 args = parser.parse_args()
 
 auth = (args.user, args.password) if args.user else None
 os.makedirs(args.out, exist_ok=True)
-resume_date = args.resume_after
-print(f"Reprise après : {resume_date or 'début'}", flush=True)
 
+DEADLINE = time.time() + args.max_minutes * 60
+print(f"Deadline dans {args.max_minutes} min", flush=True)
+
+# ── Helpers ────────────────────────────────────────────────────────────────────
 def slot(ts_str):
     try:
         dt = datetime.fromisoformat(ts_str)
@@ -52,7 +53,9 @@ def parse_row(row):
             "c": cap, "e": elec, "m": meca, "st": row.get("status", "OPEN")}
 
 def fetch_page(start):
-    url = BASE_URL.format(size=PAGE_SIZE, start=start)
+    url = (f"https://data.grandlyon.com/fr/datapusher/ws/timeseries"
+           f"/jcd_jcdecaux.historiquevelov/all.json"
+           f"?compact=false&maxfeatures={PAGE_SIZE}&start={start}")
     for attempt in range(3):
         try:
             r = requests.get(url, auth=auth, timeout=30)
@@ -65,11 +68,11 @@ def fetch_page(start):
             if attempt == 2:
                 print(f"  ERREUR start={start}: {e}", flush=True)
                 return start, [], False
-            time.sleep(1)
+            time.sleep(2)
 
-def flush_buffer(buffer, flushed_files):
+def flush_buffer(buf, flushed_files):
     written = 0
-    for date_str, slots in buffer.items():
+    for date_str, slots in buf.items():
         path = os.path.join(args.out, f"{date_str}.json")
         existing = []
         if os.path.exists(path):
@@ -93,47 +96,72 @@ def flush_buffer(buffer, flushed_files):
                 json.dump(merged, f, ensure_ascii=False, separators=(",",":"))
             flushed_files.add(date_str)
             written += 1
-    print(f"  → flush : {written} nouveaux jours ({len(flushed_files)} total)", flush=True)
+    if written:
+        print(f"  → flush : {written} nouveaux jours ({len(flushed_files)} total)", flush=True)
     return defaultdict(lambda: defaultdict(dict))
 
-# ── Estimer le point de départ ─────────────────────────────────────────────────
-start_offset = 1
-if resume_date:
-    try:
-        d0 = datetime(2023, 4, 6)
-        d1 = datetime.strptime(resume_date, "%Y-%m-%d")
-        days = (d1 - d0).days
-        estimated_rows = days * 65000
-        start_offset = max(1, (estimated_rows // PAGE_SIZE - 20) * PAGE_SIZE + 1)
-        print(f"Démarrage estimé à start={start_offset:,}", flush=True)
-    except Exception:
-        pass
+def save_state(next_start, finished=False):
+    state = {
+        "next_start": next_start,
+        "finished":   finished,
+        "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
+    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
+    with open(STATE_FILE, "w") as f:
+        json.dump(state, f)
+    print(f"  → état sauvegardé : next_start={next_start:,} finished={finished}", flush=True)
 
-# ── Pipeline continu ────────────────────────────────────────────────────────────
+def load_state():
+    if os.path.exists(STATE_FILE):
+        try:
+            with open(STATE_FILE) as f:
+                s = json.load(f)
+            if s.get("finished"):
+                print("Historique déjà complet (done).", flush=True)
+                sys.exit(0)
+            start = s.get("next_start", 1)
+            print(f"Reprise depuis l'état : next_start={start:,}", flush=True)
+            return start
+        except Exception:
+            pass
+    print("Pas d'état précédent — démarrage depuis le début.", flush=True)
+    return 1
+
+# ── Main ───────────────────────────────────────────────────────────────────────
+start_offset = load_state()
+
 buffer = defaultdict(lambda: defaultdict(dict))
 flushed_files = set()
 total_rows = 0
 finished = False
-
 t0 = time.time()
-last_flush_time = t0
-FLUSH_INTERVAL = 600  # flush RAM toutes les 10 min
+last_flush = t0
+next_start = start_offset
+last_committed_start = start_offset
+
+FLUSH_INTERVAL = 300  # flush RAM toutes les 5 min
+
+print(f"Démarrage à start={start_offset:,} | {WORKERS} workers | "
+      f"pages de {PAGE_SIZE} lignes", flush=True)
 
 with ThreadPoolExecutor(max_workers=WORKERS) as ex:
-    # Soumettre les WORKERS premières pages
     pending = {}
-    next_start = start_offset
-    
-    # Remplir la queue initiale
     for _ in range(WORKERS):
         fut = ex.submit(fetch_page, next_start)
         pending[fut] = next_start
         next_start += PAGE_SIZE
 
     while pending:
-        # Traiter le premier futur qui se termine
+        # Vérifier si on approche de la deadline
+        if time.time() >= DEADLINE:
+            print(f"\n⏰ Deadline atteinte — arrêt propre.", flush=True)
+            for f in list(pending):
+                f.cancel()
+            pending.clear()
+            break
+
         done_fut = next(as_completed(pending))
-        submitted_start = pending.pop(done_fut)
+        page_start = pending.pop(done_fut)
         start, rows, has_next = done_fut.result()
 
         if rows:
@@ -141,61 +169,46 @@ with ThreadPoolExecutor(max_workers=WORKERS) as ex:
             kept = 0
             for row in rows:
                 date_str, slot_str = slot(row.get("horodate", ""))
-                if not date_str:
+                if not date_str or date_str < CUTOFF_DATE:
                     continue
                 dates_in_page.add(date_str)
-                if resume_date and date_str <= resume_date:
-                    continue
                 buffer[date_str][slot_str][row.get("number")] = row
                 kept += 1
             total_rows += len(rows)
-
             elapsed = time.time() - t0
             rate = total_rows / elapsed if elapsed > 0 else 0
-            date_range = f"{min(dates_in_page)}…{max(dates_in_page)}" if dates_in_page else "?"
-            print(f"  start={start:>12,} | dates={date_range} | kept={kept}/{len(rows)} | "
-                  f"total={total_rows:>10,} | {rate:,.0f} l/s", flush=True)
+            dr = f"{min(dates_in_page)}…{max(dates_in_page)}" if dates_in_page else "?"
+            print(f"  start={start:>12,} | {dr} | kept={kept}/{len(rows)} | "
+                  f"total={total_rows:>8,} | {rate:,.0f} l/s", flush=True)
+            last_committed_start = next_start
 
-        # Flush + commit intermédiaire toutes les 10 min
+
         now = time.time()
-        if now - last_flush_time >= FLUSH_INTERVAL:
+        if now - last_flush >= FLUSH_INTERVAL:
             buffer = flush_buffer(buffer, flushed_files)
-            last_flush_time = now
-            import subprocess
-            subprocess.run(["git","add","data/history/"], check=False)
-            r = subprocess.run(["git","diff","--staged","--quiet"], check=False)
-            if r.returncode != 0:
-                subprocess.run(["git","commit","-m",
-                    f"bootstrap: {len(flushed_files)} jours"], check=False)
-                subprocess.run(["git","push","-f","origin","history-bootstrap"], check=False)
-                print(f"  → commit intermédiaire: {len(flushed_files)} jours", flush=True)
+            last_flush = now
 
-        if not has_next or not rows:
+        if not has_next:
             finished = True
-            # Annuler les futures en cours si on a fini
             for f in list(pending):
                 f.cancel()
-                pending.pop(f)
+            pending.clear()
             break
 
-        # Soumettre la prochaine page
-        if has_next:
+        if rows:  # soumettre la page suivante seulement si pas d'erreur
             fut = ex.submit(fetch_page, next_start)
             pending[fut] = next_start
             next_start += PAGE_SIZE
 
-
-
-# Flush final
+# Flush final + sauvegarde état
 buffer = flush_buffer(buffer, flushed_files)
+save_state(next_start if not finished else next_start, finished=finished)
 
 elapsed = time.time() - t0
 print(f"\n✓ {total_rows:,} lignes en {elapsed:.0f}s "
-      f"({total_rows/elapsed:.0f} lignes/s) → {len(flushed_files)} jours", flush=True)
+      f"({total_rows/max(1,elapsed):.0f} l/s) → {len(flushed_files)} jours", flush=True)
 
 if finished:
-    print("TERMINÉ.", flush=True)
-    with open("done.txt", "w") as f:
-        f.write("done")
+    print("✅ TERMINÉ — tout l'historique importé.", flush=True)
 else:
-    print("PARTIEL — relance nécessaire.", flush=True)
+    print("⏸ PARTIEL — relancez pour continuer.", flush=True)
