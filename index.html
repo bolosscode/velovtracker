@@ -51,6 +51,15 @@ main{max-width:1500px;margin:auto;padding:20px}
 .opt:hover{background:#f0f7ff}
 .opt-type{font-size:10px;color:var(--dim);float:right}
 
+/* mode toggle */
+.mode-toggle-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.mode-label{font-size:13px;color:var(--sub);transition:color .2s}
+.mode-label.active{color:var(--ink);font-weight:600}
+.toggle-track{position:relative;width:48px;height:26px;flex-shrink:0;cursor:pointer}
+.toggle-track input{opacity:0;width:0;height:0;position:absolute}
+.toggle-bg{position:absolute;inset:0;background:#d2d2d7;border-radius:13px;transition:background .2s}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+
 /* params row */
 .params-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
 .params-row label{font-size:11px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
@@ -75,10 +84,6 @@ main{max-width:1500px;margin:auto;padding:20px}
 .score-high{color:var(--green)}
 .score-med{color:var(--orange)}
 .score-low{color:var(--red)}
-
-/* courbes */
-.search-wrap{position:relative;margin-bottom:14px}
-.search-wrap .search{padding-left:12px}
 
 /* table leaderboard */
 #lb-table{width:100%;border-collapse:collapse;font-size:13px}
@@ -126,7 +131,6 @@ main{max-width:1500px;margin:auto;padding:20px}
 
 <!-- ═══ STATISTIQUES ═══ -->
 <div class="panel" id="tab-stats">
-  <!-- Contrôles globaux -->
   <div class="card">
     <div class="card-title">Période &amp; tri</div>
     <div class="range">
@@ -146,10 +150,7 @@ main{max-width:1500px;margin:auto;padding:20px}
     </div>
   </div>
 
-  <!-- Layout 2 colonnes : table gauche, détail droite -->
   <div style="display:grid;grid-template-columns:3fr 2fr;gap:14px;align-items:start">
-
-    <!-- Table -->
     <div class="card" style="padding:0;overflow:hidden">
       <div id="lb-content" style="overflow-x:auto;max-height:70vh;overflow-y:auto">
         <table id="lb-table" style="width:100%;border-collapse:collapse;font-size:13px">
@@ -158,14 +159,11 @@ main{max-width:1500px;margin:auto;padding:20px}
         </table>
       </div>
     </div>
-
-    <!-- Détail station -->
     <div id="stats-detail">
       <div class="no-data" style="padding:80px 20px;background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow)">
         Cliquez une ligne du tableau
       </div>
     </div>
-
   </div>
 </div>
 
@@ -185,51 +183,59 @@ main{max-width:1500px;margin:auto;padding:20px}
         <div class="dropdown" id="plan-to-dd"></div>
       </div>
     </div>
-    <div style="display:flex;gap:8px;margin-bottom:12px">
-      <button id="btn-now" class="btn" onclick="setModeNow()" style="flex:1">🚲 Partir maintenant</button>
-      <button id="btn-plan" onclick="setModePlan()" style="flex:1;background:var(--bg);color:var(--sub);border:1px solid var(--border);padding:8px 18px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">📅 Planifier</button>
-    </div>
-    <div id="plan-params" style="display:none">
-    <div class="params-row">
-      <label>Jour</label>
-      <select id="plan-dow">
-        <option value="1">Lundi</option><option value="2">Mardi</option>
-        <option value="3">Mercredi</option><option value="4">Jeudi</option>
-        <option value="5">Vendredi</option><option value="6">Samedi</option>
-        <option value="0">Dimanche</option>
-      </select>
-      <label>Heure</label>
-      <input type="time" id="plan-hour-time" style="padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none" oninput="syncHourSelect()"/>
-      <select id="plan-hour" style="display:none">
-        <option value="0">00h</option><option value="1">01h</option><option value="2">02h</option><option value="3">03h</option><option value="4">04h</option><option value="5">05h</option><option value="6">06h</option><option value="7">07h</option><option value="8">08h</option><option value="9">09h</option><option value="10">10h</option><option value="11">11h</option><option value="12">12h</option><option value="13">13h</option><option value="14">14h</option><option value="15">15h</option><option value="16">16h</option><option value="17">17h</option><option value="18">18h</option><option value="19">19h</option><option value="20">20h</option><option value="21">21h</option><option value="22">22h</option><option value="23">23h</option>
-      </select>
-      <label>Type</label>
-      <select id="plan-type">
-        <option value="elec">⚡ Électrique</option>
-        <option value="meca">🔧 Mécanique</option>
-        <option value="any">Tous</option>
-      </select>
-      <label>Rayon stations</label>
-      <select id="plan-radius">
-        <option value="250">250 m</option>
-        <option value="500" selected>500 m</option>
-        <option value="750">750 m</option>
-        <option value="1000">1 km</option>
-      </select>
 
+    <!-- Toggle slider mode -->
+    <div class="mode-toggle-row">
+      <span class="mode-label active" id="label-now">Partir maintenant</span>
+      <label class="toggle-track">
+        <input type="checkbox" id="mode-toggle" onchange="toggleMode(this.checked)"/>
+        <span class="toggle-bg" id="mode-bg"></span>
+        <span class="toggle-thumb" id="mode-thumb"></span>
+      </label>
+      <span class="mode-label" id="label-plan">Planifier</span>
     </div>
+
+    <div id="plan-params" style="display:none">
+      <div class="params-row">
+        <label>Jour</label>
+        <select id="plan-dow">
+          <option value="1">Lundi</option><option value="2">Mardi</option>
+          <option value="3">Mercredi</option><option value="4">Jeudi</option>
+          <option value="5">Vendredi</option><option value="6">Samedi</option>
+          <option value="0">Dimanche</option>
+        </select>
+        <label>Heure</label>
+        <input type="time" id="plan-hour-time" style="padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none" oninput="syncHourSelect()"/>
+        <select id="plan-hour" style="display:none">
+          <option value="0">00h</option><option value="1">01h</option><option value="2">02h</option><option value="3">03h</option><option value="4">04h</option><option value="5">05h</option><option value="6">06h</option><option value="7">07h</option><option value="8">08h</option><option value="9">09h</option><option value="10">10h</option><option value="11">11h</option><option value="12">12h</option><option value="13">13h</option><option value="14">14h</option><option value="15">15h</option><option value="16">16h</option><option value="17">17h</option><option value="18">18h</option><option value="19">19h</option><option value="20">20h</option><option value="21">21h</option><option value="22">22h</option><option value="23">23h</option>
+        </select>
+        <label>Type</label>
+        <select id="plan-type">
+          <option value="elec">⚡ Électrique</option>
+          <option value="meca">🔧 Mécanique</option>
+          <option value="any">Tous</option>
+        </select>
+        <label>Rayon</label>
+        <select id="plan-radius">
+          <option value="250">250 m</option>
+          <option value="500" selected>500 m</option>
+          <option value="750">750 m</option>
+          <option value="1000">1 km</option>
+        </select>
+      </div>
     </div>
+
     <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
-      <button class="btn" onclick="computePlan()">🔍 Planifier</button>
-      <p style="font-size:12px;color:var(--dim)">Sélectionnez dans les suggestions ou cliquez Planifier</p>
+      <button class="btn" onclick="computePlan()">Calculer</button>
+      <p style="font-size:12px;color:var(--dim)">Sélectionnez dans les suggestions ou cliquez Calculer</p>
     </div>
+
     <div id="plan-meteo" style="display:none;align-items:center;gap:12px;padding:10px 14px;background:var(--bg);border-radius:10px;margin-top:8px;font-size:13px;flex-wrap:wrap">
       <span id="plan-meteo-icon" style="font-size:24px"></span>
       <div style="flex:1">
         <div id="plan-meteo-label" style="font-weight:600;color:var(--ink)"></div>
         <div id="plan-meteo-sub" style="font-size:11px;color:var(--sub)"></div>
       </div>
-
     </div>
   </div>
 
@@ -250,7 +256,7 @@ let allStations=[], map=null, markers=null, heatLayer=null, heatOn=false;
 let selectedStation=null, chartElec=null, chartMeca=null, chartFlux=null;
 let todayMv={}, lbMvCache={}, courbesSliderDays=1;
 let planMap=null, planRoutes=[], planFromPos=null, planToPos=null;
-let planFromFixed=null, planToFixed=null; // station fixée si l'user en a choisi une
+let planFromFixed=null, planToFixed=null;
 
 const fmt = d => d.toISOString().slice(0,16);
 const DOW_NAMES = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
@@ -326,17 +332,12 @@ async function loadLatest(){
 }
 async function fetchDay(date){
   try{
-    // Pour aujourd'hui, utiliser today.json (mis à jour toutes les minutes)
     const today=new Date().toISOString().slice(0,10);
     const url = date===today ? 'data/today.json' : `data/history/${date}.json`;
     const r=await fetch(url);
     if(!r.ok) return null;
     const data=await r.json();
-    // Format delta : {base, deltas}
-    if(data.base && data.deltas){
-      return expandDeltas(data);
-    }
-    // Format liste (ancien)
+    if(data.base && data.deltas){ return expandDeltas(data); }
     return Array.isArray(data) ? data : null;
   }catch{ return null; }
 }
@@ -357,7 +358,6 @@ function expandDeltas(data){
       Object.assign(baseState[n], d);
     }
     const snap = {t: delta.t, s: Object.values(baseState).map(st=>({...st}))};
-    // Propager la dernière météo connue si le delta n'en a pas
     if(delta.meteo){ lastMeteo=delta.meteo; snap.meteo=delta.meteo; }
     else if(lastMeteo){ snap.meteo=lastMeteo; }
     snapshots.push(snap);
@@ -435,23 +435,14 @@ function buildHeatLayer(){
   const vals=Object.values(todayMv).filter(v=>v>0);
   if(!vals.length) return;
   const maxMv=Math.max(...vals);
-  // Seuil : seulement les stations ayant eu au moins 1 mouvement
   const pts=allStations
     .filter(s=>s.lat&&s.lng&&todayMv[s.number]>0)
     .map(s=>[s.lat, s.lng, todayMv[s.number]/maxMv]);
   heatLayer=L.heatLayer(pts,{
-    radius:35,        // aura lisible au zoom 13
-    blur:20,
-    maxZoom:18,
-    minOpacity:.1,    // faible pour que les différences soient visibles
-    max:1.0,
+    radius:35,blur:20,maxZoom:18,minOpacity:.1,max:1.0,
     gradient:{
-      0.0: '#313695',  // bleu foncé = peu de mouvements
-      0.3: '#4575b4',
-      0.5: '#74add1',
-      0.7: '#fdae61',
-      0.85:'#f46d43',
-      1.0: '#d73027',  // rouge vif = beaucoup de mouvements
+      0.0: '#313695',0.3: '#4575b4',0.5: '#74add1',
+      0.7: '#fdae61',0.85:'#f46d43',1.0: '#d73027',
     }
   });
   if(heatOn) heatLayer.addTo(map);
@@ -474,7 +465,6 @@ function buildDropdown(inputId, ddId, opts){
     dd.innerHTML='';
     if(!q){ dd.classList.remove('open'); return; }
 
-    // Stations locales (instantané)
     const stMatches=allStations
       .filter(s=>cleanName(s.name).toLowerCase().includes(q.toLowerCase()))
       .slice(0,5);
@@ -507,9 +497,8 @@ function buildDropdown(inputId, ddId, opts){
       else dd.classList.remove('open');
     };
 
-    render(); // afficher les stations tout de suite
+    render();
 
-    // Géocodage Nominatim avec debounce 400ms
     clearTimeout(_nominatimDebounce[inputId]);
     if(q.length>=3){
       _nominatimDebounce[inputId]=setTimeout(async()=>{
@@ -655,9 +644,33 @@ async function showDayMeteo(date){
   if(el) el.textContent=`${icon} ${avgTemp}°C · ${(totalPrecip/nMeteo).toFixed(1)} mm/h moy · ${rainyPct}% pluvieux`;
 }
 
-/* ═══ PLANIFIER ════════════════════════════════════════ */
-let planHeatMvCache={};
+/* ═══ MODE TOGGLE ══════════════════════════════════════ */
+function toggleMode(isPlan){
+  const bg=document.getElementById('mode-bg');
+  const thumb=document.getElementById('mode-thumb');
+  const labelNow=document.getElementById('label-now');
+  const labelPlan=document.getElementById('label-plan');
+  if(isPlan){
+    bg.style.background='var(--blue)';
+    thumb.style.left='25px';
+    labelNow.classList.remove('active');
+    labelPlan.classList.add('active');
+    document.getElementById('plan-params').style.display='';
+    window._planMode='plan';
+  } else {
+    bg.style.background='#d2d2d7';
+    thumb.style.left='3px';
+    labelNow.classList.add('active');
+    labelPlan.classList.remove('active');
+    document.getElementById('plan-params').style.display='none';
+    window._planMode='now';
+  }
+}
+function setModeNow(){ document.getElementById('mode-toggle').checked=false; toggleMode(false); }
+function setModePlan(){ document.getElementById('mode-toggle').checked=true; toggleMode(true); }
+window._planMode='now';
 
+/* ═══ PLANIFIER ════════════════════════════════════════ */
 function initPlanMap(){
   if(planMap){ planMap.invalidateSize(); return; }
   planMap=L.map('plan-map').setView([45.757,4.832],13);
@@ -675,16 +688,14 @@ function initPlanMap(){
     onGeoPos:  pos=>{ planToPos=pos; planToFixed=null; },
   });
 
-  // Init heure et jour
   const now=new Date();
   const dowEl=document.getElementById('plan-dow');
   const hourEl=document.getElementById('plan-hour');
   if(dowEl) dowEl.value=String(now.getDay());
-  setModeNow(); // mode par défaut
   if(hourEl) hourEl.value=String(now.getHours());
   const timeEl=document.getElementById('plan-hour-time');
   if(timeEl) timeEl.value=String(now.getHours()).padStart(2,'0')+':00';
-  // Afficher la météo actuelle dès l'ouverture
+
   fetchCurrentMeteo().then(meteo=>{
     if(!meteo) return;
     const m=meteoFromCode(meteo.weathercode, meteo.rain);
@@ -701,9 +712,6 @@ function initPlanMap(){
   });
 }
 
-
-
-// WMO weather codes → emoji + label
 function meteoFromCode(code, rain){
   if(rain || code>=51) return {icon:'🌧️', label:'Pluvieux', rainy:true};
   if(code>=45)         return {icon:'🌫️', label:'Brouillard', rainy:false};
@@ -733,14 +741,13 @@ async function computePlan(){
   resultsCard.style.display='';
   results.innerHTML='<div class="loader">Analyse de l\'historique…</div>';
 
-  // Météo actuelle
   const meteo=await fetchCurrentMeteo();
   const meteoEl=document.getElementById('plan-meteo');
   if(meteo&&meteoEl){
     const m=meteoFromCode(meteo.weathercode, meteo.rain);
     document.getElementById('plan-meteo-icon').textContent=m.icon;
-     const tempStr=meteo.temp!==undefined?` · ${meteo.temp}°C`:'';
-     document.getElementById('plan-meteo-label').textContent=`${m.label}${meteo.precipitation>0?' — '+meteo.precipitation.toFixed(1)+' mm/h':''}${tempStr}`;
+    const tempStr=meteo.temp!==undefined?` · ${meteo.temp}°C`:'';
+    document.getElementById('plan-meteo-label').textContent=`${m.label}${meteo.precipitation>0?' — '+meteo.precipitation.toFixed(1)+' mm/h':''}${tempStr}`;
     document.getElementById('plan-meteo-sub').textContent=
       meteo.rain ? 'Conditions pluvieuses — usage vélo potentiellement réduit' : 'Conditions favorables au vélo';
     meteoEl.style.display='flex';
@@ -750,14 +757,13 @@ async function computePlan(){
 
   const bikeType=document.getElementById('plan-type').value;
   const radius=parseInt(document.getElementById('plan-radius').value);
-  const topN=10; // calcule 10, affiche 3 par défaut
+  const topN=10;
   const isNowMode = (window._planMode||'now') === 'now';
   const now2 = new Date();
   const targetDow = isNowMode ? now2.getDay()   : parseInt(document.getElementById('plan-dow').value);
   const targetH   = isNowMode ? now2.getHours() : parseInt(document.getElementById('plan-hour').value);
   const bikeSpeedKmh=bikeType==='meca'?16:21;
 
-  // Charger historique pour ce jour de semaine
   const today=new Date();
   const dayPromises=[];
   for(let i=0;i<365;i++){
@@ -768,17 +774,13 @@ async function computePlan(){
 
   const currentlyRainy = isRainy;
   const currentPrecip  = meteo?.precipitation ?? 0;
-  const filteredDays   = allDays;  // on pondère, on ne filtre plus
+  const filteredDays   = allDays;
   const meteoFiltered  = false;
-  console.log(`Météo: ${currentlyRainy?'🌧️':'☀️'} ${currentPrecip}mm/h`);
 
-
-  // Stations proches du départ (si pas de station fixe)
   const depStations = planFromFixed
     ? [planFromFixed]
     : allStations.filter(s=>s.lat&&s.lng).map(s=>({...s,dist:haversine(planFromPos.lat,planFromPos.lng,s.lat,s.lng)})).filter(s=>s.dist<=radius).sort((a,b)=>a.dist-b.dist).slice(0,5);
 
-  // Stations proches de l'arrivée (si pas de station fixe)
   const arrStations = planToFixed
     ? [planToFixed]
     : allStations.filter(s=>s.lat&&s.lng).map(s=>({...s,dist:haversine(planToPos.lat,planToPos.lng,s.lat,s.lng)})).filter(s=>s.dist<=radius).sort((a,b)=>a.dist-b.dist).slice(0,5);
@@ -788,11 +790,9 @@ async function computePlan(){
     return;
   }
 
-  // Calculer proba pour chaque station sur l'heure cible
-  const stationProba={}; // number → {dep:%, arr:%}
+  const stationProba={};
   const allIds=new Set([...depStations.map(s=>s.number),...arrStations.map(s=>s.number)]);
 
-  // Calculer aussi les probas conditions inverses (pour affichage info)
   const invertedRainy = !isRainy;
   function meteoWeightInv(snapMeteo){
     if(!snapMeteo) return 0.5;
@@ -800,8 +800,6 @@ async function computePlan(){
     if(!sameRain) return 0.3;
     return 1.0;
   }
-
-    // Pondération météo : poids selon similarité avec conditions actuelles
   function meteoWeight(snapMeteo){
     if(!snapMeteo) return 0.5;
     const sameRain = snapMeteo.rain === currentlyRainy;
@@ -826,7 +824,6 @@ async function computePlan(){
         samples++;
       });
     });
-    // Calcul inverse (conditions météo opposées)
     let depSumI=0,arrSumI=0,wSumI=0;
     filteredDays.forEach(snaps=>{
       snaps.forEach(snap=>{
@@ -850,22 +847,17 @@ async function computePlan(){
     };
   });
 
-  // Générer toutes les combinaisons dep × arr
   const combos=[];
   for(const dep of depStations){
     for(const arr of arrStations){
       if(dep.number===arr.number) continue;
       const pd=stationProba[dep.number], pa=stationProba[arr.number];
       const depPct=pd?.dep??null, arrPct=pa?.arr??null;
-      const depPctInv=pd?.depInv??null, arrPctInv=pa?.arrInv??null;
       if(depPct===null||arrPct===null) continue;
-      // Distance vélo entre les deux stations
       const dist=haversine(dep.lat,dep.lng,arr.lat,arr.lng);
       const rideMin=Math.round(dist/1000/bikeSpeedKmh*60);
-      // Score = 60% proba départ + 40% proba arrivée
       let score=Math.round(depPct*0.6+arrPct*0.4);
       if(isNowMode){
-        // Boost/pénalité selon l'état live
         const liveDep=allStations.find(s=>s.number===dep.number);
         const liveArr=allStations.find(s=>s.number===arr.number);
         if(liveDep&&liveDep.bike_stands>0){
@@ -889,7 +881,6 @@ async function computePlan(){
   document.getElementById('plan-results-title').textContent=
     `Top ${top.length} combinaisons · ${DOW_NAMES[targetDow]} ${String(targetH).padStart(2,'0')}h · ${bikeType==='elec'?'⚡ Élec':bikeType==='meca'?'🔧 Méca':'🚲 Tous'} · ${filteredDays.length} sem.${meteoFiltered?' 🌦️ météo filtrée':''}${meteoNote}`;
 
-  // Afficher top 3 par défaut, bouton pour voir plus
   const renderComboList=(limit)=>{
     const shown=top.slice(0,limit);
     const html=shown.map((combo,i)=>{
@@ -920,20 +911,18 @@ async function computePlan(){
           </button></div>`:'';
     return html+more;
   };
-  // Afficher 3 par défaut, élargir auto si les scores sont faibles
   const topScore=top[0]?.score??0;
   const autoLimit=topScore<30 ? top.length : topScore<50 ? Math.min(5,top.length) : 3;
   results.innerHTML=renderComboList(autoLimit);
   window._showMoreCombos=()=>{ results.innerHTML=renderComboList(top.length); showRoute(0); };
   window._planCombos=top;
-  initPlanMap(); // s'assurer que la carte est initialisée
+  initPlanMap();
   showRoute(0);
 }
 
 let planLayerGroup=null;
 
 async function showRoute(idx){
-  // Highlight carte
   document.querySelectorAll('.combo-card').forEach((el,i)=>{
     el.classList.toggle('selected',i===idx);
   });
@@ -942,16 +931,12 @@ async function showRoute(idx){
   if(planLayerGroup) planLayerGroup.clearLayers();
   planLayerGroup=L.layerGroup().addTo(planMap);
 
-  // Marqueurs départ/arrivée réels
   const radius=parseInt(document.getElementById('plan-radius').value);
 
   if(planFromPos&&!planFromFixed){
-    // Point départ — blanc avec bordure verte épaisse
     L.circleMarker([planFromPos.lat,planFromPos.lng],{radius:9,fillColor:'#fff',color:'#1a9e3f',weight:3,fillOpacity:1})
       .bindTooltip('<b>Départ</b>',{permanent:true,direction:'top'}).addTo(planLayerGroup);
-    // Cercle rayon — vert foncé, tirets
     L.circle([planFromPos.lat,planFromPos.lng],{radius,color:'#1a9e3f',fillColor:'#1a9e3f',fillOpacity:.07,weight:2,dashArray:'6,4'}).addTo(planLayerGroup);
-    // Stations dans le rayon — carré vert vif
     allStations.filter(s=>s.lat&&s.lng&&haversine(planFromPos.lat,planFromPos.lng,s.lat,s.lng)<=radius)
       .forEach(s=>{
         const m=L.circleMarker([s.lat,s.lng],{radius:7,fillColor:'#1a9e3f',color:'#fff',weight:2,fillOpacity:.95});
@@ -960,12 +945,9 @@ async function showRoute(idx){
       });
   }
   if(planToPos&&!planToFixed){
-    // Point arrivée — blanc avec bordure rouge épaisse
     L.circleMarker([planToPos.lat,planToPos.lng],{radius:9,fillColor:'#fff',color:'#c0001a',weight:3,fillOpacity:1})
       .bindTooltip('<b>Arrivée</b>',{permanent:true,direction:'top'}).addTo(planLayerGroup);
-    // Cercle rayon — rouge foncé, tirets
     L.circle([planToPos.lat,planToPos.lng],{radius,color:'#c0001a',fillColor:'#c0001a',fillOpacity:.07,weight:2,dashArray:'6,4'}).addTo(planLayerGroup);
-    // Stations dans le rayon — rouge vif
     allStations.filter(s=>s.lat&&s.lng&&haversine(planToPos.lat,planToPos.lng,s.lat,s.lng)<=radius)
       .forEach(s=>{
         const m=L.circleMarker([s.lat,s.lng],{radius:7,fillColor:'#c0001a',color:'#fff',weight:2,fillOpacity:.95});
@@ -974,13 +956,11 @@ async function showRoute(idx){
       });
   }
 
-  // Stations
   L.circleMarker([combo.dep.lat,combo.dep.lng],{radius:10,fillColor:'#28cd41',color:'#fff',weight:2,fillOpacity:.95})
     .bindTooltip(cleanName(combo.dep.name),{permanent:true,direction:'top'}).addTo(planLayerGroup);
   L.circleMarker([combo.arr.lat,combo.arr.lng],{radius:10,fillColor:'#ff3b30',color:'#fff',weight:2,fillOpacity:.95})
     .bindTooltip(cleanName(combo.arr.name),{permanent:true,direction:'top'}).addTo(planLayerGroup);
 
-  // Routing Valhalla entre les deux stations
   const bikeType=document.getElementById('plan-type').value;
   const speed=bikeType==='meca'?16:21;
   const routeColor=bikeType==='meca'?'#e8001c':'#28cd41';
@@ -991,7 +971,6 @@ async function showRoute(idx){
       costing_options:{bicycle:{bicycle_type:'Road',cycling_speed:speed,use_roads:0.4,use_hills:0.2}},
       directions_type:'none'
     };
-    // Essai Valhalla, fallback OSRM
     let coords = null;
     try {
       const rv=await fetch(`https://valhalla1.openstreetmap.de/route?json=${encodeURIComponent(JSON.stringify(body))}`,{signal:AbortSignal.timeout(5000)});
@@ -1002,7 +981,6 @@ async function showRoute(idx){
       }
     } catch {}
     if(!coords){
-      // Fallback OSRM cycling
       const osrmUrl=`https://router.project-osrm.org/route/v1/bike/${combo.dep.lng},${combo.dep.lat};${combo.arr.lng},${combo.arr.lat}?overview=full&geometries=polyline6`;
       const ro=await fetch(osrmUrl,{signal:AbortSignal.timeout(8000)});
       if(ro.ok){
@@ -1020,20 +998,17 @@ async function showRoute(idx){
     }
   }catch{}
 
-  // Lignes en pointillés piéton
   if(planFromPos&&!planFromFixed)
     L.polyline([[planFromPos.lat,planFromPos.lng],[combo.dep.lat,combo.dep.lng]],{color:'#6e6e73',weight:2,dashArray:'5,5',opacity:.7}).addTo(planLayerGroup);
   if(planToPos&&!planToFixed)
     L.polyline([[combo.arr.lat,combo.arr.lng],[planToPos.lat,planToPos.lng]],{color:'#6e6e73',weight:2,dashArray:'5,5',opacity:.7}).addTo(planLayerGroup);
 
-  // Courbes probabilité 24h pour cette combinaison
   showComboCourbes(combo);
 }
 
 let _chartComboA=null, _chartComboB=null;
 
 async function showComboCourbes(combo){
-  // Récupérer ou créer la zone courbes
   let zone=document.getElementById('plan-courbes-zone');
   if(!zone){
     zone=document.createElement('div');
@@ -1093,13 +1068,6 @@ async function showComboCourbes(combo){
   });
 }
 
-/* ═══ INIT ════════════════════════════════════════════ */
-function initRanges(){
-  const now=new Date();
-  document.getElementById('lb-date').value=now.toISOString().slice(0,10);
-}
-
-
 /* ═══ STATS DETAIL ════════════════════════════════════ */
 let _chartSD_elec=null, _chartSD_meca=null, _chartSD_hmap=null;
 
@@ -1107,7 +1075,6 @@ async function showStationDetail(number){
   const st=allStations.find(s=>s.number===number);
   if(!st) return;
 
-  // Highlight ligne
   document.querySelectorAll('#lb-body tr').forEach(r=>r.style.background='');
   const row=document.getElementById('lb-row-'+number);
   if(row) row.style.background='var(--blue-l, #e8f0fe)';
@@ -1131,7 +1098,6 @@ async function showStationDetail(number){
       <div id="sd-hmap"><div class="loader">Calcul…</div></div>
     </div>`;
 
-  // Mini-carte
   if(st.lat && st.lng){
     const sdMap=L.map('sd-map',{zoomControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false,keyboard:false,touchZoom:false})
       .setView([st.lat,st.lng],16);
@@ -1140,7 +1106,6 @@ async function showStationDetail(number){
     L.circleMarker([st.lat,st.lng],{radius:10,fillColor:stationColor(st),color:'#fff',weight:2,fillOpacity:.95}).addTo(sdMap);
   }
 
-  // Période depuis les inputs globaux
   const d=document.getElementById('lb-date').value;
   if(!d){ return; }
   const snaps=await fetchDay(d)||[];
@@ -1169,7 +1134,6 @@ async function showStationDetail(number){
   _chartSD_elec=mk('sd-elec',dataElec,'#28cd41','⚡ Électriques');
   _chartSD_meca=mk('sd-meca',dataMeca,'#0071e3','🔧 Mécaniques');
 
-  // Heatmap mouvements 7j — grille heure × jour
   const hmapEl=document.getElementById('sd-hmap');
   const today=new Date();
   const week7=[];
@@ -1179,7 +1143,6 @@ async function showStationDetail(number){
   }
   const weekSnaps=(await Promise.all(week7)).filter(Boolean);
 
-  // buckets[dow][hour] = mouvements
   const bk=Array.from({length:7},()=>Array.from({length:24},()=>0));
   for(const snaps of weekSnaps){
     for(let i=1;i<snaps.length;i++){
@@ -1215,30 +1178,17 @@ async function showStationDetail(number){
   hmapEl.innerHTML=html;
 }
 
-function setModeNow(){
-  document.getElementById('btn-now').style.background='var(--blue)';
-  document.getElementById('btn-now').style.color='#fff';
-  document.getElementById('btn-plan').style.background='var(--bg)';
-  document.getElementById('btn-plan').style.color='var(--sub)';
-  document.getElementById('plan-params').style.display='none';
-  window._planMode='now';
-}
-function setModePlan(){
-  document.getElementById('btn-plan').style.background='var(--blue)';
-  document.getElementById('btn-plan').style.color='#fff';
-  document.getElementById('btn-now').style.background='var(--bg)';
-  document.getElementById('btn-now').style.color='var(--sub)';
-  document.getElementById('btn-now').style.border='1px solid var(--border)';
-  document.getElementById('plan-params').style.display='';
-  window._planMode='plan';
-}
-window._planMode='now';
-
 function syncHourSelect(){
   const t=document.getElementById('plan-hour-time')?.value||'00:00';
   const h=parseInt(t.split(':')[0]);
   const sel=document.getElementById('plan-hour');
   if(sel) sel.value=String(h);
+}
+
+/* ═══ INIT ════════════════════════════════════════════ */
+function initRanges(){
+  const now=new Date();
+  document.getElementById('lb-date').value=now.toISOString().slice(0,10);
 }
 
 /* ═══ BOOT ════════════════════════════════════════════ */
