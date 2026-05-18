@@ -855,7 +855,7 @@ async function computePlan(){
       const rideMin=Math.round(dist/1000/bikeSpeedKmh*60);
       // Score = 60% proba départ + 40% proba arrivée
       const score=Math.round(depPct*0.6+arrPct*0.4);
-      combos.push({dep,arr,depPct,arrPct,score,dist,rideMin,samples:pd?.samples??0});
+      combos.push({dep,arr,depPct,arrPct,depPctInv:pd?.depInv??null,arrPctInv:pa?.arrInv??null,score,dist,rideMin,samples:pd?.samples??0});
     }
   }
 
@@ -908,6 +908,7 @@ async function computePlan(){
   results.innerHTML=renderComboList(autoLimit);
   window._showMoreCombos=()=>{ results.innerHTML=renderComboList(top.length); showRoute(0); };
   window._planCombos=top;
+  initPlanMap(); // s'assurer que la carte est initialisée
   showRoute(0);
 }
 
