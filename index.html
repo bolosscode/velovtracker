@@ -215,11 +215,19 @@ main{max-width:1500px;margin:auto;padding:20px}
       <button class="btn" onclick="computePlan()">🔍 Planifier</button>
       <p style="font-size:12px;color:var(--dim)">Sélectionnez dans les suggestions ou cliquez Planifier</p>
     </div>
-    <div id="plan-meteo" style="display:none;align-items:center;gap:10px;padding:10px 14px;background:var(--bg);border-radius:10px;margin-top:8px;font-size:13px">
+    <div id="plan-meteo" style="display:none;align-items:center;gap:12px;padding:10px 14px;background:var(--bg);border-radius:10px;margin-top:8px;font-size:13px;flex-wrap:wrap">
       <span id="plan-meteo-icon" style="font-size:24px"></span>
-      <div>
+      <div style="flex:1">
         <div id="plan-meteo-label" style="font-weight:600;color:var(--ink)"></div>
         <div id="plan-meteo-sub" style="font-size:11px;color:var(--sub)"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px">
+        <label style="color:var(--sub);font-weight:600">Forcer météo :</label>
+        <select id="plan-meteo-override" style="padding:4px 8px;border-radius:8px;border:1px solid var(--border);font-size:12px">
+          <option value="auto">Auto (actuel)</option>
+          <option value="dry">☀️ Sec</option>
+          <option value="rain">🌧️ Pluie</option>
+        </select>
       </div>
     </div>
   </div>
@@ -697,7 +705,10 @@ async function computePlan(){
     meteoEl.style.display='flex';
     meteoEl.style.background=meteo.rain?'rgba(0,113,227,.06)':'rgba(40,205,65,.06)';
   }
-  const isRainy=meteo?.rain??false;
+  const meteoOverride = document.getElementById('plan-meteo-override')?.value ?? 'auto';
+  const isRainy = meteoOverride==='rain' ? true
+                : meteoOverride==='dry'  ? false
+                : (meteo?.precipitation??0)>0.1;
 
   const bikeType=document.getElementById('plan-type').value;
   const radius=parseInt(document.getElementById('plan-radius').value);
