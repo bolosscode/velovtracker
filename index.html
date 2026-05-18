@@ -715,16 +715,11 @@ async function computePlan(){
   }
   const allDays=(await Promise.all(dayPromises)).filter(Boolean);
 
-  // Filtrer par météo si on a assez d'échantillons
   const currentlyRainy = isRainy;
-  const rainyDays  = allDays.filter(snaps=>snaps.some(s=>s.meteo?.rain===true));
-  const dryDays    = allDays.filter(snaps=>snaps.some(s=>s.meteo?.rain===false));
-  const meteoLabel = currentlyRainy ? '🌧️ pluie' : '☀️ sec';
-  const filteredDays = currentlyRainy
-    ? (rainyDays.length >= 5 ? rainyDays : allDays)
-    : (dryDays.length   >= 5 ? dryDays   : allDays);
-  const meteoFiltered = filteredDays.length < allDays.length;
-  console.log(`Météo: ${meteoLabel} | ${filteredDays.length}/${allDays.length} jours utilisés`);
+  const currentPrecip  = meteo?.precipitation ?? 0;
+  const filteredDays   = allDays;  // on pondère, on ne filtre plus
+  const meteoFiltered  = false;
+  console.log(`Météo: ${currentlyRainy?'🌧️':'☀️'} ${currentPrecip}mm/h`);
 
 
   // Stations proches du départ (si pas de station fixe)
@@ -746,8 +741,17 @@ async function computePlan(){
   const stationProba={}; // number → {dep:%, arr:%}
   const allIds=new Set([...depStations.map(s=>s.number),...arrStations.map(s=>s.number)]);
 
+  // Pondération météo : poids selon similarité avec conditions actuelles
+  function meteoWeight(snapMeteo){
+    if(!snapMeteo) return 0.5;
+    const sameRain = snapMeteo.rain === currentlyRainy;
+    if(!sameRain) return 0.3;
+    const precDiff = Math.abs((snapMeteo.precipitation||0) - currentPrecip);
+    return Math.max(0.5, 1.0 - precDiff * 0.1);
+  }
+
   allIds.forEach(num=>{
-    const depVals=[],arrVals=[];
+    let depSum=0, arrSum=0, wSum=0, samples=0;
     filteredDays.forEach(snaps=>{
       snaps.forEach(snap=>{
         const h=(new Date(getTs(snap)).getUTCHours()+2)%24;
@@ -755,12 +759,18 @@ async function computePlan(){
         const sts=getSts(snap), st=sts.find(s=>s.number===num);
         if(!st||!st.bike_stands) return;
         const depKey=bikeType==='elec'?'electrical_bikes':bikeType==='meca'?'mechanical_bikes':'available_bikes';
-        depVals.push((st[depKey]||0)/st.bike_stands*100);
-        arrVals.push(st.available_bike_stands/st.bike_stands*100);
+        const w=meteoWeight(snap.meteo);
+        depSum += (st[depKey]||0)/st.bike_stands*100 * w;
+        arrSum += st.available_bike_stands/st.bike_stands*100 * w;
+        wSum   += w;
+        samples++;
       });
     });
-    const avg=a=>a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length):null;
-    stationProba[num]={dep:avg(depVals),arr:avg(arrVals),samples:depVals.length};
+    stationProba[num]={
+      dep: wSum>0 ? Math.round(depSum/wSum) : null,
+      arr: wSum>0 ? Math.round(arrSum/wSum) : null,
+      samples
+    };
   });
 
   // Générer toutes les combinaisons dep × arr
