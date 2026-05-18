@@ -221,14 +221,7 @@ main{max-width:1500px;margin:auto;padding:20px}
         <div id="plan-meteo-label" style="font-weight:600;color:var(--ink)"></div>
         <div id="plan-meteo-sub" style="font-size:11px;color:var(--sub)"></div>
       </div>
-      <div style="display:flex;align-items:center;gap:6px;font-size:12px">
-        <label style="color:var(--sub);font-weight:600">Forcer météo :</label>
-        <select id="plan-meteo-override" style="padding:4px 8px;border-radius:8px;border:1px solid var(--border);font-size:12px">
-          <option value="auto">Auto (actuel)</option>
-          <option value="dry">☀️ Sec</option>
-          <option value="rain">🌧️ Pluie</option>
-        </select>
-      </div>
+
     </div>
   </div>
 
@@ -705,10 +698,7 @@ async function computePlan(){
     meteoEl.style.display='flex';
     meteoEl.style.background=meteo.rain?'rgba(0,113,227,.06)':'rgba(40,205,65,.06)';
   }
-  const meteoOverride = document.getElementById('plan-meteo-override')?.value ?? 'auto';
-  const isRainy = meteoOverride==='rain' ? true
-                : meteoOverride==='dry'  ? false
-                : (meteo?.precipitation??0)>0.1;
+  const isRainy=(meteo?.precipitation??0)>0.1;
 
   const bikeType=document.getElementById('plan-type').value;
   const radius=parseInt(document.getElementById('plan-radius').value);
@@ -752,7 +742,16 @@ async function computePlan(){
   const stationProba={}; // number → {dep:%, arr:%}
   const allIds=new Set([...depStations.map(s=>s.number),...arrStations.map(s=>s.number)]);
 
-  // Pondération météo : poids selon similarité avec conditions actuelles
+  // Calculer aussi les probas conditions inverses (pour affichage info)
+  const invertedRainy = !isRainy;
+  function meteoWeightInv(snapMeteo){
+    if(!snapMeteo) return 0.5;
+    const sameRain = snapMeteo.rain === invertedRainy;
+    if(!sameRain) return 0.3;
+    return 1.0;
+  }
+
+    // Pondération météo : poids selon similarité avec conditions actuelles
   function meteoWeight(snapMeteo){
     if(!snapMeteo) return 0.5;
     const sameRain = snapMeteo.rain === currentlyRainy;
@@ -777,9 +776,26 @@ async function computePlan(){
         samples++;
       });
     });
+    // Calcul inverse (conditions météo opposées)
+    let depSumI=0,arrSumI=0,wSumI=0;
+    filteredDays.forEach(snaps=>{
+      snaps.forEach(snap=>{
+        const h=(new Date(getTs(snap)).getUTCHours()+2)%24;
+        if(h!==targetH) return;
+        const sts=getSts(snap), st=sts.find(s=>s.number===num);
+        if(!st||!st.bike_stands) return;
+        const depKey=bikeType==='elec'?'electrical_bikes':bikeType==='meca'?'mechanical_bikes':'available_bikes';
+        const w=meteoWeightInv(snap.meteo);
+        depSumI += (st[depKey]||0)/st.bike_stands*100 * w;
+        arrSumI += st.available_bike_stands/st.bike_stands*100 * w;
+        wSumI   += w;
+      });
+    });
     stationProba[num]={
       dep: wSum>0 ? Math.round(depSum/wSum) : null,
       arr: wSum>0 ? Math.round(arrSum/wSum) : null,
+      depInv: wSumI>0 ? Math.round(depSumI/wSumI) : null,
+      arrInv: wSumI>0 ? Math.round(arrSumI/wSumI) : null,
       samples
     };
   });
@@ -791,6 +807,7 @@ async function computePlan(){
       if(dep.number===arr.number) continue;
       const pd=stationProba[dep.number], pa=stationProba[arr.number];
       const depPct=pd?.dep??null, arrPct=pa?.arr??null;
+      const depPctInv=pd?.depInv??null, arrPctInv=pa?.arrInv??null;
       if(depPct===null||arrPct===null) continue;
       // Distance vélo entre les deux stations
       const dist=haversine(dep.lat,dep.lng,arr.lat,arr.lng);
@@ -826,7 +843,8 @@ async function computePlan(){
           <div class="combo-route">🟢 ${cleanName(combo.dep.name)} → 🔴 ${cleanName(combo.arr.name)}</div>
           <div class="combo-meta">
             Départ${depDist} · ${Math.round(combo.dist/1000*10)/10} km · ~${combo.rideMin} min<br>
-            ⚡ vélo dispo : <b>${combo.depPct}%</b> · 🅿️ place dispo : <b>${combo.arrPct}%</b>
+            ${isRainy?'🌧️':'☀️'} vélo dispo : <b>${combo.depPct}%</b> · 🅿️ place dispo : <b>${combo.arrPct}%</b>
+            ${combo.depPctInv!==null?`· ${invertedRainy?'🌧️':'☀️'} <span style="color:var(--dim)">${combo.depPctInv}%/${combo.arrPctInv}%</span>`:''}
             ${combo.samples?` · ${combo.samples} mesures`:''}${arrDist}
           </div>
         </div>
