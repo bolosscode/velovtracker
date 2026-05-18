@@ -187,8 +187,8 @@ main{max-width:1500px;margin:auto;padding:20px}
     </div>
     <div style="display:flex;background:var(--bg);border-radius:12px;padding:3px;margin-bottom:12px;position:relative;width:fit-content">
       <div id="toggle-slider" style="position:absolute;top:3px;left:3px;height:calc(100% - 6px);width:50%;background:#fff;border-radius:9px;box-shadow:0 1px 4px rgba(0,0,0,.12);transition:transform .2s ease;pointer-events:none"></div>
-      <button id="btn-now" onclick="setModeNow()" style="position:relative;z-index:1;padding:8px 20px;border:none;background:transparent;font-size:13px;font-weight:600;cursor:pointer;border-radius:9px;color:var(--blue);min-width:160px">🚲 Partir maintenant</button>
-      <button id="btn-plan" onclick="setModePlan()" style="position:relative;z-index:1;padding:8px 20px;border:none;background:transparent;font-size:13px;font-weight:600;cursor:pointer;border-radius:9px;color:var(--sub);min-width:140px">📅 Planifier</button>
+      <button id="btn-now" onclick="setModeNow()" style="position:relative;z-index:1;padding:8px 20px;border:none;background:transparent;font-size:13px;font-weight:600;cursor:pointer;border-radius:9px;color:var(--blue);min-width:140px">Maintenant</button>
+      <button id="btn-plan" onclick="setModePlan()" style="position:relative;z-index:1;padding:8px 20px;border:none;background:transparent;font-size:13px;font-weight:600;cursor:pointer;border-radius:9px;color:var(--sub);min-width:140px">Planifier</button>
     </div>
     <div id="plan-params" style="display:none">
     <div class="params-row">
@@ -221,8 +221,8 @@ main{max-width:1500px;margin:auto;padding:20px}
     </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
-      <button class="btn" onclick="computePlan()">🔍 Planifier</button>
-      <p style="font-size:12px;color:var(--dim)">Sélectionnez dans les suggestions ou cliquez Planifier</p>
+       <button class="btn" onclick="computePlan()">Calculer</button>
+       <p style="font-size:12px;color:var(--dim)">Sélectionnez dans les suggestions ou cliquez Calculer</p>
     </div>
     <div id="plan-meteo" style="display:none;align-items:center;gap:12px;padding:10px 14px;background:var(--bg);border-radius:10px;margin-top:8px;font-size:13px;flex-wrap:wrap">
       <span id="plan-meteo-icon" style="font-size:24px"></span>
@@ -1002,26 +1002,45 @@ async function showRoute(idx){
       costing_options:{bicycle:{bicycle_type:'Road',cycling_speed:speed,use_roads:0.4,use_hills:0.2}},
       directions_type:'none'
     };
-    // Essai Valhalla, fallback OSRM
     let coords = null;
+
+    // 1. Valhalla — prioritaire
     try {
-      const rv=await fetch(`https://valhalla1.openstreetmap.de/route?json=${encodeURIComponent(JSON.stringify(body))}`,{signal:AbortSignal.timeout(5000)});
-      if(rv.ok){
-        const dv=await rv.json();
-        const leg=dv.trip?.legs?.[0];
-        if(leg) coords=decodePolyline(leg.shape);
+      const rv0 = await fetch(`https://valhalla1.openstreetmap.de/route?json=${encodeURIComponent(JSON.stringify(body))}`, {signal: AbortSignal.timeout(5000)});
+      if(rv0.ok){
+        const dv0 = await rv0.json();
+        const leg0 = dv0.trip?.legs?.[0];
+        if(leg0) coords = decodePolyline(leg0.shape);
       }
     } catch {}
+
+    // 2. Fallback Brouter
     if(!coords){
-      // Fallback OSRM cycling
-      const osrmUrl=`https://router.project-osrm.org/route/v1/bike/${combo.dep.lng},${combo.dep.lat};${combo.arr.lng},${combo.arr.lat}?overview=full&geometries=polyline6`;
-      const ro=await fetch(osrmUrl,{signal:AbortSignal.timeout(8000)});
-      if(ro.ok){
-        const dor=await ro.json();
-        const geom=dor.routes?.[0]?.geometry;
-        if(geom) coords=decodePolyline(geom);
-      }
+      try {
+        const profile = bikeType==='meca' ? 'trekking' : 'trekking-electric';
+        const brUrl = `https://brouter.de/brouter?lonlats=${combo.dep.lng},${combo.dep.lat}|${combo.arr.lng},${combo.arr.lat}&profile=${profile}&alternativeidx=0&format=geojson`;
+        const rb = await fetch(brUrl, {signal: AbortSignal.timeout(8000)});
+        if(rb.ok){
+          const db = await rb.json();
+          const geom = db.features?.[0]?.geometry;
+          if(geom?.type==='LineString') coords = geom.coordinates.map(([lng,lat])=>[lat,lng]);
+        }
+      } catch {}
     }
+
+    // 3. Fallback OSRM bike
+    if(!coords){
+      try {
+        const osrmUrl = `https://router.project-osrm.org/route/v1/bike/${combo.dep.lng},${combo.dep.lat};${combo.arr.lng},${combo.arr.lat}?overview=full&geometries=polyline6`;
+        const ro = await fetch(osrmUrl, {signal: AbortSignal.timeout(8000)});
+        if(ro.ok){
+          const dor = await ro.json();
+          const geom = dor.routes?.[0]?.geometry;
+          if(geom) coords = decodePolyline(geom);
+        }
+      } catch {}
+    }
+
     if(coords){
       L.polyline(coords,{color:routeColor,weight:5,opacity:.9}).addTo(planLayerGroup);
       setTimeout(()=>{
