@@ -980,7 +980,10 @@ async function showRoute(idx){
       if(leg){
         const coords=decodePolyline(leg.shape);
         L.polyline(coords,{color:routeColor,weight:5,opacity:.9}).addTo(planLayerGroup);
-        planMap.fitBounds(L.polyline(coords).getBounds().pad(.2));
+        setTimeout(()=>{
+          planMap.invalidateSize();
+          planMap.fitBounds(L.polyline(coords).getBounds().pad(.2));
+        }, 100);
       }
     }
   }catch{}
