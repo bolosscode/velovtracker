@@ -15,13 +15,13 @@ LIVE_URL = (
 METEO_URL = (
     "https://api.open-meteo.com/v1/forecast"
     "?latitude=45.75&longitude=4.83"
-    "&current=precipitation,rain,weathercode"
+    "&current=precipitation,rain,weathercode,temperature_2m"
     "&timezone=Europe%2FParis"
 )
 VAE_LAUNCH  = '2025-01-29'
 TODAY_FILE  = 'data/today.json'
 LATEST_FILE = 'data/latest.json'
-RESET_HOUR  = 2  # heure locale Paris de reset
+RESET_HOUR  = 0  # reset à minuit heure locale Paris
 
 def parse_stands(raw):
     if not raw or raw.strip() in ('', '""', "''"):
@@ -70,7 +70,8 @@ def fetch_meteo():
         cur = r.json().get('current', {})
         precip = cur.get('precipitation', 0) or 0
         return {"precipitation": round(precip, 2), "rain": precip > 0.1,
-                "weathercode": cur.get('weathercode', 0) or 0}
+                "weathercode": cur.get('weathercode', 0) or 0,
+                "temp": round(cur.get('temperature_2m', 0) or 0, 1)}
     except Exception:
         return None
 
