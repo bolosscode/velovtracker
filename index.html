@@ -141,6 +141,7 @@ main{max-width:1500px;margin:auto;padding:20px}
         <option value="fill">% remplissage</option>
       </select>
       <button class="btn" onclick="computeLeaderboard()">Calculer</button>
+      <span id="lb-meteo" style="font-size:12px;color:var(--sub)"></span>
       <span style="font-size:12px;color:var(--dim)">· Cliquez une station pour ses courbes</span>
     </div>
   </div>
@@ -193,7 +194,8 @@ main{max-width:1500px;margin:auto;padding:20px}
         <option value="0">Dimanche</option>
       </select>
       <label>Heure</label>
-      <select id="plan-hour">
+      <input type="time" id="plan-hour-time" style="padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none" oninput="syncHourSelect()"/>
+      <select id="plan-hour" style="display:none">
         <option value="0">00h</option><option value="1">01h</option><option value="2">02h</option><option value="3">03h</option><option value="4">04h</option><option value="5">05h</option><option value="6">06h</option><option value="7">07h</option><option value="8">08h</option><option value="9">09h</option><option value="10">10h</option><option value="11">11h</option><option value="12">12h</option><option value="13">13h</option><option value="14">14h</option><option value="15">15h</option><option value="16">16h</option><option value="17">17h</option><option value="18">18h</option><option value="19">19h</option><option value="20">20h</option><option value="21">21h</option><option value="22">22h</option><option value="23">23h</option>
       </select>
       <label>Type</label>
@@ -593,6 +595,7 @@ async function computeLeaderboard(){
   const d=document.getElementById('lb-date').value;
   if(!d){ content.innerHTML='<div class="no-data">Sélectionnez une date.</div>'; return; }
   const snaps=await fetchDay(d)||[];
+  showDayMeteo(d);
   if(!snaps.length){ content.innerHTML='<div class="no-data">Aucune donnée.</div>'; return; }
   lbMvCache=calcMvFromSnaps(snaps);
   content.innerHTML='<div style="overflow-x:auto"><table id="lb-table"><thead id="lb-head"></thead><tbody id="lb-body"></tbody></table></div>';
@@ -627,6 +630,25 @@ function renderLbTable(mvData){
 }
 document.getElementById('lb-sort').addEventListener('change',()=>renderLbTable(Object.keys(lbMvCache).length?lbMvCache:todayMv));
 
+async function showDayMeteo(date){
+  const snaps=await fetchDay(date);
+  if(!snaps||!snaps.length) return;
+  let totalPrecip=0,totalTemp=0,nMeteo=0,rainySnaps=0;
+  snaps.forEach(s=>{
+    const m=s.meteo; if(!m) return;
+    totalPrecip+=m.precipitation||0;
+    if(m.temp!==undefined) totalTemp+=m.temp;
+    if(m.rain) rainySnaps++;
+    nMeteo++;
+  });
+  if(!nMeteo) return;
+  const avgTemp=Math.round(totalTemp/nMeteo*10)/10;
+  const rainyPct=Math.round(rainySnaps/nMeteo*100);
+  const icon=rainyPct>50?'🌧️':rainyPct>20?'⛅':'☀️';
+  const el=document.getElementById('lb-meteo');
+  if(el) el.textContent=`${icon} ${avgTemp}°C · ${(totalPrecip/nMeteo).toFixed(1)} mm/h moy · ${rainyPct}% pluvieux`;
+}
+
 /* ═══ PLANIFIER ════════════════════════════════════════ */
 let planHeatMvCache={};
 
@@ -653,6 +675,23 @@ function initPlanMap(){
   const hourEl=document.getElementById('plan-hour');
   if(dowEl) dowEl.value=String(now.getDay());
   if(hourEl) hourEl.value=String(now.getHours());
+  const timeEl=document.getElementById('plan-hour-time');
+  if(timeEl) timeEl.value=String(now.getHours()).padStart(2,'0')+':00';
+  // Afficher la météo actuelle dès l'ouverture
+  fetchCurrentMeteo().then(meteo=>{
+    if(!meteo) return;
+    const m=meteoFromCode(meteo.weathercode, meteo.rain);
+    const tempStr=meteo.temp!==undefined?` · ${meteo.temp}°C`:'';
+    const meteoEl=document.getElementById('plan-meteo');
+    if(meteoEl){
+      document.getElementById('plan-meteo-icon').textContent=m.icon;
+      document.getElementById('plan-meteo-label').textContent=`${m.label}${meteo.precipitation>0?' — '+meteo.precipitation.toFixed(1)+' mm/h':''}${tempStr}`;
+      document.getElementById('plan-meteo-sub').textContent=
+        meteo.rain?'Conditions pluvieuses':'Conditions favorables au vélo';
+      meteoEl.style.display='flex';
+      meteoEl.style.background=meteo.rain?'rgba(0,113,227,.06)':'rgba(40,205,65,.06)';
+    }
+  });
 }
 
 
@@ -668,7 +707,7 @@ function meteoFromCode(code, rain){
 
 async function fetchCurrentMeteo(){
   try{
-    const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude=45.75&longitude=4.83&current=precipitation,rain,weathercode&timezone=Europe%2FParis');
+    const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude=45.75&longitude=4.83&current=precipitation,rain,weathercode,temperature_2m&timezone=Europe%2FParis');
     if(!r.ok) return null;
     const d=await r.json();
     const cur=d.current||{};
@@ -692,7 +731,8 @@ async function computePlan(){
   if(meteo&&meteoEl){
     const m=meteoFromCode(meteo.weathercode, meteo.rain);
     document.getElementById('plan-meteo-icon').textContent=m.icon;
-    document.getElementById('plan-meteo-label').textContent=`${m.label}${meteo.precipitation>0?' — '+meteo.precipitation.toFixed(1)+' mm/h':''}`;
+     const tempStr=meteo.temp!==undefined?` · ${meteo.temp}°C`:'';
+     document.getElementById('plan-meteo-label').textContent=`${m.label}${meteo.precipitation>0?' — '+meteo.precipitation.toFixed(1)+' mm/h':''}${tempStr}`;
     document.getElementById('plan-meteo-sub').textContent=
       meteo.rain ? 'Conditions pluvieuses — usage vélo potentiellement réduit' : 'Conditions favorables au vélo';
     meteoEl.style.display='flex';
@@ -1136,6 +1176,13 @@ async function showStationDetail(number){
   html+='</div></div>';
   html+='<div style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:11px;color:var(--sub)"><span>0 mvt</span><div style="flex:1;max-width:120px;height:5px;border-radius:2px;background:linear-gradient(to right,#f5f5f7,#3040e0)"></div><span>max</span></div>';
   hmapEl.innerHTML=html;
+}
+
+function syncHourSelect(){
+  const t=document.getElementById('plan-hour-time')?.value||'00:00';
+  const h=parseInt(t.split(':')[0]);
+  const sel=document.getElementById('plan-hour');
+  if(sel) sel.value=String(h);
 }
 
 /* ═══ BOOT ════════════════════════════════════════════ */
