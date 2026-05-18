@@ -316,7 +316,41 @@ async function loadLatest(){
   }
 }
 async function fetchDay(date){
-  try{ const r=await fetch(`data/history/${date}.json`); return r.ok?r.json():null; }catch{ return null; }
+  try{
+    const r=await fetch(`data/history/${date}.json`);
+    if(!r.ok) return null;
+    const data=await r.json();
+    // Format delta : {base, deltas}
+    if(data.base && data.deltas){
+      return expandDeltas(data);
+    }
+    // Format liste (ancien)
+    return Array.isArray(data) ? data : null;
+  }catch{ return null; }
+}
+
+function expandDeltas(data){
+  // Reconstruit la liste de snapshots depuis le format delta
+  const base = data.base;
+  const snapshots = [];
+  // Snapshot de base complet
+  const baseState = {};
+  (base.s||[]).forEach(st=>{ baseState[st.n]={...st}; });
+  const baseSnap = {t: base.t, s: Object.values(baseState)};
+  if(base.meteo) baseSnap.meteo = base.meteo;
+  snapshots.push(baseSnap);
+  // Appliquer les deltas
+  for(const delta of (data.deltas||[])){
+    for(const d of (delta.d||[])){
+      const n=d.n;
+      if(!baseState[n]) baseState[n]={n};
+      Object.assign(baseState[n], d);
+    }
+    const snap = {t: delta.t, s: Object.values(baseState).map(st=>({...st}))};
+    if(delta.meteo) snap.meteo = delta.meteo;
+    snapshots.push(snap);
+  }
+  return snapshots;
 }
 function getTs(snap){ return snap.timestamp||snap.t||''; }
 function getSts(snap){
@@ -563,7 +597,7 @@ async function computeLeaderboard(){
 function renderLbTable(mvData){
   const head=document.getElementById('lb-head'), body=document.getElementById('lb-body');
   if(!head||!body) return;
-  head.innerHTML='<tr><th>#</th><th>Station</th><th>⚡ Élec</th><th>🔧 Méca</th><th>Total</th><th>Places</th><th>↕ Mvts</th><th>Remplissage</th></tr>';
+  head.innerHTML='<tr><th>#</th><th>Station</th><th>⚡/🔧</th><th>🚲</th><th>🅿️</th><th>↕</th><th>%</th></tr>';
   const sortKey=document.getElementById('lb-sort').value;
   const maxMv=Math.max(1,...Object.values(mvData));
   const rows=allStations.map(st=>{
@@ -578,9 +612,11 @@ function renderLbTable(mvData){
     const pct=Math.round(st.fill*100), cls=pct>=50?'fill-high':pct>=25?'fill-med':'fill-low';
     const bw=Math.round(st.mv/maxMv*60);
     return `<tr onclick="showStationDetail(${st.number})" style="cursor:pointer" id="lb-row-${st.number}">
-      <td class="rank-cell">${i+1}</td><td>${cleanName(st.name)}</td>
-      <td>⚡ ${st.electrical_bikes}</td><td>🔧 ${st.mechanical_bikes}</td>
-      <td><b>${st.available_bikes}</b></td><td>${st.available_bike_stands}</td>
+      <td class="rank-cell">${i+1}</td>
+      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cleanName(st.name)}</td>
+      <td style="font-size:12px;color:var(--sub)">⚡${st.electrical_bikes} 🔧${st.mechanical_bikes}</td>
+      <td><b>${st.available_bikes}</b></td>
+      <td>${st.available_bike_stands}</td>
       <td>${st.mv}<span class="mv-bar" style="width:${bw}px"></span></td>
       <td><span class="fill-pill ${cls}">${pct}%</span></td></tr>`;
   }).join('');
