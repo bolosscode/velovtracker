@@ -1,8 +1,6 @@
 name: Collecte Vélo'v
 
 on:
-  schedule:
-    - cron: '16 23 * * *'   
   workflow_dispatch: # Déclenchement manuel possible
 
 permissions:
