@@ -1003,7 +1003,7 @@ async function showRoute(idx){
     } catch {}
     if(!coords){
       // Fallback OSRM cycling
-      const osrmUrl=`https://router.project-osrm.org/route/v1/cycling/${combo.dep.lng},${combo.dep.lat};${combo.arr.lng},${combo.arr.lat}?overview=full&geometries=polyline6`;
+      const osrmUrl=`https://router.project-osrm.org/route/v1/bike/${combo.dep.lng},${combo.dep.lat};${combo.arr.lng},${combo.arr.lat}?overview=full&geometries=polyline6`;
       const ro=await fetch(osrmUrl,{signal:AbortSignal.timeout(8000)});
       if(ro.ok){
         const dor=await ro.json();
