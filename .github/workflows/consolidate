@@ -1,8 +1,6 @@
 name: Consolidation Vélo'v J-1
 
 on:
-  schedule:
-    - cron: '10 1 * * *'  # 2h10 heure Paris (UTC+1 hiver / UTC+2 été → ~1h10 UTC)
   workflow_dispatch:
     inputs:
       date:
