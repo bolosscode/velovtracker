@@ -317,7 +317,10 @@ async function loadLatest(){
 }
 async function fetchDay(date){
   try{
-    const r=await fetch(`data/history/${date}.json`);
+    // Pour aujourd'hui, utiliser today.json (mis à jour toutes les minutes)
+    const today=new Date().toISOString().slice(0,10);
+    const url = date===today ? 'data/today.json' : `data/history/${date}.json`;
+    const r=await fetch(url);
     if(!r.ok) return null;
     const data=await r.json();
     // Format delta : {base, deltas}
