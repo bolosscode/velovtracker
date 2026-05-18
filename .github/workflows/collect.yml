@@ -1,9 +1,7 @@
 name: Collecte Vélo'v
 
 on:
-  schedule:
-    # Toutes les 10 minutes (minimum GitHub Actions)
-    - cron: "*/10 * * * *"
+ 
   workflow_dispatch: # Déclenchement manuel possible
 
 permissions:
