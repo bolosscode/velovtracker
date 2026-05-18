@@ -333,16 +333,14 @@ async function fetchDay(date){
 }
 
 function expandDeltas(data){
-  // Reconstruit la liste de snapshots depuis le format delta
   const base = data.base;
   const snapshots = [];
-  // Snapshot de base complet
   const baseState = {};
   (base.s||[]).forEach(st=>{ baseState[st.n]={...st}; });
   const baseSnap = {t: base.t, s: Object.values(baseState)};
   if(base.meteo) baseSnap.meteo = base.meteo;
   snapshots.push(baseSnap);
-  // Appliquer les deltas
+  let lastMeteo = base.meteo || null;
   for(const delta of (data.deltas||[])){
     for(const d of (delta.d||[])){
       const n=d.n;
@@ -350,7 +348,9 @@ function expandDeltas(data){
       Object.assign(baseState[n], d);
     }
     const snap = {t: delta.t, s: Object.values(baseState).map(st=>({...st}))};
-    if(delta.meteo) snap.meteo = delta.meteo;
+    // Propager la dernière météo connue si le delta n'en a pas
+    if(delta.meteo){ lastMeteo=delta.meteo; snap.meteo=delta.meteo; }
+    else if(lastMeteo){ snap.meteo=lastMeteo; }
     snapshots.push(snap);
   }
   return snapshots;
@@ -715,6 +715,17 @@ async function computePlan(){
   }
   const allDays=(await Promise.all(dayPromises)).filter(Boolean);
 
+  // Filtrer par météo si on a assez d'échantillons
+  const currentlyRainy = isRainy;
+  const rainyDays  = allDays.filter(snaps=>snaps.some(s=>s.meteo?.rain===true));
+  const dryDays    = allDays.filter(snaps=>snaps.some(s=>s.meteo?.rain===false));
+  const meteoLabel = currentlyRainy ? '🌧️ pluie' : '☀️ sec';
+  const filteredDays = currentlyRainy
+    ? (rainyDays.length >= 5 ? rainyDays : allDays)
+    : (dryDays.length   >= 5 ? dryDays   : allDays);
+  const meteoFiltered = filteredDays.length < allDays.length;
+  console.log(`Météo: ${meteoLabel} | ${filteredDays.length}/${allDays.length} jours utilisés`);
+
 
   // Stations proches du départ (si pas de station fixe)
   const depStations = planFromFixed
@@ -737,7 +748,7 @@ async function computePlan(){
 
   allIds.forEach(num=>{
     const depVals=[],arrVals=[];
-    allDays.forEach(snaps=>{
+    filteredDays.forEach(snaps=>{
       snaps.forEach(snap=>{
         const h=(new Date(getTs(snap)).getUTCHours()+2)%24;
         if(h!==targetH) return;
@@ -779,7 +790,7 @@ async function computePlan(){
 
   const meteoNote=isRainy?' 🌧️ (conditions pluvieuses)':'';
   document.getElementById('plan-results-title').textContent=
-    `Top ${top.length} combinaisons · ${DOW_NAMES[targetDow]} ${String(targetH).padStart(2,'0')}h · ${bikeType==='elec'?'⚡ Élec':bikeType==='meca'?'🔧 Méca':'🚲 Tous'} · ${allDays.length} sem. d'historique`;
+    `Top ${top.length} combinaisons · ${DOW_NAMES[targetDow]} ${String(targetH).padStart(2,'0')}h · ${bikeType==='elec'?'⚡ Élec':bikeType==='meca'?'🔧 Méca':'🚲 Tous'} · ${filteredDays.length} sem.${meteoFiltered?' 🌦️ météo filtrée':''}${meteoNote}`;
 
   // Afficher top 3 par défaut, bouton pour voir plus
   const renderComboList=(limit)=>{
