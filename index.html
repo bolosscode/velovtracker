@@ -715,6 +715,7 @@ async function fetchCurrentMeteo(){
       precipitation: cur.precipitation||0,
       rain: (cur.precipitation||0)>0.1,
       weathercode: cur.weathercode||0,
+      temp: cur.temperature_2m !== undefined ? Math.round(cur.temperature_2m*10)/10 : undefined,
     };
   }catch{ return null; }
 }
