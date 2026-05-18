@@ -697,7 +697,9 @@ function initPlanMap(){
   fetchCurrentMeteo().then(meteo=>{
     if(!meteo) return;
     const m=meteoFromCode(meteo.weathercode, meteo.rain);
-    const tempStr=meteo.temp!==undefined?` · ${meteo.temp}°C`:'';
+     const tempStr=meteo.temp!==undefined?` · ${meteo.temp}°C`:''
+     const windArr=meteo.winddir!==undefined?['↓','↙','←','↖','↑','↗','→','↘'][Math.round(meteo.winddir/45)%8]:''
+     const windStr=meteo.wind!==undefined?` · ${meteo.wind}km/h${windArr}`:''
     const meteoEl=document.getElementById('plan-meteo');
     if(meteoEl){
       document.getElementById('plan-meteo-icon').textContent=m.icon;
@@ -750,7 +752,9 @@ async function computePlan(){
   if(meteo&&meteoEl){
     const m=meteoFromCode(meteo.weathercode, meteo.rain);
     document.getElementById('plan-meteo-icon').textContent=m.icon;
-     const tempStr=meteo.temp!==undefined?` · ${meteo.temp}°C`:'';
+     const tempStr=meteo.temp!==undefined?` · ${meteo.temp}°C`:''
+     const windArr=meteo.winddir!==undefined?['↓','↙','←','↖','↑','↗','→','↘'][Math.round(meteo.winddir/45)%8]:''
+     const windStr=meteo.wind!==undefined?` · ${meteo.wind}km/h${windArr}`:''
      document.getElementById('plan-meteo-label').textContent=`${m.label}${meteo.precipitation>0?' — '+meteo.precipitation.toFixed(1)+' mm/h':''}${tempStr}${windStr}`;
     document.getElementById('plan-meteo-sub').textContent=
       meteo.rain ? 'Conditions pluvieuses — usage vélo potentiellement réduit' : 'Conditions favorables au vélo';
