@@ -34,6 +34,9 @@ out_path = os.path.join(args.out, f"{target}.json")
 
 print(f"Consolidation {gte} → {lt}", flush=True)
 
+# Fetch météo J-1
+meteo_by_hour = fetch_meteo_day(target.isoformat())
+
 # ── Helpers ────────────────────────────────────────────────────────────────────
 def parse_stands(raw):
     if not raw or raw.strip() in ('', '""', "''"):
@@ -50,6 +53,33 @@ def parse_stands(raw):
 def safe_int(v):
     try: return int(v or 0)
     except Exception: return 0
+
+def fetch_meteo_day(day):
+    """Fetch météo horaire pour un jour donné depuis Open-Meteo archive."""
+    url = (
+        f"https://archive-api.open-meteo.com/v1/archive"
+        f"?latitude=45.75&longitude=4.83"
+        f"&start_date={day}&end_date={day}"
+        f"&hourly=precipitation,weathercode"
+        f"&timezone=Europe%2FParis"
+    )
+    try:
+        r = requests.get(url, timeout=15)
+        r.raise_for_status()
+        h = r.json()["hourly"]
+        meteo = {}
+        for i, t in enumerate(h["time"]):
+            key = t[:13]  # "2025-03-10T14"
+            meteo[key] = {
+                "precipitation": h["precipitation"][i] or 0,
+                "rain":          (h["precipitation"][i] or 0) > 0.1,
+                "weathercode":   int(h["weathercode"][i] or 0),
+            }
+        print(f"Météo : {len(meteo)} heures chargées", flush=True)
+        return meteo
+    except Exception as e:
+        print(f"AVERTISSEMENT météo : {e}", flush=True)
+        return {}
 
 def slot(ts_str):
     try:
@@ -113,7 +143,12 @@ for ts in sorted(buffer.keys()):
     stations = [normalize_row(r) for r in buffer[ts].values()]
     stations = [s for s in stations if s]
     if stations:
-        snapshots.append({'t': ts, 's': stations})
+        snap = {'t': ts, 's': stations}
+        # Joindre la météo par heure
+        hour_key = ts[:13]  # "2025-03-10T14"
+        if hour_key in meteo_by_hour:
+            snap['meteo'] = meteo_by_hour[hour_key]
+        snapshots.append(snap)
 
 print(f"{len(snapshots)} snapshots", flush=True)
 
