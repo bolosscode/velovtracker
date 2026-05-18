@@ -973,18 +973,32 @@ async function showRoute(idx){
       costing_options:{bicycle:{bicycle_type:'Road',cycling_speed:speed,use_roads:0.4,use_hills:0.2}},
       directions_type:'none'
     };
-    const r=await fetch(`https://valhalla1.openstreetmap.de/route?json=${encodeURIComponent(JSON.stringify(body))}`);
-    if(r.ok){
-      const data=await r.json();
-      const leg=data.trip?.legs?.[0];
-      if(leg){
-        const coords=decodePolyline(leg.shape);
-        L.polyline(coords,{color:routeColor,weight:5,opacity:.9}).addTo(planLayerGroup);
-        setTimeout(()=>{
-          planMap.invalidateSize();
-          planMap.fitBounds(L.polyline(coords).getBounds().pad(.2));
-        }, 100);
+    // Essai Valhalla, fallback OSRM
+    let coords = null;
+    try {
+      const rv=await fetch(`https://valhalla1.openstreetmap.de/route?json=${encodeURIComponent(JSON.stringify(body))}`,{signal:AbortSignal.timeout(5000)});
+      if(rv.ok){
+        const dv=await rv.json();
+        const leg=dv.trip?.legs?.[0];
+        if(leg) coords=decodePolyline(leg.shape);
       }
+    } catch {}
+    if(!coords){
+      // Fallback OSRM cycling
+      const osrmUrl=`https://router.project-osrm.org/route/v1/cycling/${combo.dep.lng},${combo.dep.lat};${combo.arr.lng},${combo.arr.lat}?overview=full&geometries=polyline6`;
+      const ro=await fetch(osrmUrl,{signal:AbortSignal.timeout(8000)});
+      if(ro.ok){
+        const dor=await ro.json();
+        const geom=dor.routes?.[0]?.geometry;
+        if(geom) coords=decodePolyline(geom);
+      }
+    }
+    if(coords){
+      L.polyline(coords,{color:routeColor,weight:5,opacity:.9}).addTo(planLayerGroup);
+      setTimeout(()=>{
+        planMap.invalidateSize();
+        planMap.fitBounds(L.polyline(coords).getBounds().pad(.2));
+      }, 100);
     }
   }catch{}
 
