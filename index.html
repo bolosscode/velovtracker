@@ -708,7 +708,7 @@ async function showDayMeteo(date){
 /* ═══ PLANIFIER ════════════════════════════════════════ */
 let planHeatMvCache={};
 
-function initPlanMap(){
+
 function initPlanMap(){
   if(planMap){ planMap.invalidateSize(); return; }
   planMap=L.map('plan-map').setView([45.757,4.832],13);
@@ -765,7 +765,7 @@ function initPlanMap(){
 
 
 
-} // fin initPlanMap
+
 
 // WMO weather codes → emoji + label
 function meteoFromCode(code, rain){
