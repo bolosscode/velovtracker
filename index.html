@@ -247,10 +247,15 @@ main{max-width:1500px;margin:auto;padding:20px}
         <option value="0">00h</option><option value="1">01h</option><option value="2">02h</option><option value="3">03h</option><option value="4">04h</option><option value="5">05h</option><option value="6">06h</option><option value="7">07h</option><option value="8">08h</option><option value="9">09h</option><option value="10">10h</option><option value="11">11h</option><option value="12">12h</option><option value="13">13h</option><option value="14">14h</option><option value="15">15h</option><option value="16">16h</option><option value="17">17h</option><option value="18">18h</option><option value="19">19h</option><option value="20">20h</option><option value="21">21h</option><option value="22">22h</option><option value="23">23h</option>
       </select>
       <label>Type</label>
-      <select id="plan-type">
-        <option value="elec">⚡ Électrique</option>
-        <option value="meca">🔧 Mécanique</option>
-        <option value="any">Tous</option>
+      <div style="display:flex;background:var(--bg);border-radius:10px;padding:2px;position:relative;width:fit-content">
+        <div id="type-slider" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.1);transition:transform .15s ease;pointer-events:none"></div>
+        <button onclick="setBikeType('elec')" id="btn-type-elec" style="position:relative;z-index:1;padding:6px 16px;border:none;background:transparent;font-size:12px;font-weight:600;cursor:pointer;color:var(--blue)">⚡ Élec</button>
+        <button onclick="setBikeType('meca')" id="btn-type-meca" style="position:relative;z-index:1;padding:6px 16px;border:none;background:transparent;font-size:12px;font-weight:600;cursor:pointer;color:var(--sub)">🔧 Méca</button>
+      </div>
+      <select id="plan-type" style="display:none">
+        <option value="elec">elec</option>
+        <option value="meca">meca</option>
+        <option value="any" selected>any</option>
       </select>
       <label>Rayon stations</label>
       <select id="plan-radius">
@@ -261,6 +266,14 @@ main{max-width:1500px;margin:auto;padding:20px}
       </select>
 
     </div>
+    </div>
+    <div id="type-now-row" style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <span style="font-size:12px;color:var(--sub);font-weight:600">Type</span>
+      <div style="display:flex;background:var(--bg);border-radius:10px;padding:2px;position:relative;width:fit-content">
+        <div id="type-slider-now" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.1);transition:transform .15s ease;pointer-events:none"></div>
+        <button onclick="setBikeType('elec')" style="position:relative;z-index:1;padding:6px 16px;border:none;background:transparent;font-size:12px;font-weight:600;cursor:pointer;color:var(--blue)">⚡ Élec</button>
+        <button onclick="setBikeType('meca')" style="position:relative;z-index:1;padding:6px 16px;border:none;background:transparent;font-size:12px;font-weight:600;cursor:pointer;color:var(--sub)">🔧 Méca</button>
+      </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
        <button class="btn" onclick="computePlan()">Calculer</button>
@@ -832,16 +845,18 @@ async function computePlan(){
   console.log(`Météo: ${currentlyRainy?'🌧️':'☀️'} ${currentPrecip}mm/h`);
 
 
-  // Stations proches du départ (si pas de station fixe)
-  const depStations = planFromFixed
-    ? [planFromFixed]
-    : allStations.filter(s=>s.lat&&s.lng).map(s=>({...s,dist:haversine(planFromPos.lat,planFromPos.lng,s.lat,s.lng)})).filter(s=>s.dist<=radius).sort((a,b)=>a.dist-b.dist).slice(0,5);
 
-  // Stations proches de l'arrivée (si pas de station fixe)
-  const arrStations = planToFixed
-    ? [planToFixed]
-    : allStations.filter(s=>s.lat&&s.lng).map(s=>({...s,dist:haversine(planToPos.lat,planToPos.lng,s.lat,s.lng)})).filter(s=>s.dist<=radius).sort((a,b)=>a.dist-b.dist).slice(0,5);
+  // Stations proches du départ — toujours chercher dans le rayon (station fixe = centre)
+  const depCenter = planFromFixed ? {lat:planFromFixed.lat,lng:planFromFixed.lng} : planFromPos;
+  const depStations = allStations.filter(s=>s.lat&&s.lng)
+    .map(s=>({...s,dist:haversine(depCenter.lat,depCenter.lng,s.lat,s.lng)}))
+    .filter(s=>s.dist<=radius).sort((a,b)=>a.dist-b.dist).slice(0,6);
 
+  // Stations proches de l'arrivée — idem
+  const arrCenter = planToFixed ? {lat:planToFixed.lat,lng:planToFixed.lng} : planToPos;
+  const arrStations = allStations.filter(s=>s.lat&&s.lng)
+    .map(s=>({...s,dist:haversine(arrCenter.lat,arrCenter.lng,s.lat,s.lng)}))
+    .filter(s=>s.dist<=radius).sort((a,b)=>a.dist-b.dist).slice(0,6);
   if(!depStations.length||!arrStations.length){
     results.innerHTML='<div class="no-data">Aucune station dans ce rayon. Augmentez le rayon.</div>';
     return;
@@ -997,10 +1012,11 @@ async function computePlan(){
                 const depKey=bikeType==='elec'?'electrical_bikes':bikeType==='meca'?'mechanical_bikes':'available_bikes';
                 const nb=l[depKey]||0;
                 const elec=l.electrical_bikes||0;
-                const total=l.available_bikes||0;
                 const elecStr=(bikeType!=='meca'&&elec>0)?` dont ${elec}⚡`:'';
                 const places=combo.arr.live?.available_bike_stands??'?';
-                return `🚲 <b>${nb}</b> vélo${nb>1?'s':''} dispo${elecStr} · 🅿️ <b>${places}</b> place${places>1?'s':''} dispo`;
+                const probaDep=combo.depPct!==null?` <span style="color:var(--dim)">(${combo.depPct}% hist.)</span>`:'';
+                const probaArr=combo.arrPct!==null?` <span style="color:var(--dim)">(${combo.arrPct}% hist.)</span>`:'';
+                return `🚲 <b>${nb}</b> vélo${nb>1?'s':''} dispo${elecStr}${probaDep} · 🅿️ <b>${places}</b> place${places>1?'s':''}${probaArr}`;
               }
               return `${isRainy?'🌧️':'☀️'} vélo dispo : <b>${combo.depPct}%</b> · 🅿️ place dispo : <b>${combo.arrPct}%</b>`;
             })()}
@@ -1094,39 +1110,39 @@ async function showRoute(idx){
     };
     let coords = null;
 
-    // 1. Valhalla — prioritaire
+    // 1. Brouter — direct, pas de Valhalla (down)
     try {
-      const rv0 = await fetch(`https://valhalla1.openstreetmap.de/route?json=${encodeURIComponent(JSON.stringify(body))}`, {signal: AbortSignal.timeout(5000)});
-      if(rv0.ok){
-        const dv0 = await rv0.json();
-        const leg0 = dv0.trip?.legs?.[0];
-        if(leg0) coords = decodePolyline(leg0.shape);
+      const brUrl = `https://brouter.de/brouter?lonlats=${combo.dep.lng},${combo.dep.lat}|${combo.arr.lng},${combo.arr.lat}&profile=trekking&alternativeidx=0&format=geojson`;
+      const rb = await fetch(brUrl, {signal: AbortSignal.timeout(12000)});
+      if(rb.ok){
+        const db = await rb.json();
+        const geom = db.features?.[0]?.geometry;
+        if(geom?.type==='LineString') coords = geom.coordinates.map(([lng,lat])=>[lat,lng]);
       }
-    } catch {}
+    } catch(e){ console.warn('Brouter:', e.message); }
 
-    // 2. Fallback Brouter
+    // 2. Fallback OSRM bike
     if(!coords){
       try {
-        const profile = 'trekking';  // même profil pour méca et élec
-        const brUrl = `https://brouter.de/brouter?lonlats=${combo.dep.lng},${combo.dep.lat}|${combo.arr.lng},${combo.arr.lat}&profile=${profile}&alternativeidx=0&format=geojson`;
-        const rb = await fetch(brUrl, {signal: AbortSignal.timeout(8000)});
-        if(rb.ok){
-          const db = await rb.json();
-          const geom = db.features?.[0]?.geometry;
-          if(geom?.type==='LineString') coords = geom.coordinates.map(([lng,lat])=>[lat,lng]);
-        }
-      } catch {}
-    }
-
-    // 3. Fallback OSRM bike
-    if(!coords){
-      try {
+        console.log('Fallback OSRM…');
         const osrmUrl = `https://router.project-osrm.org/route/v1/bike/${combo.dep.lng},${combo.dep.lat};${combo.arr.lng},${combo.arr.lat}?overview=full&geometries=polyline6`;
-        const ro = await fetch(osrmUrl, {signal: AbortSignal.timeout(8000)});
+        const ro = await fetch(osrmUrl, {signal: AbortSignal.timeout(12000)});
         if(ro.ok){
           const dor = await ro.json();
           const geom = dor.routes?.[0]?.geometry;
           if(geom) coords = decodePolyline(geom);
+        }
+      } catch(e){ console.warn('OSRM:', e.message); }
+    }
+
+    // 3. Fallback Valhalla si de retour
+    if(!coords){
+      try {
+        const rv0 = await fetch(`https://valhalla1.openstreetmap.de/route?json=${encodeURIComponent(JSON.stringify(body))}`, {signal: AbortSignal.timeout(8000)});
+        if(rv0.ok){
+          const dv0 = await rv0.json();
+          const leg0 = dv0.trip?.legs?.[0];
+          if(leg0) coords = decodePolyline(leg0.shape);
         }
       } catch {}
     }
@@ -1356,6 +1372,20 @@ function setModePlan(){
   window._planMode='plan';
 }
 window._planMode='now';
+
+function setBikeType(t){
+  document.getElementById('plan-type').value = t;
+  const pos = t==='meca' ? 1 : 0;
+  ['type-slider','type-slider-now'].forEach(id=>{
+    const sl = document.getElementById(id);
+    if(sl) sl.style.transform = `translateX(${pos*100}%)`;
+  });
+  ['elec','meca'].forEach(v=>{
+    document.querySelectorAll(`[onclick="setBikeType('${v}')"]`).forEach(btn=>{
+      btn.style.color = v===t ? 'var(--blue)' : 'var(--sub)';
+    });
+  });
+}
 
 function syncHourSelect(){
   const t=document.getElementById('plan-hour-time')?.value||'00:00';
