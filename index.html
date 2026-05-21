@@ -379,19 +379,31 @@ async function loadLatest(){
 }
 async function fetchDay(date){
   try{
-    // Pour aujourd'hui, utiliser today.json (mis à jour toutes les minutes)
     const today=new Date().toISOString().slice(0,10);
-    const url = date===today ? 'data/today.json' : `data/history/${date}.json`;
-    const cb = date===today ? `?t=${Date.now()}` : '';
-    const r=await fetch(url+cb, {cache: date===today?'no-store':'default'});
-    if(!r.ok) return null;
-    const data=await r.json();
-    // Format delta : {base, deltas}
-    if(data.base && data.deltas){
-      return expandDeltas(data);
+    if(date===today){
+      const r=await fetch(`data/today.json?t=${Date.now()}`,{cache:'no-store'});
+      if(!r.ok) return null;
+      const data=await r.json();
+      return data.base&&data.deltas ? expandDeltas(data) : Array.isArray(data)?data:null;
     }
-    // Format liste (ancien)
-    return Array.isArray(data) ? data : null;
+    // Essayer .json.gz d'abord, puis .json en fallback
+    for(const ext of ['.json.gz','.json']){
+      const r=await fetch(`data/history/${date}${ext}`);
+      if(!r.ok) continue;
+      let data;
+      if(ext==='.json.gz'){
+        const blob=await r.blob();
+        const ds=new DecompressionStream('gzip');
+        const stream=blob.stream().pipeThrough(ds);
+        const text=await new Response(stream).text();
+        data=JSON.parse(text);
+      } else {
+        data=await r.json();
+      }
+      if(data.base&&data.deltas) return expandDeltas(data);
+      if(Array.isArray(data)) return data;
+    }
+    return null;
   }catch{ return null; }
 }
 
