@@ -715,14 +715,14 @@ async function showDayMeteo(date){
 let planHeatMvCache={};
 
 function initPlanMap(){
+function initPlanMap(){
   if(planMap){ planMap.invalidateSize(); return; }
   planMap=L.map('plan-map').setView([45.757,4.832],13);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
     {attribution:'© OpenStreetMap © CARTO',maxZoom:20}).addTo(planMap);
   L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm-lite/{z}/{x}/{y}.png',
     {maxZoom:20,opacity:0.5}).addTo(planMap);
-  initMap();
-  planMap = map; // même carte
+
 
   function resetPlan(){
     planFromPos=null; planFromFixed=null;
@@ -770,6 +770,8 @@ function initPlanMap(){
 }
 
 
+
+} // fin initPlanMap
 
 // WMO weather codes → emoji + label
 function meteoFromCode(code, rain){
