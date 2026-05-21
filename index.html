@@ -2,7 +2,11 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="Vélo'v"/>
+<meta name="theme-color" content="#ffffff"/>
 <title>Vélo'v Lyon Analytics</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -10,6 +14,40 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+@media(max-width:640px){
+  header{height:48px;padding:0 14px}
+  .brand{font-size:15px}
+  #top-nav{display:none}
+  main{padding:12px 10px 80px}
+  .card{padding:14px}
+  .loc-row{grid-template-columns:1fr}
+  #map{height:calc(100vh - 180px)}
+  #plan-map{height:260px}
+  .params-row{gap:8px}
+  .params-row select,.params-row input{font-size:12px;padding:6px 8px}
+  #stats-detail{display:none}
+  #lb-content{max-height:60vh}
+  .combo-card{padding:10px 12px}
+  .combo-rank{font-size:18px;min-width:24px}
+  .combo-pct{font-size:18px}
+}
+@media(min-width:641px){
+  #bottom-nav{display:none}
+}
+#bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:300;
+  background:rgba(255,255,255,.95);backdrop-filter:blur(14px);
+  border-top:1px solid #ececec;
+  display:flex;padding:0;height:60px;
+}
+#bottom-nav .tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:2px;padding:6px 0;
+  font-size:10px;font-weight:600;color:var(--sub);
+  border-bottom:none;border-top:2px solid transparent;
+}
+#bottom-nav .tab span{font-size:10px}
+#bottom-nav .tab.on{color:var(--blue);border-top-color:var(--blue)}
 :root{
   --bg:#f5f5f7;--paper:#fff;--ink:#1d1d1f;--sub:#6e6e73;--dim:#aeaeb2;
   --border:#d2d2d7;--blue:#0071e3;--green:#28cd41;--orange:#ff9f0a;--red:#ff3b30;
@@ -58,7 +96,7 @@ main{max-width:1500px;margin:auto;padding:20px}
 .params-row select:focus,.params-row input:focus{border-color:var(--blue)}
 
 /* plan map */
-#plan-map{height:380px;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);margin-bottom:16px}
+
 
 /* results */
 .combo-card{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background .15s}
@@ -106,21 +144,25 @@ main{max-width:1500px;margin:auto;padding:20px}
   <div class="clock" id="clock"></div>
 </header>
 
-<nav>
+<nav id="top-nav">
   <div class="tab on" data-tab="map">🗺 Carte</div>
   <div class="tab" data-tab="stats">📊 Statistiques</div>
   <div class="tab" data-tab="plan">🚴 Planifier</div>
 </nav>
+<nav id="bottom-nav">
+  <div class="tab on" data-tab="map">🗺<span>Carte</span></div>
+  <div class="tab" data-tab="stats">📊<span>Stats</span></div>
+  <div class="tab" data-tab="plan">🚴<span>Planifier</span></div>
+</nav>
 
 <main>
 
+
+
 <!-- ═══ CARTE ═══ -->
 <div class="panel on" id="tab-map">
-  <div class="map-rel">
-    <div class="map-ctrl">
-      <button class="map-btn" id="btn-heat" onclick="toggleHeat()">🔥 Flux du jour</button>
-    </div>
-    <div id="map"></div>
+  <div class="map-rel" style="position:relative">
+    <div id="map" style="height:calc(100vh - 140px);border-radius:var(--radius);overflow:hidden"></div>
   </div>
 </div>
 
@@ -234,7 +276,7 @@ main{max-width:1500px;margin:auto;padding:20px}
     </div>
   </div>
 
-  <div id="plan-map"></div>
+  <div id="plan-map" style="height:380px;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);margin-bottom:16px"></div>
 
   <div class="card" id="plan-results-card" style="display:none">
     <div class="card-title" id="plan-results-title">Meilleures combinaisons</div>
@@ -261,11 +303,14 @@ setInterval(()=>{ document.getElementById('clock').textContent=new Date().toLoca
 
 document.querySelectorAll('.tab').forEach(tab=>{
   tab.onclick=()=>{
+    // Sync les deux navs
     document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
     document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
-    tab.classList.add('on');
+    // Activer le bon tab dans les deux navs
+    document.querySelectorAll(`.tab[data-tab="${tab.dataset.tab}"]`).forEach(t=>t.classList.add('on'));
     document.getElementById('tab-'+tab.dataset.tab).classList.add('on');
     setTimeout(()=>{ map?.invalidateSize(); planMap?.invalidateSize(); },150);
+    if(tab.dataset.tab==='map') setTimeout(()=>{ if(!map)initMap(); map?.invalidateSize(); renderStations(); },150);
     if(tab.dataset.tab==='stats') quickLeaderboard();
     if(tab.dataset.tab==='plan') initPlanMap();
   };
@@ -319,10 +364,10 @@ function parseStation(r){
 }
 async function loadLatest(){
   try{
-    const r=await fetch('https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov/all.json?maxfeatures=-1&start=1',{signal:AbortSignal.timeout(8000)});
+    const r=await fetch('https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov/all.json?maxfeatures=-1&start=1',{signal:AbortSignal.timeout(8000),cache:'no-store'});
     return (await r.json()).values?.map(parseStation)||[];
   }catch{
-    const r=await fetch('data/latest.json'); const d=await r.json(); return d.stations||[];
+    const r=await fetch(`data/latest.json?t=${Date.now()}`,{cache:'no-store'}); const d=await r.json(); return d.stations||[];
   }
 }
 async function fetchDay(date){
@@ -330,7 +375,8 @@ async function fetchDay(date){
     // Pour aujourd'hui, utiliser today.json (mis à jour toutes les minutes)
     const today=new Date().toISOString().slice(0,10);
     const url = date===today ? 'data/today.json' : `data/history/${date}.json`;
-    const r=await fetch(url);
+    const cb = date===today ? `?t=${Date.now()}` : '';
+    const r=await fetch(url+cb, {cache: date===today?'no-store':'default'});
     if(!r.ok) return null;
     const data=await r.json();
     // Format delta : {base, deltas}
@@ -412,6 +458,7 @@ async function computeMovements(){
 
 /* ═══ MAP ═════════════════════════════════════════════ */
 function initMap(){
+  if(map) return;
   map=L.map('map').setView([45.757,4.832],13);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
     {attribution:'© OpenStreetMap © CARTO',maxZoom:20}).addTo(map);
@@ -457,12 +504,7 @@ function buildHeatLayer(){
   });
   if(heatOn) heatLayer.addTo(map);
 }
-function toggleHeat(){
-  heatOn=!heatOn;
-  const btn=document.getElementById('btn-heat');
-  if(heatOn){ heatLayer?.addTo(map); btn.classList.add('on'); }
-  else{ if(heatLayer) map.removeLayer(heatLayer); btn.classList.remove('on'); }
-}
+
 
 /* ═══ DROPDOWN GÉNÉRIQUE ═══════════════════════════════ */
 let _nominatimDebounce={};
@@ -666,6 +708,8 @@ function initPlanMap(){
     {attribution:'© OpenStreetMap © CARTO',maxZoom:20}).addTo(planMap);
   L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm-lite/{z}/{x}/{y}.png',
     {maxZoom:20,opacity:0.5}).addTo(planMap);
+  initMap();
+  planMap = map; // même carte
 
   function resetPlan(){
     planFromPos=null; planFromFixed=null;
@@ -810,19 +854,44 @@ async function computePlan(){
   // Calculer aussi les probas conditions inverses (pour affichage info)
   const invertedRainy = !isRainy;
   function meteoWeightInv(snapMeteo){
-    if(!snapMeteo) return 0.5;
+    if(!snapMeteo) return 0.8;
     const sameRain = snapMeteo.rain === invertedRainy;
-    if(!sameRain) return 0.3;
-    return 1.0;
+    if(sameRain) return 1.0;
+    try {
+      const snapMonth = snapMeteo._ts ? new Date(snapMeteo._ts).getMonth()+1 : new Date().getMonth()+1;
+      const r = (RAIN_R_MATRIX[snapMonth]||RAIN_R_MATRIX[1])[targetH] || -0.15;
+      return Math.max(0.3, 1.0 - Math.abs(r) * 2);
+    } catch { return 0.5; }
   }
 
-    // Pondération météo : poids selon similarité avec conditions actuelles
+    // Matrice r(pluie, mouvements) par (mois, heure) — issue de correlation_meteo.py
+  const RAIN_R_MATRIX = {
+    1: [-0.019,-0.132,-0.133,-0.018,-0.132,-0.016,0.104,0.071,0.071,0.066,-0.021,-0.508,-0.224,-0.286,-0.224,-0.511,-0.443,-0.268,-0.129,-0.218,-0.278,-0.274,-0.25,-0.264],
+    2: [0.001,0.026,0.006,0.067,-0.103,0.057,0.057,0.037,0.077,0.154,0.055,-0.294,-0.246,-0.149,-0.34,-0.379,-0.394,-0.34,-0.248,-0.26,-0.187,-0.309,-0.237,-0.084],
+    3: [-0.003,-0.061,0.095,-0.027,0.045,-0.137,-0.22,-0.188,-0.223,-0.113,0.056,0.077,-0.064,-0.082,-0.23,-0.063,-0.21,-0.114,-0.175,-0.412,-0.359,-0.417,-0.135,-0.276],
+    4: [-0.024,-0.207,-0.155,-0.137,-0.147,-0.229,-0.263,-0.111,-0.118,-0.176,-0.368,-0.434,-0.332,-0.514,-0.494,-0.495,-0.543,-0.284,-0.31,-0.46,-0.349,-0.215,-0.483,-0.209],
+    5: [-0.046,-0.26,-0.268,-0.179,-0.282,-0.173,-0.087,-0.04,-0.042,-0.194,-0.363,-0.396,-0.327,-0.363,-0.184,-0.13,-0.196,-0.325,-0.45,-0.523,-0.26,-0.281,-0.352,-0.431],
+    6: [0.026,-0.056,0.026,-0.189,-0.121,0,0,-0.189,-0.208,0.013,-0.162,-0.49,-0.595,-0.563,-0.422,0.032,-0.228,0.096,-0.108,-0.188,-0.104,-0.327,-0.466,-0.11],
+    7: [-0.023,-0.04,-0.26,0.069,0.116,-0.048,-0.043,0.019,0.09,-0.013,0.161,-0.361,-0.51,-0.299,-0.096,-0.045,-0.039,-0.287,-0.316,-0.438,-0.47,-0.022,-0.533,-0.406],
+    8: [-0.018,-0.046,-0.092,-0.205,-0.197,-0.225,-0.047,0.07,0.186,0.181,-0.214,0.017,0.043,0.233,0.125,0.031,-0.125,0.148,0.128,-0.214,-0.248,0.175,-0.084,-0.183],
+    9: [-0.025,-0.337,-0.28,-0.203,-0.274,-0.084,-0.084,-0.014,-0.088,-0.089,-0.143,-0.633,-0.187,-0.681,-0.659,-0.802,-0.842,-0.379,-0.114,-0.024,-0.482,-0.417,-0.062,-0.16],
+    10: [-0.029,-0.147,-0.104,-0.116,-0.161,-0.136,-0.098,-0.118,-0.077,-0.154,-0.562,-0.526,-0.627,-0.579,-0.356,-0.289,-0.432,-0.646,-0.543,-0.459,-0.515,-0.314,-0.158,0.031],
+    11: [-0.006,0.027,0.043,-0.009,0.048,0.116,-0.265,0.032,-0.105,-0.441,-0.623,-0.601,-0.484,-0.424,-0.356,-0.27,-0.424,-0.425,-0.336,-0.525,-0.268,-0.245,-0.358,-0.505],
+    12: [0.007,-0.137,-0.209,0.042,-0.168,-0.087,-0.019,-0.071,0.063,-0.04,-0.09,-0.11,-0.127,-0.055,0.015,0.112,0.123,-0.032,0.135,-0.029,-0.109,-0.132,-0.35,-0.087],
+  };
+
   function meteoWeight(snapMeteo){
-    if(!snapMeteo) return 0.5;
+    if(!snapMeteo) return 0.8;
     const sameRain = snapMeteo.rain === currentlyRainy;
-    if(!sameRain) return 0.3;
-    const precDiff = Math.abs((snapMeteo.precipitation||0) - currentPrecip);
-    return Math.max(0.5, 1.0 - precDiff * 0.1);
+    if(sameRain) return 1.0;
+    // Récupérer le r pour le mois et l'heure du snapshot
+    try {
+      const snapMonth = new Date(snapMeteo._ts||0).getMonth()+1 || new Date().getMonth()+1;
+      const r = (RAIN_R_MATRIX[snapMonth]||RAIN_R_MATRIX[1])[targetH] || -0.15;
+      return Math.max(0.3, 1.0 - Math.abs(r) * 2);
+    } catch {
+      return 0.5;
+    }
   }
 
   allIds.forEach(num=>{
@@ -834,7 +903,8 @@ async function computePlan(){
         const sts=getSts(snap), st=sts.find(s=>s.number===num);
         if(!st||!st.bike_stands) return;
         const depKey=bikeType==='elec'?'electrical_bikes':bikeType==='meca'?'mechanical_bikes':'available_bikes';
-        const w=meteoWeight(snap.meteo);
+        const snapM=snap.meteo; if(snapM) snapM._ts=new Date(getTs(snap)).getTime();
+        const w=meteoWeight(snapM);
         depSum += (st[depKey]||0)/st.bike_stands*100 * w;
         arrSum += st.available_bike_stands/st.bike_stands*100 * w;
         wSum   += w;
@@ -888,7 +958,11 @@ async function computePlan(){
           score=Math.round(score*0.5+liveDepPct*0.3+(liveArr&&liveArr.bike_stands>0?liveArr.available_bike_stands/liveArr.bike_stands*100*0.2:0));
         }
       }
-      combos.push({dep,arr,depPct,arrPct,depPctInv:pd?.depInv??null,arrPctInv:pa?.arrInv??null,score,dist,rideMin,samples:pd?.samples??0});
+      const liveDep2=allStations.find(s=>s.number===dep.number);
+      const liveArr2=allStations.find(s=>s.number===arr.number);
+      const depWithLive = Object.assign({}, dep, {live: liveDep2||null});
+      const arrWithLive = Object.assign({}, arr, {live: liveArr2||null});
+      combos.push({dep:depWithLive,arr:arrWithLive,depPct,arrPct,depPctInv:pd?.depInv??null,arrPctInv:pa?.arrInv??null,score,dist,rideMin,samples:pd?.samples??0});
     }
   }
 
@@ -917,9 +991,21 @@ async function computePlan(){
           <div class="combo-route">🟢 ${cleanName(combo.dep.name)} → 🔴 ${cleanName(combo.arr.name)}</div>
           <div class="combo-meta">
             Départ${depDist} · ${Math.round(combo.dist/1000*10)/10} km · ~${combo.rideMin} min<br>
-            ${isRainy?'🌧️':'☀️'} vélo dispo : <b>${combo.depPct}%</b> · 🅿️ place dispo : <b>${combo.arrPct}%</b>
-            ${combo.depPctInv!==null?`· ${invertedRainy?'🌧️':'☀️'} <span style="color:var(--dim)">${combo.depPctInv}%/${combo.arrPctInv}%</span>`:''}
-            ${combo.samples?` · ${combo.samples} mesures`:''}${arrDist}
+            ${(()=>{
+              if(isNowMode && combo.dep.live){
+                const l=combo.dep.live;
+                const depKey=bikeType==='elec'?'electrical_bikes':bikeType==='meca'?'mechanical_bikes':'available_bikes';
+                const nb=l[depKey]||0;
+                const elec=l.electrical_bikes||0;
+                const total=l.available_bikes||0;
+                const elecStr=(bikeType!=='meca'&&elec>0)?` dont ${elec}⚡`:'';
+                const places=combo.arr.live?.available_bike_stands??'?';
+                return `🚲 <b>${nb}</b> vélo${nb>1?'s':''} dispo${elecStr} · 🅿️ <b>${places}</b> place${places>1?'s':''} dispo`;
+              }
+              return `${isRainy?'🌧️':'☀️'} vélo dispo : <b>${combo.depPct}%</b> · 🅿️ place dispo : <b>${combo.arrPct}%</b>`;
+            })()}
+            ${(!isNowMode&&combo.depPctInv!==null)?`· ${invertedRainy?'🌧️':'☀️'} <span style="color:var(--dim)">${combo.depPctInv}%/${combo.arrPctInv}%</span>`:''}
+            ${combo.samples?` · <span style="color:var(--dim)">${combo.samples} mesures hist.</span>`:''}${arrDist}
           </div>
         </div>
         <div class="combo-score">
@@ -1021,7 +1107,7 @@ async function showRoute(idx){
     // 2. Fallback Brouter
     if(!coords){
       try {
-        const profile = bikeType==='meca' ? 'trekking' : 'trekking-electric';
+        const profile = 'trekking';  // même profil pour méca et élec
         const brUrl = `https://brouter.de/brouter?lonlats=${combo.dep.lng},${combo.dep.lat}|${combo.arr.lng},${combo.arr.lat}&profile=${profile}&alternativeidx=0&format=geojson`;
         const rb = await fetch(brUrl, {signal: AbortSignal.timeout(8000)});
         if(rb.ok){
