@@ -933,6 +933,7 @@ async function computePlan(){
     }
   }
 
+  const _depNAcc={}, _arrNAcc={};
   allIds.forEach(num=>{
     let depSum=0, arrSum=0, wSum=0, samples=0;
     let depHit=0, arrHit=0; // snapshots avec >= 1 vélo/place
