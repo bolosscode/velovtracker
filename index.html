@@ -170,9 +170,18 @@ main{max-width:1500px;margin:auto;padding:20px}
 <div class="panel" id="tab-stats">
   <!-- Contrôles globaux -->
   <div class="card">
+    <div class="card">
     <div class="card-title">Période &amp; tri</div>
     <div class="range">
-      <label>Date</label><input type="date" id="lb-date"/>
+      <label>Vue</label>
+      <select id="lb-view" onchange="onLbViewChange()" style="padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px">
+        <option value="day">Jour</option>
+        <option value="month">Mois</option>
+        <option value="year">Année</option>
+      </select>
+      <input type="date" id="lb-date"/>
+      <input type="month" id="lb-month" style="display:none;padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px"/>
+      <select id="lb-year" style="display:none;padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px"><option value="2025">2025</option><option value="2026" selected>2026</option></select>
       <select id="lb-sort">
         <option value="mv">Mouvements ↕</option>
         <option value="rotation">Taux de rotation</option>
@@ -184,7 +193,6 @@ main{max-width:1500px;margin:auto;padding:20px}
       </select>
       <button class="btn" onclick="computeLeaderboard()">Calculer</button>
       <span id="lb-meteo" style="font-size:12px;color:var(--sub)"></span>
-      <span style="font-size:12px;color:var(--dim)">· Cliquez une station pour ses courbes</span>
     </div>
   </div>
 
@@ -215,18 +223,25 @@ main{max-width:1500px;margin:auto;padding:20px}
 <div class="panel" id="tab-plan">
   <div class="card">
     <div class="card-title">Planifier un trajet</div>
-    <div class="loc-row">
-      <div class="loc-box">
+    <div style="margin-bottom:12px">
+      <div>
         <div class="loc-label"><span class="loc-dot" style="background:var(--green)"></span>Point de départ</div>
         <input id="plan-from" class="search" type="text" placeholder="Adresse ou station de départ…" autocomplete="off"/>
         <div class="dropdown" id="plan-from-dd"></div>
       </div>
-      <div class="loc-box">
+      <div style="display:flex;justify-content:center;margin:4px 0">
+        <button onclick="swapPlanFromTo()" title="Inverser" style="width:28px;height:28px;border:1px solid var(--border);border-radius:50%;background:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.1)">⇅</button>
+      </div>
+      <div>
         <div class="loc-label"><span class="loc-dot" style="background:var(--red)"></span>Point d'arrivée</div>
         <input id="plan-to" class="search" type="text" placeholder="Adresse ou station d'arrivée…" autocomplete="off"/>
         <div class="dropdown" id="plan-to-dd"></div>
       </div>
     </div>
+
+
+
+
     <div style="display:flex;background:var(--bg);border-radius:12px;padding:3px;margin-bottom:12px;position:relative;width:fit-content">
       <div id="toggle-slider" style="position:absolute;top:3px;left:3px;height:calc(100% - 6px);width:50%;background:#fff;border-radius:9px;box-shadow:0 1px 4px rgba(0,0,0,.12);transition:transform .2s ease;pointer-events:none"></div>
       <button id="btn-now" onclick="setModeNow()" style="position:relative;z-index:1;padding:8px 20px;border:none;background:transparent;font-size:13px;font-weight:600;cursor:pointer;border-radius:9px;color:var(--blue);min-width:140px">Maintenant</button>
@@ -657,17 +672,58 @@ async function renderCourbes(){
 
 /* ═══ LEADERBOARD ═════════════════════════════════════ */
 function quickLeaderboard(){ renderLbTable(todayMv); }
+function onLbViewChange(){
+  const v=document.getElementById('lb-view').value;
+  document.getElementById('lb-date').style.display  = v==='day'   ? '' : 'none';
+  document.getElementById('lb-month').style.display = v==='month' ? '' : 'none';
+  document.getElementById('lb-year').style.display  = v==='year'  ? '' : 'none';
+}
+
 async function computeLeaderboard(){
   const content=document.getElementById('lb-content');
   content.innerHTML='<div class="loader">Calcul…</div>';
-  const d=document.getElementById('lb-date').value;
-  if(!d){ content.innerHTML='<div class="no-data">Sélectionnez une date.</div>'; return; }
-  const snaps=await fetchDay(d)||[];
-  showDayMeteo(d);
-  if(!snaps.length){ content.innerHTML='<div class="no-data">Aucune donnée.</div>'; return; }
-  lbMvCache=calcMvFromSnaps(snaps);
+  const view=document.getElementById('lb-view').value;
+
+  if(view==='day'){
+    const d=document.getElementById('lb-date').value;
+    if(!d){ content.innerHTML='<div class="no-data">Sélectionnez une date.</div>'; return; }
+    const snaps=await fetchDay(d)||[];
+    showDayMeteo(d);
+    if(!snaps.length){ content.innerHTML='<div class="no-data">Aucune donnée.</div>'; return; }
+    lbMvCache=calcMvFromSnaps(snaps);
+  } else {
+    // Mois ou Année — agréger plusieurs jours
+    let dates=[];
+    if(view==='month'){
+      const m=document.getElementById('lb-month').value;
+      if(!m){ content.innerHTML='<div class="no-data">Sélectionnez un mois.</div>'; return; }
+      const [y,mo]=m.split('-').map(Number);
+      const days=new Date(y,mo,0).getDate();
+      for(let d=1;d<=days;d++) dates.push(`${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
+    } else {
+      const y=document.getElementById('lb-year').value;
+      for(let mo=1;mo<=12;mo++) for(let d=1;d<=new Date(y,mo,0).getDate();d++)
+        dates.push(`${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
+    }
+    // Limiter aux dates passées
+    const today=new Date().toISOString().slice(0,10);
+    dates=dates.filter(d=>d<=today);
+    content.innerHTML=`<div class="loader">Calcul sur ${dates.length} jours…</div>`;
+    // Agréger les mouvements
+    const cumul={};
+    let loaded=0;
+    for(const d of dates){
+      const snaps=await fetchDay(d)||[];
+      const mv=calcMvFromSnaps(snaps);
+      for(const [num,v] of Object.entries(mv)) cumul[num]=(cumul[num]||0)+v;
+      loaded++;
+      if(loaded%10===0) content.innerHTML=`<div class="loader">${loaded}/${dates.length} jours…</div>`;
+    }
+    lbMvCache=cumul;
+  }
   content.innerHTML='<div style="overflow-x:auto"><table id="lb-table"><thead id="lb-head"></thead><tbody id="lb-body"></tbody></table></div>';
   renderLbTable(lbMvCache);
+  if(view==='day') showDayMeteo(document.getElementById('lb-date').value);
 }
 function renderLbTable(mvData){
   const head=document.getElementById('lb-head'), body=document.getElementById('lb-body');
@@ -1446,6 +1502,17 @@ function setBikeType(t){
       btn.style.color = v===t ? 'var(--blue)' : 'var(--sub)';
     });
   });
+}
+
+function swapPlanFromTo(){
+  const fromEl = document.getElementById('plan-from');
+  const toEl   = document.getElementById('plan-to');
+  const tmpVal = fromEl.value;
+  fromEl.value = toEl.value;
+  toEl.value   = tmpVal;
+  // Inverser aussi les positions et stations fixes
+  const tmpPos   = planFromPos;   planFromPos   = planToPos;   planToPos   = tmpPos;
+  const tmpFixed = planFromFixed; planFromFixed = planToFixed; planToFixed = tmpFixed;
 }
 
 function syncHourSelect(){
