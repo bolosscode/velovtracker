@@ -842,6 +842,27 @@ async function computePlan(){
 
 
 
+  if(!planFromPos && !planFromFixed){ results.innerHTML='<div class="no-data">Sélectionnez un point de départ.</div>'; return; }
+  if(!planToPos && !planToFixed){ results.innerHTML='<div class="no-data">Sélectionnez une destination.</div>'; return; }
+
+  if(!planFromPos && !planFromFixed){
+    results.innerHTML='<div class="no-data">Sélectionnez un point de départ.</div>';
+    return;
+  }
+  if(!planToPos && !planToFixed){
+    results.innerHTML='<div class="no-data">Sélectionnez un point d\u0027arrivée.</div>';
+    return;
+  }
+
+  if(!planFromPos && !planFromFixed){
+    results.innerHTML='<div class="no-data">Sélectionnez un point de départ.</div>';
+    return;
+  }
+  if(!planToPos && !planToFixed){
+    results.innerHTML='<div class="no-data">Destination manquante.</div>';
+    return;
+  }
+
   // Stations proches du départ — station fixe en tête, puis les proches
   const depCenter = planFromFixed ? {lat:planFromFixed.lat,lng:planFromFixed.lng} : planFromPos;
   let depStations = allStations.filter(s=>s.lat&&s.lng)
