@@ -542,6 +542,40 @@ function buildHeatLayer(){
 /* ═══ DROPDOWN GÉNÉRIQUE ═══════════════════════════════ */
 let _nominatimDebounce={};
 
+// Lieux lyonnais connus — suggestions instantanées
+const LIEUX_LYON = [
+  {name:'Gare Part-Dieu', lat:45.7603, lng:4.8597, type:'🚆'},
+  {name:'Gare Perrache', lat:45.7491, lng:4.8271, type:'🚆'},
+  {name:'Gare Saint-Paul', lat:45.7647, lng:4.8272, type:'🚆'},
+  {name:'Aéroport Lyon-Saint Exupéry', lat:45.7256, lng:5.0811, type:'✈️'},
+  {name:'Hôtel de Ville', lat:45.7676, lng:4.8338, type:'🏛️'},
+  {name:'Place Bellecour', lat:45.7579, lng:4.8320, type:'📍'},
+  {name:'Vieux-Lyon', lat:45.7627, lng:4.8272, type:'🏘️'},
+  {name:"Presqu\u00eele", lat:45.7640, lng:4.8340, type:"📍"},
+  {name:'Confluence', lat:45.7432, lng:4.8188, type:'🛍️'},
+  {name:'Croix-Rousse', lat:45.7762, lng:4.8285, type:'📍'},
+  {name:'Fourvière', lat:45.7623, lng:4.8222, type:'⛪'},
+  {name:'Université Lyon 1', lat:45.7825, lng:4.8675, type:'🎓'},
+  {name:'Université Lyon 2', lat:45.7491, lng:4.8316, type:'🎓'},
+  {name:'Université Lyon 3', lat:45.7628, lng:4.8368, type:'🎓'},
+  {name:'INSA Lyon', lat:45.7816, lng:4.8766, type:'🎓'},
+  {name:'École Centrale Lyon', lat:45.7250, lng:4.9160, type:'🎓'},
+  {name:'Hospices Civils de Lyon', lat:45.7628, lng:4.8312, type:'🏥'},
+  {name:'Hôpital Édouard Herriot', lat:45.7528, lng:4.8643, type:'🏥'},
+  {name:'Hôpital de la Croix-Rousse', lat:45.7783, lng:4.8290, type:'🏥'},
+  {name:'Stade de Gerland', lat:45.7325, lng:4.8285, type:'⚽'},
+  {name:"Parc de la T\u00eate d'Or", lat:45.7780, lng:4.8555, type:"🌳"},
+  {name:'Musée des Confluences', lat:45.7334, lng:4.8183, type:'🏛️'},
+  {name:'Opéra de Lyon', lat:45.7680, lng:4.8348, type:'🎭'},
+  {name:'Centre Commercial La Part-Dieu', lat:45.7606, lng:4.8614, type:'🛍️'},
+  {name:"March\u00e9 Saint-Antoine", lat:45.7618, lng:4.8310, type:"🛒"},
+  {name:'Villeurbanne', lat:45.7670, lng:4.8882, type:'📍'},
+  {name:'Vénissieux', lat:45.6967, lng:4.8877, type:'📍'},
+  {name:'Bron', lat:45.7369, lng:4.9098, type:'📍'},
+  {name:'Caluire-et-Cuire', lat:45.7967, lng:4.8483, type:'📍'},
+  {name:'Saint-Priest', lat:45.6966, lng:4.9428, type:'📍'},
+];
+
 function buildDropdown(inputId, ddId, opts){
   const input=document.getElementById(inputId), dd=document.getElementById(ddId);
 
@@ -554,6 +588,11 @@ function buildDropdown(inputId, ddId, opts){
     const stMatches=allStations
       .filter(s=>cleanName(s.name).toLowerCase().includes(q.toLowerCase()))
       .slice(0,5);
+
+    // Lieux lyonnais connus (instantané)
+    const lieuMatches=LIEUX_LYON
+      .filter(l=>l.name.toLowerCase().includes(q.toLowerCase()))
+      .slice(0,3);
 
     const render=(geoResults=[])=>{
       dd.innerHTML='';
@@ -579,7 +618,15 @@ function buildDropdown(inputId, ddId, opts){
         };
         dd.appendChild(el);
       });
-      if(stMatches.length||geoResults.length) dd.classList.add('open');
+      // Lieux locaux
+      lieuMatches.forEach(l=>{
+        if(geoResults.some(g=>g.display_name?.includes(l.name))) return; // dédoublonner
+        const el=document.createElement('div'); el.className='opt';
+        el.innerHTML=`<span style="font-size:14px">${l.type}</span><div><div style="font-weight:500">${l.name}</div><div style="font-size:11px;color:var(--dim)">Lyon</div></div>`;
+        el.onclick=()=>{ input.value=l.name; dd.classList.remove('open'); opts.onGeoPos?.({lat:l.lat,lng:l.lng}); };
+        dd.appendChild(el);
+      });
+      if(stMatches.length||geoResults.length||lieuMatches.length) dd.classList.add('open');
       else dd.classList.remove('open');
     };
 
@@ -594,7 +641,7 @@ function buildDropdown(inputId, ddId, opts){
           const data=await r.json();
           render(data);
         }catch{}
-      },400);
+      },200);
     }
   });
 
@@ -1364,39 +1411,27 @@ let _openDetailNum = null;
 async function toggleStationDetail(number, row){
   const detailRow = document.getElementById(`lb-detail-${number}`);
   const detailDiv = document.getElementById(`stats-detail-${number}`);
-  // Fermer si déjà ouvert
   if(_openDetailNum === number){
     detailRow.style.display='none';
     row.classList.remove('selected');
     _openDetailNum=null;
     return;
   }
-  // Fermer l'ancien ouvert
   if(_openDetailNum){
     const old=document.getElementById(`lb-detail-${_openDetailNum}`);
     const oldRow=document.getElementById(`lb-row-${_openDetailNum}`);
     if(old) old.style.display='none';
     if(oldRow) oldRow.classList.remove('selected');
   }
-  // Ouvrir ce détail
   detailRow.style.display='';
   row.classList.add('selected');
   _openDetailNum=number;
   detailDiv.innerHTML='<div class="loader">Chargement…</div>';
-  // Injecter le contenu stats-detail dans ce div
-  const oldDetail = document.getElementById('stats-detail');
-  const prevDetail = document.createElement('div');
-  prevDetail.id='stats-detail';
-  prevDetail.style.display='none';
-  document.body.appendChild(prevDetail);
-  await showStationDetail(number);
-  detailDiv.innerHTML = document.getElementById('stats-detail').innerHTML;
-  document.getElementById('stats-detail').remove();
-  prevDetail.id='stats-detail';
+  await showStationDetail(number, detailDiv);
   detailRow.scrollIntoView({behavior:'smooth',block:'nearest'});
-} // fin toggleStationDetail
+}
 
-async function showStationDetail(number){
+async function showStationDetail(number, targetEl=null){
   const st=allStations.find(s=>s.number===number);
   if(!st) return;
 
@@ -1405,7 +1440,7 @@ async function showStationDetail(number){
   const row=document.getElementById('lb-row-'+number);
   if(row) row.style.background='var(--blue-l, #e8f0fe)';
 
-  const detail=document.getElementById('stats-detail');
+  const detail=targetEl || document.getElementById('stats-detail');
   detail.innerHTML=`
     <div class="card" style="margin-bottom:14px;padding:0;overflow:hidden">
       <div id="sd-map" style="height:160px"></div>
