@@ -224,7 +224,7 @@ main{max-width:1500px;margin:auto;padding:20px}
   <div class="card">
     <div class="card-title">Planifier un trajet</div>
     <div style="margin-bottom:12px">
-      <div>
+      <div style="position:relative">
         <div class="loc-label"><span class="loc-dot" style="background:var(--green)"></span>Point de départ</div>
         <input id="plan-from" class="search" type="text" placeholder="Adresse ou station de départ…" autocomplete="off"/>
         <div class="dropdown" id="plan-from-dd"></div>
@@ -232,7 +232,7 @@ main{max-width:1500px;margin:auto;padding:20px}
       <div style="display:flex;justify-content:center;margin:4px 0">
         <button onclick="swapPlanFromTo()" title="Inverser" style="width:28px;height:28px;border:1px solid var(--border);border-radius:50%;background:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.1)">⇅</button>
       </div>
-      <div>
+      <div style="position:relative">
         <div class="loc-label"><span class="loc-dot" style="background:var(--red)"></span>Point d'arrivée</div>
         <input id="plan-to" class="search" type="text" placeholder="Adresse ou station d'arrivée…" autocomplete="off"/>
         <div class="dropdown" id="plan-to-dd"></div>
