@@ -15,6 +15,8 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 @media(max-width:640px){
+  #stats-layout{grid-template-columns:1fr !important}
+  #stats-detail{display:block !important}
   header{height:48px;padding:0 14px}
   .brand{font-size:15px}
   #top-nav{display:none}
@@ -36,31 +38,31 @@
 }
 #bottom-nav{
   position:fixed;bottom:0;left:0;right:0;z-index:300;
-  background:rgba(255,255,255,.95);backdrop-filter:blur(14px);
-  border-top:1px solid #ececec;
+  background:#2c2c2e;backdrop-filter:blur(14px);
+  border-top:none;
   display:flex;padding:0;height:60px;
 }
 #bottom-nav .tab{
   flex:1;display:flex;flex-direction:column;align-items:center;
   justify-content:center;gap:2px;padding:6px 0;
-  font-size:10px;font-weight:600;color:var(--sub);
+  font-size:18px;font-weight:600;color:#bbb;
   border-bottom:none;border-top:2px solid transparent;
 }
-#bottom-nav .tab span{font-size:10px}
-#bottom-nav .tab.on{color:var(--blue);border-top-color:var(--blue)}
+#bottom-nav .tab span{font-size:11px;display:block}
+#bottom-nav .tab.on{color:#e0392d;border-top-color:#e0392d}
 :root{
   --bg:#f5f5f7;--paper:#fff;--ink:#1d1d1f;--sub:#6e6e73;--dim:#aeaeb2;
-  --border:#d2d2d7;--blue:#0071e3;--green:#28cd41;--orange:#ff9f0a;--red:#ff3b30;
+  --border:#d2d2d7;--blue:#e0392d;--green:#28cd41;--orange:#ff9f0a;--red:#ff3b30;
   --radius:14px;--shadow:0 2px 14px rgba(0,0,0,.08);
 }
-body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Arial,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased;letter-spacing:-0.01em}
 
-header{position:sticky;top:0;z-index:300;height:56px;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border-bottom:1px solid #ececec;display:flex;align-items:center;justify-content:space-between;padding:0 22px}
-.brand{font-weight:700;font-size:18px}.brand em{color:var(--blue);font-style:normal}
+header{position:sticky;top:0;z-index:300;height:56px;background:#1c1c1e;backdrop-filter:blur(14px);border-bottom:none;display:flex;align-items:center;justify-content:space-between;padding:0 22px}
+.brand{font-weight:700;font-size:20px;color:#fff}.brand em{color:var(--blue);font-style:normal}
 .clock{font-size:12px;color:var(--dim)}
 
 nav{position:sticky;top:56px;z-index:250;background:#fff;border-bottom:1px solid #ececec;display:flex;padding:0 20px;overflow-x:auto}
-.tab{padding:14px 16px;cursor:pointer;color:var(--sub);border-bottom:2px solid transparent;font-size:13px;font-weight:500;white-space:nowrap}
+.tab{padding:14px 16px;cursor:pointer;color:#aaa;border-bottom:2px solid transparent;font-size:13px;font-weight:500;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
 .tab.on{color:var(--blue);border-bottom-color:var(--blue)}
 
 main{max-width:1500px;margin:auto;padding:20px}
@@ -76,7 +78,9 @@ main{max-width:1500px;margin:auto;padding:20px}
 
 /* search */
 .loc-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
-@media(max-width:640px){.loc-row{grid-template-columns:1fr}}
+@media(max-width:640px){
+  #stats-layout{grid-template-columns:1fr !important}
+  #stats-detail{display:block !important}.loc-row{grid-template-columns:1fr}}
 .loc-box{position:relative}
 .loc-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--sub);margin-bottom:5px;display:flex;align-items:center;gap:6px}
 .loc-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
@@ -145,14 +149,14 @@ main{max-width:1500px;margin:auto;padding:20px}
 </header>
 
 <nav id="top-nav">
-  <div class="tab on" data-tab="map">🗺 Carte</div>
-  <div class="tab" data-tab="stats">📊 Statistiques</div>
-  <div class="tab" data-tab="plan">🚴 Planifier</div>
+  <div class="tab on" data-tab="map"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg> Carte</div>
+  <div class="tab" data-tab="stats"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Statistiques</div>
+  <div class="tab" data-tab="plan"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg> Planifier</div>
 </nav>
 <nav id="bottom-nav">
-  <div class="tab on" data-tab="map">🗺<span>Carte</span></div>
-  <div class="tab" data-tab="stats">📊<span>Stats</span></div>
-  <div class="tab" data-tab="plan">🚴<span>Planifier</span></div>
+  <div class="tab on" data-tab="map"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg><span>Carte</span></div>
+  <div class="tab" data-tab="stats"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Stats</span></div>
+  <div class="tab" data-tab="plan"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg><span>Planifier</span></div>
 </nav>
 
 <main>
@@ -196,8 +200,8 @@ main{max-width:1500px;margin:auto;padding:20px}
     </div>
   </div>
 
-  <!-- Layout 2 colonnes : table gauche, détail droite -->
-  <div style="display:grid;grid-template-columns:3fr 2fr;gap:14px;align-items:start">
+  <!-- Layout responsive : 2 col desktop, 1 col mobile -->
+  <div id="stats-layout">
 
     <!-- Table -->
     <div class="card" style="padding:0;overflow:hidden">
@@ -209,12 +213,7 @@ main{max-width:1500px;margin:auto;padding:20px}
       </div>
     </div>
 
-    <!-- Détail station -->
-    <div id="stats-detail">
-      <div class="no-data" style="padding:80px 20px;background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow)">
-        Cliquez une ligne du tableau
-      </div>
-    </div>
+    <!-- Détail injecté dans le tableau -->
 
   </div>
 </div>
@@ -342,7 +341,7 @@ document.querySelectorAll('.tab').forEach(tab=>{
 const cleanName = n => n.replace(/^\d+\s*[-–]\s*/,'').trim();
 function stationColor(st){
   if(!st.bike_stands||st.available_bikes===0) return '#ff3b30';
-  return st.available_bikes/st.bike_stands<=.25 ? '#ff9f0a' : '#28cd41';
+  return st.available_bikes/st.bike_stands<=.25 ? '#ff9f0a' : '#1a7a3e';
 }
 function chartOpts(){
   return { responsive:true,
@@ -662,8 +661,8 @@ async function renderCourbes(){
   const mk=(cid,data,color,label)=>new Chart(document.getElementById(cid),{type:'line',
     data:{labels,datasets:[{label,data,borderColor:color,backgroundColor:color+'18',borderWidth:1.8,tension:0,pointRadius:pr,spanGaps:true,fill:true}]},
     options:chartOpts()});
-  chartElec=mk('elec-chart',dataElec,'#28cd41','⚡ Électriques');
-  chartMeca=mk('meca-chart',dataMeca,'#0071e3','🔧 Mécaniques');
+  chartElec=mk('elec-chart',dataElec,'#1a7a3e','⚡ Électriques');
+  chartMeca=mk('meca-chart',dataMeca,'#b52a2a','🔧 Mécaniques');
   chartFlux=new Chart(document.getElementById('flux-chart'),{type:'bar',
     data:{labels,datasets:[{label:'Départs/h',data:dataFluxH,
       backgroundColor:dataFluxH.map(v=>v>5?'rgba(255,59,48,.65)':v>2?'rgba(255,159,10,.6)':'rgba(0,113,227,.5)'),borderWidth:0}]},
@@ -742,14 +741,19 @@ function renderLbTable(mvData){
   body.innerHTML=rows.map((st,i)=>{
     const pct=Math.round(st.fill*100), cls=pct>=50?'fill-high':pct>=25?'fill-med':'fill-low';
     const bw=Math.round(st.mv/maxMv*60);
-    return `<tr onclick="showStationDetail(${st.number})" style="cursor:pointer" id="lb-row-${st.number}">
+    return `<tr onclick="toggleStationDetail(${st.number},this)" style="cursor:pointer" id="lb-row-${st.number}">
       <td class="rank-cell">${i+1}</td>
       <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cleanName(st.name)}</td>
       <td style="font-size:12px;color:var(--sub)">⚡${st.electrical_bikes} 🔧${st.mechanical_bikes}</td>
       <td><b>${st.available_bikes}</b></td>
       <td>${st.available_bike_stands}</td>
       <td>${st.mv}<span class="mv-bar" style="width:${bw}px"></span></td>
-      <td><span class="fill-pill ${cls}">${pct}%</span></td></tr>`;
+      <td><span class="fill-pill ${cls}">${pct}%</span></td></tr>
+      <tr class="detail-row" id="lb-detail-${st.number}" style="display:none">
+        <td colspan="7" style="padding:0">
+          <div id="stats-detail-${st.number}" style="padding:14px;background:var(--bg);border-bottom:1px solid var(--border)"></div>
+        </td>
+      </tr>`;
   }).join('');
 }
 document.getElementById('lb-sort').addEventListener('change',()=>renderLbTable(Object.keys(lbMvCache).length?lbMvCache:todayMv));
@@ -1209,7 +1213,7 @@ async function showRoute(idx){
   }
 
   // Stations
-  L.circleMarker([combo.dep.lat,combo.dep.lng],{radius:10,fillColor:'#28cd41',color:'#fff',weight:2,fillOpacity:.95})
+  L.circleMarker([combo.dep.lat,combo.dep.lng],{radius:10,fillColor:'#1a7a3e',color:'#fff',weight:2,fillOpacity:.95})
     .bindTooltip(cleanName(combo.dep.name),{permanent:true,direction:'top'}).addTo(planLayerGroup);
   L.circleMarker([combo.arr.lat,combo.arr.lng],{radius:10,fillColor:'#ff3b30',color:'#fff',weight:2,fillOpacity:.95})
     .bindTooltip(cleanName(combo.arr.name),{permanent:true,direction:'top'}).addTo(planLayerGroup);
@@ -1217,7 +1221,7 @@ async function showRoute(idx){
   // Routing Valhalla entre les deux stations
   const bikeType=document.getElementById('plan-type').value;
   const speed=bikeType==='meca'?16:21;
-  const routeColor=bikeType==='meca'?'#e8001c':'#28cd41';
+  const routeColor=bikeType==='meca'?'#e8001c':'#1a7a3e';
   try{
     const body={
       locations:[{lon:combo.dep.lng,lat:combo.dep.lat},{lon:combo.arr.lng,lat:combo.arr.lat}],
@@ -1339,7 +1343,7 @@ async function showComboCourbes(combo){
   _chartComboA?.destroy();
   _chartComboA=new Chart(document.getElementById('chart-combo'),{type:'line',
     data:{labels,datasets:[
-      {label:`${bikeLabel} dispo au départ`,data:depData,borderColor:'#28cd41',backgroundColor:'rgba(40,205,65,.08)',borderWidth:2,tension:0,pointRadius:3,spanGaps:true,fill:true},
+      {label:`${bikeLabel} dispo au départ`,data:depData,borderColor:'#1a7a3e',backgroundColor:'rgba(40,205,65,.08)',borderWidth:2,tension:0,pointRadius:3,spanGaps:true,fill:true},
       {label:'🅿️ Place dispo à l\'arrivée',data:arrData,borderColor:'#ff3b30',backgroundColor:'rgba(255,59,48,.06)',borderWidth:2,tension:0,pointRadius:3,spanGaps:true,fill:true},
     ]},
     options:{...chartOpts(),scales:{...chartOpts().scales,y:{...chartOpts().scales.y,max:100,ticks:{...chartOpts().scales.y.ticks,callback:v=>v+'%'}}}}
@@ -1355,6 +1359,42 @@ function initRanges(){
 
 /* ═══ STATS DETAIL ════════════════════════════════════ */
 let _chartSD_elec=null, _chartSD_meca=null, _chartSD_hmap=null;
+
+let _openDetailNum = null;
+async function toggleStationDetail(number, row){
+  const detailRow = document.getElementById(`lb-detail-${number}`);
+  const detailDiv = document.getElementById(`stats-detail-${number}`);
+  // Fermer si déjà ouvert
+  if(_openDetailNum === number){
+    detailRow.style.display='none';
+    row.classList.remove('selected');
+    _openDetailNum=null;
+    return;
+  }
+  // Fermer l'ancien ouvert
+  if(_openDetailNum){
+    const old=document.getElementById(`lb-detail-${_openDetailNum}`);
+    const oldRow=document.getElementById(`lb-row-${_openDetailNum}`);
+    if(old) old.style.display='none';
+    if(oldRow) oldRow.classList.remove('selected');
+  }
+  // Ouvrir ce détail
+  detailRow.style.display='';
+  row.classList.add('selected');
+  _openDetailNum=number;
+  detailDiv.innerHTML='<div class="loader">Chargement…</div>';
+  // Injecter le contenu stats-detail dans ce div
+  const oldDetail = document.getElementById('stats-detail');
+  const prevDetail = document.createElement('div');
+  prevDetail.id='stats-detail';
+  prevDetail.style.display='none';
+  document.body.appendChild(prevDetail);
+  await showStationDetail(number);
+  detailDiv.innerHTML = document.getElementById('stats-detail').innerHTML;
+  document.getElementById('stats-detail').remove();
+  prevDetail.id='stats-detail';
+  detailRow.scrollIntoView({behavior:'smooth',block:'nearest'});
+} // fin toggleStationDetail
 
 async function showStationDetail(number){
   const st=allStations.find(s=>s.number===number);
@@ -1419,8 +1459,8 @@ async function showStationDetail(number){
   const mk=(cid,data,color,label)=>new Chart(document.getElementById(cid),{type:'line',
     data:{labels,datasets:[{label,data,borderColor:color,backgroundColor:color+'18',borderWidth:1.8,tension:0,pointRadius:pr,spanGaps:true,fill:true}]},
     options:chartOpts()});
-  _chartSD_elec=mk('sd-elec',dataElec,'#28cd41','⚡ Électriques');
-  _chartSD_meca=mk('sd-meca',dataMeca,'#0071e3','🔧 Mécaniques');
+  _chartSD_elec=mk('sd-elec',dataElec,'#1a7a3e','⚡ Électriques');
+  _chartSD_meca=mk('sd-meca',dataMeca,'#b52a2a','🔧 Mécaniques');
 
   // Heatmap mouvements 7j — grille heure × jour
   const hmapEl=document.getElementById('sd-hmap');
@@ -1466,7 +1506,10 @@ async function showStationDetail(number){
   html+='</div></div>';
   html+='<div style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:11px;color:var(--sub)"><span>0 mvt</span><div style="flex:1;max-width:120px;height:5px;border-radius:2px;background:linear-gradient(to right,#f5f5f7,#3040e0)"></div><span>max</span></div>';
   hmapEl.innerHTML=html;
-}
+  hmapEl.innerHTML=html;
+  if(window.innerWidth<=640) document.getElementById('stats-detail').scrollIntoView({behavior:'smooth',block:'start'});
+
+} // fin showStationDetail
 
 function setModeNow(){
   const sl=document.getElementById('toggle-slider');
