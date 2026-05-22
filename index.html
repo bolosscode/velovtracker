@@ -1442,24 +1442,21 @@ async function showStationDetail(number, targetEl=null){
 
   const detail=targetEl || document.getElementById('stats-detail');
   detail.innerHTML=`
-    <div class="card" style="margin-bottom:14px;padding:0;overflow:hidden">
-      <div id="sd-map" style="height:160px"></div>
-      <div style="padding:10px 14px;font-size:13px;font-weight:600">${cleanName(st.name)}</div>
+    <div style="display:grid;grid-template-columns:120px 1fr;gap:10px;margin-bottom:10px;align-items:start">
+      <div id="sd-map" style="height:100px;border-radius:8px;overflow:hidden"></div>
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px">${cleanName(st.name)}</div>
+        <div style="font-size:11px;color:var(--sub)">⚡${st.electrical_bikes} dispo · 🔧${st.mechanical_bikes} dispo · 🅿️${st.available_bike_stands} places</div>
+      </div>
     </div>
-    <div class="card" style="margin-bottom:14px">
-      <div class="card-title">⚡ Électriques</div>
-      <canvas id="sd-elec" height="90"></canvas>
+    <div style="margin-bottom:10px">
+      <div style="display:flex;gap:12px;font-size:11px;color:var(--sub);margin-bottom:4px">
+        <span><span style="display:inline-block;width:10px;height:2px;background:#1a7a3e;vertical-align:middle;margin-right:3px"></span>⚡ Élec</span>
+        <span><span style="display:inline-block;width:10px;height:2px;background:#b52a2a;vertical-align:middle;margin-right:3px"></span>🔧 Méca</span>
+      </div>
+      <canvas id="sd-combined" height="70"></canvas>
     </div>
-    <div class="card" style="margin-bottom:14px">
-      <div class="card-title">🔧 Mécaniques</div>
-      <canvas id="sd-meca" height="90"></canvas>
-    </div>
-    <div class="card">
-      <div class="card-title">🌡 Heatmap mouvements (7j glissants)</div>
-      <div id="sd-hmap"><div class="loader">Calcul…</div></div>
-    </div>`;
-
-  // Mini-carte
+    <div id="sd-hmap"><div class="loader">Calcul…</div></div>`;
   if(st.lat && st.lng){
     const sdMap=L.map('sd-map',{zoomControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false,keyboard:false,touchZoom:false})
       .setView([st.lat,st.lng],16);
@@ -1491,11 +1488,12 @@ async function showStationDetail(number, targetEl=null){
   _chartSD_elec?.destroy();
   _chartSD_meca?.destroy();
   const pr=days<=1?0:2;
-  const mk=(cid,data,color,label)=>new Chart(document.getElementById(cid),{type:'line',
-    data:{labels,datasets:[{label,data,borderColor:color,backgroundColor:color+'18',borderWidth:1.8,tension:0,pointRadius:pr,spanGaps:true,fill:true}]},
+  _chartSD_elec=new Chart(document.getElementById('sd-combined'),{type:'line',
+    data:{labels,datasets:[
+      {label:'⚡ Élec',data:dataElec,borderColor:'#1a7a3e',backgroundColor:'#1a7a3e18',borderWidth:1.8,tension:0,pointRadius:pr,spanGaps:true,fill:true},
+      {label:'🔧 Méca',data:dataMeca,borderColor:'#b52a2a',backgroundColor:'#b52a2a18',borderWidth:1.8,tension:0,pointRadius:pr,spanGaps:true,fill:true}
+    ]},
     options:chartOpts()});
-  _chartSD_elec=mk('sd-elec',dataElec,'#1a7a3e','⚡ Électriques');
-  _chartSD_meca=mk('sd-meca',dataMeca,'#b52a2a','🔧 Mécaniques');
 
   // Heatmap mouvements 7j — grille heure × jour
   const hmapEl=document.getElementById('sd-hmap');
