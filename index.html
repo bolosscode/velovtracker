@@ -152,12 +152,12 @@ main{max-width:1500px;margin:auto;padding:20px}
 
 <nav id="top-nav">
   <div class="tab on" data-tab="map"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg> Carte</div>
-  <div class="tab" data-tab="plan"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg> Planifier</div>
+  <div class="tab" style="display:none" data-tab="plan"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg> Planifier</div>
   <div class="tab" data-tab="stats"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Statistiques</div>
 </nav>
 <nav id="bottom-nav">
   <div class="tab on" data-tab="map"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg><span>Carte</span></div>
-  <div class="tab" data-tab="plan"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg><span>Planifier</span></div>
+  <div class="tab" style="display:none" data-tab="plan"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg><span>Planifier</span></div>
   <div class="tab" data-tab="stats"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Stats</span></div>
 </nav>
 
@@ -166,7 +166,51 @@ main{max-width:1500px;margin:auto;padding:20px}
 
 
 <!-- ═══ CARTE ═══ -->
-<div class="panel on" id="tab-map">
+<div class="panel on" id="tab-map" style="position:relative">
+  <!-- Formulaire planifier flottant -->
+  <div id="plan-float" style="position:absolute;top:10px;left:10px;right:10px;z-index:200;background:rgba(28,28,30,.94);backdrop-filter:blur(20px);border-radius:14px;border:0.5px solid #38383a;padding:10px 12px;box-shadow:0 4px 24px rgba(0,0,0,.6)">
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <div style="flex:1;background:#2c2c2e;border-radius:10px;overflow:hidden;border:0.5px solid #38383a">
+        <div style="position:relative">
+          <input id="plan-from" class="search" type="text" placeholder="Départ…" autocomplete="off" style="background:transparent;border-radius:0;border:none;border-bottom:0.5px solid #38383a"/>
+          <div class="dropdown" id="plan-from-dd"></div>
+        </div>
+        <div style="position:relative">
+          <input id="plan-to" class="search" type="text" placeholder="Arrivée…" autocomplete="off" style="background:transparent;border-radius:0;border:none"/>
+          <div class="dropdown" id="plan-to-dd"></div>
+        </div>
+      </div>
+      <button onclick="swapPlanFromTo()" style="width:30px;height:30px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;cursor:pointer;font-size:15px;color:#8e8e93;display:flex;align-items:center;justify-content:center;flex-shrink:0">⇅</button>
+    </div>
+    <div id="plan-meteo" style="font-size:10px;color:#636366;margin-bottom:8px"></div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px">
+        <button id="btn-now" onclick="setModeNow()" style="padding:4px 11px;border:none;background:#3a3a3c;color:#fff;font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">Maintenant</button>
+        <button id="btn-plan" onclick="setModePlan()" style="padding:4px 11px;border:none;background:transparent;color:#636366;font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">Planifier</button>
+      </div>
+      <div id="plan-params" style="display:none;gap:6px;align-items:center;flex-wrap:wrap">
+        <select id="plan-dow" style="padding:4px 8px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;color:#f5f5f7;font-size:11px"><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option><option value="6">Samedi</option><option value="0">Dimanche</option></select>
+        <input type="time" id="plan-hour-time" style="padding:4px 8px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;color:#f5f5f7;font-size:11px;outline:none" oninput="syncHourSelect()"/>
+        <select id="plan-hour" style="display:none"></select>
+        <select id="plan-radius" style="padding:4px 8px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;color:#f5f5f7;font-size:11px"><option value="300">300m</option><option value="500" selected>500m</option><option value="800">800m</option><option value="1200">1.2km</option></select>
+      </div>
+      <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px;position:relative">
+        <div id="type-slider-now" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:#3a3a3c;border-radius:18px;transition:transform .15s;pointer-events:none"></div>
+        <button onclick="setBikeType('elec')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:#fff">⚡ Élec</button>
+        <button onclick="setBikeType('meca')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:#636366">🔧 Méca</button>
+      </div>
+      <select id="plan-type" style="display:none"><option value="elec">elec</option><option value="meca">meca</option><option value="any" selected>any</option></select>
+      <button class="btn" onclick="computePlan()" style="margin-left:auto;padding:5px 14px;font-size:11px">Calculer</button>
+    </div>
+  </div>
+
+  <!-- Volet résultats -->
+  <div id="plan-results-card" style="display:none;position:absolute;bottom:60px;left:0;right:0;z-index:200;background:rgba(28,28,30,.96);backdrop-filter:blur(16px);border-radius:16px 16px 0 0;border-top:0.5px solid #38383a;max-height:58vh;overflow-y:auto;padding:6px 14px 20px;box-shadow:0 -4px 20px rgba(0,0,0,.4)">
+    <div style="width:36px;height:4px;background:#48484a;border-radius:2px;margin:6px auto 10px"></div>
+    <div id="plan-results-title" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#8e8e93;margin-bottom:10px"></div>
+    <div id="plan-results"></div>
+  </div>
+
   <div class="map-rel" style="position:relative">
     <div id="map" style="height:calc(100vh - 140px);border-radius:var(--radius);overflow:hidden"></div>
   </div>
@@ -221,98 +265,56 @@ main{max-width:1500px;margin:auto;padding:20px}
 </div>
 
 <!-- ═══ PLANIFIER ═══ -->
-<div class="panel" id="tab-plan" style="position:relative;overflow:hidden">
-  <div style="position:absolute;top:0;left:0;right:0;bottom:0;z-index:10;pointer-events:none;display:flex;flex-direction:column">
-    <!-- Formulaire flottant en haut -->
-    <div style="pointer-events:all;margin:10px;background:rgba(28,28,30,.95);backdrop-filter:blur(14px);border-radius:14px;border:0.5px solid #38383a;padding:12px 14px">
-    <div class="card-title" style="margin-bottom:8px">Planifier un trajet</div>
-    <div style="margin-bottom:12px">
-      <div style="position:relative">
-        <div class="loc-label"><span class="loc-dot" style="background:var(--green)"></span>Point de départ</div>
-        <input id="plan-from" class="search" type="text" placeholder="Adresse ou station de départ…" autocomplete="off"/>
-        <div class="dropdown" id="plan-from-dd"></div>
+<div class="panel" id="tab-plan" style="position:relative;height:calc(100vh - 108px);overflow:hidden">
+
+  <!-- Carte plein écran -->
+  <div id="plan-map" style="position:absolute;inset:0;z-index:0"></div>
+
+  <!-- Fenêtre flottante -->
+  <div id="plan-float" style="position:absolute;top:10px;left:10px;right:10px;z-index:20;background:rgba(28,28,30,.94);backdrop-filter:blur(20px);border-radius:14px;border:0.5px solid #38383a;padding:10px 12px;box-shadow:0 4px 24px rgba(0,0,0,.6)">
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <div style="flex:1;background:#2c2c2e;border-radius:10px;overflow:hidden;border:0.5px solid #38383a">
+        <div style="position:relative">
+          <input id="plan-from" class="search" type="text" placeholder="Départ…" autocomplete="off" style="background:transparent;border-radius:0;border:none;border-bottom:0.5px solid #38383a"/>
+          <div class="dropdown" id="plan-from-dd"></div>
+        </div>
+        <div style="position:relative">
+          <input id="plan-to" class="search" type="text" placeholder="Arrivée…" autocomplete="off" style="background:transparent;border-radius:0;border:none"/>
+          <div class="dropdown" id="plan-to-dd"></div>
+        </div>
       </div>
-      <div style="display:flex;justify-content:center;margin:4px 0">
-        <button onclick="swapPlanFromTo()" title="Inverser" style="width:28px;height:28px;border:1px solid var(--border);border-radius:50%;background:var(--paper);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.1)">⇅</button>
+      <button onclick="swapPlanFromTo()" style="width:30px;height:30px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;cursor:pointer;font-size:15px;color:#8e8e93;display:flex;align-items:center;justify-content:center;flex-shrink:0">⇅</button>
+    </div>
+    <div id="plan-meteo" style="font-size:10px;color:#636366;margin-bottom:8px"></div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px">
+        <button id="btn-now" onclick="setModeNow()" style="padding:4px 11px;border:none;background:#3a3a3c;color:#fff;font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">Maintenant</button>
+        <button id="btn-plan" onclick="setModePlan()" style="padding:4px 11px;border:none;background:transparent;color:#636366;font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">Planifier</button>
       </div>
-      <div style="position:relative">
-        <div class="loc-label"><span class="loc-dot" style="background:var(--red)"></span>Point d'arrivée</div>
-        <input id="plan-to" class="search" type="text" placeholder="Adresse ou station d'arrivée…" autocomplete="off"/>
-        <div class="dropdown" id="plan-to-dd"></div>
+      <div id="plan-params" style="display:none;gap:6px;align-items:center;flex-wrap:wrap">
+        <select id="plan-dow" style="padding:4px 8px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;color:#f5f5f7;font-size:11px"><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option><option value="6">Samedi</option><option value="0">Dimanche</option></select>
+        <input type="time" id="plan-hour-time" style="padding:4px 8px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;color:#f5f5f7;font-size:11px;outline:none" oninput="syncHourSelect()"/>
+        <select id="plan-hour" style="display:none"></select>
+        <select id="plan-radius" style="padding:4px 8px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;color:#f5f5f7;font-size:11px"><option value="300">300m</option><option value="500" selected>500m</option><option value="800">800m</option><option value="1200">1.2km</option></select>
       </div>
-    </div>
-
-
-
-
-    <div style="display:flex;background:var(--bg);border-radius:12px;padding:3px;margin-bottom:12px;position:relative;width:fit-content">
-      <div id="toggle-slider" style="position:absolute;top:3px;left:3px;height:calc(100% - 6px);width:50%;background:var(--paper);border-radius:9px;box-shadow:0 1px 4px rgba(0,0,0,.12);transition:transform .2s ease;pointer-events:none"></div>
-      <button id="btn-now" onclick="setModeNow()" style="position:relative;z-index:1;padding:8px 20px;border:none;background:transparent;font-size:13px;font-weight:600;cursor:pointer;border-radius:9px;color:var(--blue);min-width:140px">Maintenant</button>
-      <button id="btn-plan" onclick="setModePlan()" style="position:relative;z-index:1;padding:8px 20px;border:none;background:transparent;font-size:13px;font-weight:600;cursor:pointer;border-radius:9px;color:var(--sub);min-width:140px">Planifier</button>
-    </div>
-    <div id="plan-params" style="display:none">
-    <div class="params-row">
-      <label>Jour</label>
-      <select id="plan-dow">
-        <option value="1">Lundi</option><option value="2">Mardi</option>
-        <option value="3">Mercredi</option><option value="4">Jeudi</option>
-        <option value="5">Vendredi</option><option value="6">Samedi</option>
-        <option value="0">Dimanche</option>
-      </select>
-      <label>Heure</label>
-      <input type="time" id="plan-hour-time" style="padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none" oninput="syncHourSelect()"/>
-      <select id="plan-hour" style="display:none">
-        <option value="0">00h</option><option value="1">01h</option><option value="2">02h</option><option value="3">03h</option><option value="4">04h</option><option value="5">05h</option><option value="6">06h</option><option value="7">07h</option><option value="8">08h</option><option value="9">09h</option><option value="10">10h</option><option value="11">11h</option><option value="12">12h</option><option value="13">13h</option><option value="14">14h</option><option value="15">15h</option><option value="16">16h</option><option value="17">17h</option><option value="18">18h</option><option value="19">19h</option><option value="20">20h</option><option value="21">21h</option><option value="22">22h</option><option value="23">23h</option>
-      </select>
-      <select id="plan-type" style="display:none">
-        <option value="elec">elec</option>
-        <option value="meca">meca</option>
-        <option value="any" selected>any</option>
-      </select>
-      <label>Rayon stations</label>
-      <select id="plan-radius">
-        <option value="250">250 m</option>
-        <option value="500" selected>500 m</option>
-        <option value="750">750 m</option>
-        <option value="1000">1 km</option>
-      </select>
-
-    </div>
-    </div>
-    <div id="type-now-row" style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-      <span style="font-size:12px;color:var(--sub);font-weight:600">Type</span>
-      <div style="display:flex;background:var(--bg);border-radius:10px;padding:2px;position:relative;width:fit-content">
-        <div id="type-slider-now" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:var(--paper);border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.1);transition:transform .15s ease;pointer-events:none"></div>
-        <button onclick="setBikeType('elec')" style="position:relative;z-index:1;padding:6px 16px;border:none;background:transparent;font-size:12px;font-weight:600;cursor:pointer;color:var(--blue)">⚡ Élec</button>
-        <button onclick="setBikeType('meca')" style="position:relative;z-index:1;padding:6px 16px;border:none;background:transparent;font-size:12px;font-weight:600;cursor:pointer;color:var(--sub)">🔧 Méca</button>
+      <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px;position:relative">
+        <div id="type-slider-now" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:#3a3a3c;border-radius:18px;transition:transform .15s;pointer-events:none"></div>
+        <button onclick="setBikeType('elec')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:#fff">⚡ Élec</button>
+        <button onclick="setBikeType('meca')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:#636366">🔧 Méca</button>
       </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
-       <button class="btn" onclick="computePlan()">Calculer</button>
-       <p style="font-size:12px;color:var(--dim)">Sélectionnez dans les suggestions ou cliquez Calculer</p>
-    </div>
-    <div id="plan-meteo" style="display:none;align-items:center;gap:12px;padding:10px 14px;background:var(--bg);border-radius:10px;margin-top:8px;font-size:13px;flex-wrap:wrap">
-      <span id="plan-meteo-icon" style="font-size:24px"></span>
-      <div style="flex:1">
-        <div id="plan-meteo-label" style="font-weight:600;color:var(--ink)"></div>
-        <div id="plan-meteo-sub" style="font-size:11px;color:var(--sub)"></div>
-      </div>
-
+      <select id="plan-type" style="display:none"><option value="elec">elec</option><option value="meca">meca</option><option value="any" selected>any</option></select>
+      <button class="btn" onclick="computePlan()" style="margin-left:auto;padding:5px 14px;font-size:11px">Calculer</button>
     </div>
   </div>
 
-  <div id="plan-map" style="position:absolute;inset:0;z-index:0;border-radius:0"></div>
-
-    </div>
-    <!-- Résultats en bas coulissants -->
-    <div style="flex:1"></div>
-    <div id="plan-results-wrapper" style="pointer-events:all;max-height:55vh;overflow-y:auto;margin:0 10px 10px;background:rgba(28,28,30,.95);backdrop-filter:blur(14px);border-radius:14px;border:0.5px solid #38383a">
-  <div class="card" id="plan-results-card" style="display:none;background:transparent;box-shadow:none;border:none">
-    <div class="card-title" id="plan-results-title">Meilleures combinaisons</div>
+  <!-- Volet résultats -->
+  <div id="plan-results-card" style="display:none;position:absolute;bottom:0;left:0;right:0;z-index:20;background:rgba(28,28,30,.96);backdrop-filter:blur(16px);border-radius:16px 16px 0 0;border-top:0.5px solid #38383a;max-height:58vh;overflow-y:auto;padding:6px 14px 20px;box-shadow:0 -4px 20px rgba(0,0,0,.4)">
+    <div style="width:36px;height:4px;background:#48484a;border-radius:2px;margin:6px auto 10px"></div>
+    <div id="plan-results-title" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#8e8e93;margin-bottom:10px"></div>
     <div id="plan-results"></div>
   </div>
-</div>
 
+</div>
 </main>
 <script>
 'use strict';
@@ -536,7 +538,7 @@ function renderStations(){
   allStations.forEach(st=>{
     if(!st.lat||!st.lng) return;
     const mv=todayMv[st.number]||0;
-    const m=L.circleMarker([st.lat,st.lng],{radius:Math.max(5,Math.min(14,5+(st.available_bikes||0)*0.5)),fillColor:stationColor(st),color:'#fff',weight:1.5,fillOpacity:.9});
+    const m=L.circleMarker([st.lat,st.lng],{radius:8,fillColor:stationColor(st),color:'#fff',weight:1.5,fillOpacity:.9});
     m.bindPopup(`<div style="min-width:190px;font-family:-apple-system,sans-serif">
       <b style="font-size:14px">${cleanName(st.name)}</b><br><br>
       ⚡ ${st.electrical_bikes} · 🔧 ${st.mechanical_bikes} · 🚲 ${st.available_bikes}<br>
@@ -872,6 +874,7 @@ let planHeatMvCache={};
 function initPlanMap(){
   if(planMap){ planMap.invalidateSize(); return; }
   planMap=L.map('plan-map').setView([45.757,4.832],13);
+  planMap.on('click',()=>{ const rc=document.getElementById('plan-results-card'); if(rc&&rc.style.display!=='none') rc.style.display='none'; });
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
     {attribution:'© OpenStreetMap © CARTO',maxZoom:20}).addTo(planMap);
 
@@ -1266,12 +1269,13 @@ async function computePlan(){
           <div style="flex:1;min-width:0">
             <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🟢 ${cleanName(combo.dep.name)}</div>
             <div style="font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🔴 ${cleanName(combo.arr.name)}</div>
-            <div style="font-size:10px;color:var(--dim);margin-top:1px">${Math.round(combo.dist/1000*10)/10} km · ~${combo.rideMin} min${depDist}</div>
+            <div style="font-size:10px;color:var(--dim);margin-top:1px">${Math.round(combo.dist/1000*10)/10} km · ~${combo.rideMin} min${depDist}${combo.rideMin>30&&bikeType==='elec'?' · <span style="color:#f59e0b;font-weight:500">⚠️ >30 min</span>':''}</div>
           </div>
           ${scoreBadge}
         </div>
         ${body}
         ${body}
+        ${combo.rideMin>30&&bikeType==='elec'?`<div style="padding:7px 12px;background:#2b1a00;border-top:0.5px solid #38383a;font-size:10px;color:#f59e0b">⚠️ Trajet >30 min — pensez à déposer le VAE à ~26 min pour éviter la surfacturation</div>`:''}
         <div id="combo-detail-${i}" style="display:none;border-top:0.5px solid var(--border)">
           <div id="combo-detail-inner-${i}" style="padding:12px"></div>
         </div>
