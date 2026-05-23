@@ -24,8 +24,8 @@
 
   .card{padding:14px;border:0.5px solid var(--border)}
   .loc-row{grid-template-columns:1fr}
-  #map{height:calc(100vh - 108px)}
-#tab-plan{height:calc(100vh - 108px)}
+  #map{height:calc(100vh - 50px)}
+#tab-plan{height:calc(100vh - 50px)}
   #plan-map{height:260px}
   .params-row{gap:8px}
   .params-row select,.params-row input{font-size:12px;padding:6px 8px}
@@ -72,7 +72,7 @@ main{max-width:1500px;margin:auto;padding:20px}
 .card{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
 .card-title{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--sub);margin-bottom:14px}
 
-#map{height:calc(100vh - 140px);border-radius:var(--radius);overflow:hidden;position:relative;z-index:1}
+#map{height:calc(100vh - 50px);border-radius:var(--radius);overflow:hidden;position:relative;z-index:1}
 .map-ctrl{position:absolute;top:10px;right:10px;z-index:500;display:flex;gap:6px}
 .map-btn{padding:6px 14px;border-radius:20px;border:none;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);box-shadow:var(--shadow);font-size:12px;font-weight:600;cursor:pointer;color:var(--sub);transition:all .15s}
 .map-btn.on{background:var(--blue);color:#fff}
@@ -88,7 +88,7 @@ main{max-width:1500px;margin:auto;padding:20px}
 .loc-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .search{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none;transition:border-color .15s}
 .search:focus{border-color:var(--blue)}
-.dropdown{position:absolute;left:0;right:0;top:100%;background:#2c2c2e;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);display:none;z-index:100;max-height:220px;overflow-y:auto}
+.dropdown{position:absolute;left:0;right:0;top:100%;background:#2c2c2e;border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.6);display:none;z-index:1000;max-height:220px;overflow-y:auto}
 .dropdown.open{display:block}
 .opt{padding:9px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0f0}
 .opt:last-child{border-bottom:none}
@@ -229,7 +229,7 @@ main{max-width:1500px;margin:auto;padding:20px}
       </div>
       <input type="hidden" id="lb-view" value="day"/>
       <input type="date" id="lb-date"/>
-      <input type="month" id="lb-month" style="display:none;padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px"/>
+       <input type="month" id="lb-month" style="display:none;padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;background:#2c2c2e;color:#f5f5f7;color-scheme:dark"/>
       <select id="lb-year" style="display:none;padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px"><option value="2025">2025</option><option value="2026" selected>2026</option></select>
       <select id="lb-sort">
         <option value="mv">Mouvements ↕</option>
@@ -749,8 +749,12 @@ async function computeLeaderboard(){
       for(let d=1;d<=days;d++) dates.push(`${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
     } else {
       const y=document.getElementById('lb-year').value;
-      for(let mo=1;mo<=12;mo++) for(let d=1;d<=new Date(y,mo,0).getDate();d++)
-        dates.push(`${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
+      const todayY=new Date().toISOString().slice(0,10);
+      // Par semaine pour aller plus vite en mode annuel
+      const startY=new Date(y+'-01-01');
+      const endY=new Date(Math.min(new Date(y+'-12-31'),new Date()));
+      for(let d=new Date(startY);d<=endY;d.setDate(d.getDate()+7))
+        dates.push(d.toISOString().slice(0,10));
     }
     // Limiter aux dates passées
     const today=new Date().toISOString().slice(0,10);
@@ -1469,6 +1473,8 @@ async function showComboCourbes(combo, targetEl=null){
 /* ═══ INIT ════════════════════════════════════════════ */
 function initRanges(){
   onLbViewChange();
+  const lbDate=document.getElementById('lb-date'); if(lbDate) lbDate.value=new Date().toISOString().slice(0,10);
+  const lbMonth=document.getElementById('lb-month'); if(lbMonth) lbMonth.value=new Date().toISOString().slice(0,7);
   const now=new Date();
   document.getElementById('lb-date').value=now.toISOString().slice(0,10);
 }
@@ -1555,19 +1561,25 @@ async function showStationDetail(number, targetEl=null){
     if(!mth) return;
     const [y,mo]=mth.split('-').map(Number);
     const daysInMonth=new Date(y,mo,0).getDate();
-    for(let day=1;day<=daysInMonth;day++){
-      const dateStr=y+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
-      labels.push(day+'');
-      const snaps=await fetchDay(dateStr)||[];
-      let e=0,m=0;
-      snaps.forEach(snap=>{
-        const st2=getSts(snap).find(x=>x.number===number);
-        if(st2){e+=st2.electrical_bikes||0;m+=st2.mechanical_bikes||0;}
+    // Charger en parallèle par batch de 7 jours
+    const allDays=Array.from({length:daysInMonth},(_,i)=>{
+      const d=i+1, ds=y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+      labels.push(d+''); return ds;
+    });
+    for(let i=0;i<allDays.length;i+=7){
+      const batch=allDays.slice(i,i+7);
+      const results=await Promise.all(batch.map(ds=>fetchDay(ds)));
+      results.forEach(snaps=>{
+        snaps=snaps||[];
+        let e=0,m=0;
+        snaps.forEach(snap=>{
+          const st2=getSts(snap).find(x=>x.number===number);
+          if(st2){e+=st2.electrical_bikes||0;m+=st2.mechanical_bikes||0;}
+        });
+        dataElec.push(Math.round(e/Math.max(1,snaps.length)));
+        dataMeca.push(Math.round(m/Math.max(1,snaps.length)));
       });
-      dataElec.push(Math.round(e/Math.max(1,snaps.length)));
-      dataMeca.push(Math.round(m/Math.max(1,snaps.length)));
     }
-  } else {
     if(!yr) return;
     const today=new Date().toISOString().slice(0,10);
     for(let mo=1;mo<=12;mo++){
