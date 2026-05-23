@@ -20,11 +20,11 @@
   header{height:48px;padding:0 14px}
   .brand{font-size:15px}
   #top-nav{display:none}
-  nav{display:none}
-  main{padding:4px 8px 80px;margin-top:0}
+  #top-nav{display:none !important}
+
   .card{padding:14px;border:0.5px solid var(--border)}
   .loc-row{grid-template-columns:1fr}
-  #map{height:calc(100vh - 116px)}
+  #map{height:calc(100vh - 108px)}
   #plan-map{height:260px}
   .params-row{gap:8px}
   .params-row select,.params-row input{font-size:12px;padding:6px 8px}
@@ -1215,21 +1215,21 @@ async function computePlan(){
       // Corps selon mode
       let body='';
       if(isNowMode && live){
-        body=`<div style="display:flex;gap:0;border-top:0.5px solid #f0f0f5">
-          <div style="flex:1;padding:8px 12px;border-right:0.5px solid #f0f0f5">
-            <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#1a7a3e;margin-bottom:3px">⚡ Élec</div>
-            <div style="font-size:18px;font-weight:700;color:#1a7a3e;line-height:1">${liveElec}</div>
-            <div style="font-size:10px;color:#aeaeb2">${combo.depProb??'?'}% prob · moy ${combo.depN??'?'}</div>
+        body=`<div style="border-top:0.5px solid var(--border);padding:8px 12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:0">
+          <div style="padding-right:10px;border-right:0.5px solid var(--border)">
+            <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#1a7a3e;margin-bottom:2px">⚡ Élec</div>
+            <div style="font-size:17px;font-weight:700;color:#1a7a3e;line-height:1">${liveElec}</div>
+            <div style="font-size:10px;color:var(--dim);margin-top:2px">${combo.depProb??'?'}% · moy ${combo.depN??'?'}</div>
           </div>
-          <div style="flex:1;padding:8px 12px;border-right:0.5px solid #f0f0f5">
-            <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#b52a2a;margin-bottom:3px">🔧 Méca</div>
-            <div style="font-size:18px;font-weight:700;color:#b52a2a;line-height:1">${liveMeca}</div>
-            <div style="font-size:10px;color:#aeaeb2">${combo.depMecaProb??combo.depProb??'?'}% prob</div>
+          <div style="padding:0 10px;border-right:0.5px solid var(--border)">
+            <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#b52a2a;margin-bottom:2px">🔧 Méca</div>
+            <div style="font-size:17px;font-weight:700;color:#b52a2a;line-height:1">${liveMeca}</div>
+            <div style="font-size:10px;color:var(--dim);margin-top:2px">${combo.depMecaProb??combo.depProb??'?'}%</div>
           </div>
-          <div style="flex:1;padding:8px 12px">
-            <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#555;margin-bottom:3px">🅿️ Places</div>
-            <div style="font-size:18px;font-weight:700;color:#1c1c1e;line-height:1">${livePlaces}</div>
-            <div style="font-size:10px;color:#aeaeb2">${combo.arrProb??'?'}% prob · moy ${combo.arrN??'?'}</div>
+          <div style="padding-left:10px">
+            <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--sub);margin-bottom:2px">🅿️ Places</div>
+            <div style="font-size:17px;font-weight:700;color:var(--ink);line-height:1">${livePlaces}</div>
+            <div style="font-size:10px;color:var(--dim);margin-top:2px">${combo.arrProb??'?'}% · moy ${combo.arrN??'?'}</div>
           </div>
         </div>`;
       } else {
@@ -1255,8 +1255,8 @@ async function computePlan(){
         </div>`;
       }
 
-      return `<div class="combo-card${i===0?' selected':''}" onclick="showRoute(${i})" data-idx="${i}" style="overflow:hidden;border-radius:12px;margin-bottom:10px;background:var(--paper);box-shadow:0 1px 4px rgba(0,0,0,.06);border:1.5px solid ${i===0?'var(--blue)':'transparent'}">
-        <div style="display:flex;align-items:center;gap:10px;padding:11px 13px 9px">
+      return `<div class="combo-card${i===0?' selected':''}" onclick="toggleComboDetail(${i},this)" data-idx="${i}" style="overflow:hidden;border-radius:12px;margin-bottom:10px;background:var(--paper);box-shadow:var(--shadow);border:0.5px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 12px 8px;min-width:0">
           <div style="font-size:20px;font-weight:700;color:#f5f5f7;min-width:24px">${i+1}</div>
           <div style="flex:1;min-width:0">
             <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🟢 ${cleanName(combo.dep.name)}</div>
@@ -1266,6 +1266,10 @@ async function computePlan(){
           ${scoreBadge}
         </div>
         ${body}
+        ${body}
+        <div id="combo-detail-${i}" style="display:none;border-top:0.5px solid var(--border)">
+          <div id="combo-detail-inner-${i}" style="padding:12px"></div>
+        </div>
       </div>`;
     }).join('');
     const more=top.length>limit
@@ -1286,6 +1290,36 @@ async function computePlan(){
 }
 
 let planLayerGroup=null;
+
+let _openComboIdx = null;
+
+async function toggleComboDetail(idx, el){
+  const detailDiv = document.getElementById('combo-detail-'+idx);
+  if(!detailDiv) return;
+  // Si déjà ouvert, fermer
+  if(_openComboIdx === idx){
+    detailDiv.style.display='none';
+    document.querySelectorAll('.combo-card').forEach(c=>c.classList.remove('selected'));
+    _openComboIdx=null;
+    return;
+  }
+  // Fermer l'ancien
+  if(_openComboIdx !== null){
+    const old=document.getElementById('combo-detail-'+_openComboIdx);
+    if(old) old.style.display='none';
+  }
+  // Ouvrir ce détail
+  document.querySelectorAll('.combo-card').forEach((c,i)=>c.classList.toggle('selected',i===idx));
+  detailDiv.style.display='';
+  _openComboIdx=idx;
+  // Routing sur la carte
+  await showRoute(idx);
+  // Courbes dans la zone accordéon
+  const inner=document.getElementById('combo-detail-inner-'+idx);
+  inner.innerHTML='<div class="loader">Chargement…</div>';
+  await showComboCourbes(window._planCombos?.[idx], inner);
+  detailDiv.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
 
 async function showRoute(idx){
   // Highlight carte
@@ -1400,15 +1434,12 @@ async function showRoute(idx){
   if(planToPos&&!planToFixed)
     L.polyline([[combo.arr.lat,combo.arr.lng],[planToPos.lat,planToPos.lng]],{color:'#6e6e73',weight:2,dashArray:'5,5',opacity:.7}).addTo(planLayerGroup);
 
-  // Courbes probabilité 24h pour cette combinaison
-  showComboCourbes(combo);
 }
 
 let _chartComboA=null, _chartComboB=null;
 
-async function showComboCourbes(combo){
-  // Récupérer ou créer la zone courbes
-  let zone=document.getElementById('plan-courbes-zone');
+async function showComboCourbes(combo, targetEl=null){
+  let zone=targetEl||document.getElementById('plan-courbes-zone');
   if(!zone){
     zone=document.createElement('div');
     zone.id='plan-courbes-zone';
@@ -1417,8 +1448,11 @@ async function showComboCourbes(combo){
   }
   zone.innerHTML='<div class="loader">Chargement des courbes…</div>';
 
-  const targetDow=parseInt(document.getElementById('plan-dow').value);
-  const targetH2=parseInt(document.getElementById('plan-hour').value);
+  const nowDate=new Date();
+  const dowEl=document.getElementById('plan-dow');
+  const hourEl=document.getElementById('plan-hour');
+  const targetDow=dowEl&&dowEl.value?parseInt(dowEl.value):nowDate.getDay();
+  const targetH2=hourEl&&hourEl.value?parseInt(hourEl.value):nowDate.getHours();
   const today=new Date();
   const promises=[];
   for(let i=0;i<365;i++){
