@@ -50,7 +50,7 @@
   border-bottom:none;border-top:2px solid transparent;
 }
 #bottom-nav .tab span{font-size:11px;display:block;color:var(--sub)}
-#bottom-nav .tab.on{color:#e0392d;border-top-color:#e0392d}
+#bottom-nav .tab.on{color:#fff;border-top-color:rgba(255,255,255,.3)}
 :root{
   --bg:#1c1c1e;--paper:#2c2c2e;--ink:#f5f5f7;--sub:#8e8e93;--dim:#636366;
   --border:#38383a;--blue:#f5f5f7;--green:#30d158;--orange:#ff9f0a;--red:#ff453a;
@@ -59,23 +59,23 @@
 body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Arial,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased;letter-spacing:-0.01em;color-scheme:dark}
 
 header{position:sticky;top:0;z-index:300;height:56px;background:#1c1c1e;backdrop-filter:blur(14px);border-bottom:none;display:flex;align-items:center;justify-content:space-between;padding:0 22px}
-.brand{font-weight:700;font-size:20px;color:#fff}.brand em{color:var(--blue);font-style:normal}
+.brand{font-weight:700;font-size:20px;color:#fff}.brand em{color:#fff;font-style:normal}
 .clock{font-size:12px;color:var(--dim)}
 
 nav{position:sticky;top:56px;z-index:250;background:#1c1c1e;border-bottom:0.5px solid #38383a;display:flex;padding:0 20px;overflow-x:auto}
 nav{position:sticky;top:56px;z-index:250;background:#1c1c1e;border-bottom:0.5px solid #38383a;display:flex;padding:0 20px;overflow-x:auto}
-.tab.on{color:#fff;border-bottom-color:#ffffff55;background:transparent}
+.tab.on{color:#fff;border-bottom-color:rgba(255,255,255,.3);background:transparent}
 
 main{max-width:1500px;margin:auto;padding:20px}
-.panel{display:none}.panel.on{display:block}
+.panel{display:none;overflow:hidden}.panel.on{display:block}
 .card{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
 .card-title{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--sub);margin-bottom:14px}
 
-#map{height:calc(100vh - 140px);border-radius:var(--radius);overflow:hidden}
+#map{height:calc(100vh - 140px);border-radius:var(--radius);overflow:hidden;position:relative;z-index:1}
 .map-ctrl{position:absolute;top:10px;right:10px;z-index:500;display:flex;gap:6px}
 .map-btn{padding:6px 14px;border-radius:20px;border:none;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);box-shadow:var(--shadow);font-size:12px;font-weight:600;cursor:pointer;color:var(--sub);transition:all .15s}
 .map-btn.on{background:var(--blue);color:#fff}
-.map-rel{position:relative}
+.map-rel{position:relative;overflow:hidden}
 
 /* search */
 .loc-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
@@ -151,13 +151,13 @@ main{max-width:1500px;margin:auto;padding:20px}
 
 <nav id="top-nav">
   <div class="tab on" data-tab="map"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg> Carte</div>
-  <div class="tab" data-tab="stats"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Statistiques</div>
   <div class="tab" data-tab="plan"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg> Planifier</div>
+  <div class="tab" data-tab="stats"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Statistiques</div>
 </nav>
 <nav id="bottom-nav">
   <div class="tab on" data-tab="map"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg><span>Carte</span></div>
-  <div class="tab" data-tab="stats"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Stats</span></div>
   <div class="tab" data-tab="plan"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg><span>Planifier</span></div>
+  <div class="tab" data-tab="stats"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Stats</span></div>
 </nav>
 
 <main>
@@ -298,7 +298,7 @@ main{max-width:1500px;margin:auto;padding:20px}
     </div>
   </div>
 
-  <div id="plan-map" style="height:380px;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);margin-bottom:16px"></div>
+  <div id="plan-map" style="height:300px;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);margin-bottom:16px;position:relative;z-index:1"></div>
 
   <div class="card" id="plan-results-card" style="display:none">
     <div class="card-title" id="plan-results-title">Meilleures combinaisons</div>
@@ -494,7 +494,7 @@ async function computeMovements(){
 function initMap(){
   if(map) return;
   map=L.map('map').setView([45.757,4.832],13);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
     {attribution:'© OpenStreetMap © CARTO',maxZoom:20}).addTo(map);
   map.on('zoomend', renderStations);
 }
@@ -865,10 +865,8 @@ let planHeatMvCache={};
 function initPlanMap(){
   if(planMap){ planMap.invalidateSize(); return; }
   planMap=L.map('plan-map').setView([45.757,4.832],13);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
     {attribution:'© OpenStreetMap © CARTO',maxZoom:20}).addTo(planMap);
-  L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm-lite/{z}/{x}/{y}.png',
-    {maxZoom:20,opacity:0.5}).addTo(planMap);
 
 
   function resetPlan(){
@@ -1286,7 +1284,7 @@ async function computePlan(){
   window._showMoreCombos=()=>{ results.innerHTML=renderComboList(top.length); showRoute(0); };
   window._planCombos=top;
   initPlanMap(); // s'assurer que la carte est initialisée
-  showRoute(0);
+  _openComboIdx = null; // reset à chaque nouveau calcul
 }
 
 let planLayerGroup=null;
@@ -1564,7 +1562,7 @@ async function showStationDetail(number, targetEl=null){
   if(st.lat && st.lng){
     const sdMap=L.map('sd-map',{zoomControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false,keyboard:false,touchZoom:false})
       .setView([st.lat,st.lng],16);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
       {attribution:''}).addTo(sdMap);
     L.circleMarker([st.lat,st.lng],{radius:10,fillColor:stationColor(st),color:'#fff',weight:2,fillOpacity:.95}).addTo(sdMap);
   }
