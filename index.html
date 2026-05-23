@@ -1163,61 +1163,76 @@ async function computePlan(){
     const shown=top.slice(0,limit);
     const html=shown.map((combo,i)=>{
       const cls=scoreColor(combo.score);
-      const depDist=planFromFixed?'':` · ${Math.round(combo.dep.dist||0)} m à pied`;
-      const arrDist=planToFixed?'':` · ${Math.round(combo.arr.dist||0)} m à pied`;
-      return `<div class="combo-card${i===0?' selected':''}" onclick="showRoute(${i})" data-idx="${i}">
-        <div class="combo-rank">${i+1}</div>
-        <div class="combo-info">
-          <div class="combo-route">🟢 ${cleanName(combo.dep.name)} → 🔴 ${cleanName(combo.arr.name)}</div>
-          <div class="combo-meta">
-            Départ${depDist} · ${Math.round(combo.dist/1000*10)/10} km · ~${combo.rideMin} min<br>
-            ${(()=>{
-              if(isNowMode && combo.dep.live){
-                const l=combo.dep.live;
-                const depKey=bikeType==='elec'?'electrical_bikes':bikeType==='meca'?'mechanical_bikes':'available_bikes';
-                const nb=l[depKey]||0;
-                const elec=l.electrical_bikes||0;
-                const elecStr=(bikeType!=='meca'&&elec>0)?` dont ${elec}⚡`:'';
-                const places=combo.arr.live?.available_bike_stands??'?';
-                const probaDep=''; const probaArr='';
-                const probaArrOld=''; // supprimé
-                return `🚲 <b>${nb}</b> vélo${nb>1?'s':''}${elecStr} · 🅿️ <b>${places}</b> place${places>1?'s':''}`;
-              }
-              const depProbStr = combo.depProb!==null ? (combo.depProb+'%') : (combo.depPct+'%');
-              const arrProbStr = combo.arrProb!==null ? (combo.arrProb+'%') : (combo.arrPct+'%');
-              const depFillStr = combo.depN!==null ? ` <span style="color:var(--dim)">(moy. ${combo.depN})</span>` : '';
-              const arrFillStr = combo.arrN!==null ? ` <span style="color:var(--dim)">(moy. ${combo.arrN})</span>` : '';
-              return (isRainy?'🌧️':'☀️')+' vélo dispo : <b>'+depProbStr+'</b>'+depFillStr+' · 🅿️ place dispo : <b>'+arrProbStr+'</b>'+arrFillStr;
-            })()}
+      const depDist=planFromFixed?'':` · ${Math.round(combo.dep.dist||0)}m`;
+      const arrDist=planToFixed?'':` · ${Math.round(combo.arr.dist||0)}m`;
+      const score=Math.round((combo.depProb??combo.score??0)*0.6+(combo.arrProb??0)*0.4);
 
-            ${combo.samples?` · <span style="color:var(--dim)">${combo.samples} mesures hist.</span>`:''}${arrDist}
-          </div>
-        </div>
-        <div class="combo-score">
-                return '🚲 <b>'+nb+'</b> vélo'+(nb>1?'s':'')+(elecStr||'')+' · 🅿️ <b>'+places+'</b> place'+(places>1?'s':'');
-              }
-              const depProbStr = combo.depProb!==null ? (combo.depProb+'%') : (combo.depPct+'%');
-              const arrProbStr = combo.arrProb!==null ? (combo.arrProb+'%') : (combo.arrPct+'%');
-              const depFillStr = combo.depN!==null ? ' (remplissage moy. '+combo.depN+' vélos)' : '';
-              const arrFillStr = combo.arrN!==null ? ' (places dispo moy. '+combo.arrN+')' : '';
-              return (isRainy?'🌧️':'☀️')+' vélo dispo : <b>'+depProbStr+'</b>'+depFillStr+' · 🅿️ place dispo : <b>'+arrProbStr+'</b>'+arrFillStr;
-            })()}
+      // Données live
+      const live=combo.dep.live;
+      const liveArr=combo.arr.live;
+      const depKey=bikeType==='elec'?'electrical_bikes':bikeType==='meca'?'mechanical_bikes':'available_bikes';
+      const liveElec=live?.electrical_bikes??0;
+      const liveMeca=live?.mechanical_bikes??0;
+      const liveBikes=live?.[depKey]??0;
+      const livePlaces=liveArr?.available_bike_stands??'?';
 
-            ${combo.samples?` · <span style="color:var(--dim)">${combo.samples} mesures hist.</span>`:''}${arrDist}
+      // Score badge
+      const scoreBadge=isNowMode?`<div style="flex-shrink:0;width:38px;height:38px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:${score>=60?'#eaf3de':score>=35?'#faeeda':'#fcebeb'}"><div style="font-size:13px;font-weight:700;line-height:1;color:${score>=60?'#1a7a3e':score>=35?'#c05000':'#b52a2a'}">${score}%</div><div style="font-size:7px;color:${score>=60?'#1a7a3e':score>=35?'#c05000':'#b52a2a'};opacity:.8">score</div></div>`:'';
+
+      // Corps selon mode
+      let body='';
+      if(isNowMode && live){
+        body=`<div style="display:flex;gap:0;border-top:0.5px solid #f0f0f5">
+          <div style="flex:1;padding:8px 12px;border-right:0.5px solid #f0f0f5">
+            <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#1a7a3e;margin-bottom:3px">⚡ Élec</div>
+            <div style="font-size:18px;font-weight:700;color:#1a7a3e;line-height:1">${liveElec}</div>
+            <div style="font-size:10px;color:#aeaeb2">${combo.depProb??'?'}% prob · moy ${combo.depN??'?'}</div>
           </div>
-        </div>
-          ${isNowMode && combo.dep.live ? `
-            <div style="font-size:12px;text-align:right">
-              <div><b style="font-size:16px;color:var(--ink)">${(()=>{const l=combo.dep.live;const k=bikeType==='elec'?'electrical_bikes':bikeType==='meca'?'mechanical_bikes':'available_bikes';return l[k]||0;})()} </b><span style="color:var(--sub);font-size:11px">vélos</span></div>
-              <div style="color:var(--dim);font-size:10px">${combo.depProb??combo.depPct??'?'}% prob.</div>
-              <div style="margin-top:3px"><b style="font-size:16px;color:var(--ink)">${combo.arr.live?.available_bike_stands??'?'} </b><span style="color:var(--sub);font-size:11px">places</span></div>
-              <div style="color:var(--dim);font-size:10px">${combo.arrProb??combo.arrPct??'?'}% prob.</div>
+          <div style="flex:1;padding:8px 12px;border-right:0.5px solid #f0f0f5">
+            <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#b52a2a;margin-bottom:3px">🔧 Méca</div>
+            <div style="font-size:18px;font-weight:700;color:#b52a2a;line-height:1">${liveMeca}</div>
+            <div style="font-size:10px;color:#aeaeb2">${combo.depMecaProb??combo.depProb??'?'}% prob</div>
+          </div>
+          <div style="flex:1;padding:8px 12px">
+            <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#555;margin-bottom:3px">🅿️ Places</div>
+            <div style="font-size:18px;font-weight:700;color:#1c1c1e;line-height:1">${livePlaces}</div>
+            <div style="font-size:10px;color:#aeaeb2">${combo.arrProb??'?'}% prob · moy ${combo.arrN??'?'}</div>
+          </div>
+        </div>`;
+      } else {
+        const depElecProb=combo.depProb??combo.depPct??'?';
+        const depMecaProb=combo.depMecaProb??combo.depPct??'?';
+        const arrProb=combo.arrProb??combo.arrPct??'?';
+        const colE=depElecProb>=60?'#1a7a3e':depElecProb>=35?'#c05000':'#b52a2a';
+        const colM=depMecaProb>=60?'#1a7a3e':depMecaProb>=35?'#c05000':'#b52a2a';
+        const colA=arrProb>=60?'#1a7a3e':arrProb>=35?'#c05000':'#b52a2a';
+        body=`<div style="display:grid;grid-template-columns:1fr 1fr;border-top:0.5px solid #f0f0f5">
+          <div style="padding:8px 12px;border-right:0.5px solid #f0f0f5">
+            <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#aeaeb2;margin-bottom:5px">🚲 Vélo départ</div>
+            <div style="display:flex;gap:12px">
+              <div><div style="font-size:18px;font-weight:700;color:${colE}">${depElecProb}%</div><div style="font-size:10px;color:#1a7a3e">⚡ Élec</div><div style="font-size:10px;color:#aeaeb2">moy ${combo.depN??'?'}</div></div>
+              <div><div style="font-size:18px;font-weight:700;color:${colM}">${depMecaProb}%</div><div style="font-size:10px;color:#b52a2a">🔧 Méca</div></div>
             </div>
-          ` : `
-            <div class="combo-pct ${cls}">${combo.depProb??combo.score}%</div>
-            <div class="combo-detail">${isNowMode?'vélo prob.':'prob. départ'}</div>
-          `}
+          </div>
+          <div style="padding:8px 12px">
+            <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#aeaeb2;margin-bottom:5px">🅿️ Place arrivée</div>
+            <div style="font-size:22px;font-weight:700;color:${colA};margin-top:4px">${arrProb}%</div>
+            <div style="font-size:10px;color:#aeaeb2">moy ${combo.arrN??'?'} places</div>
+          </div>
+        </div>`;
+      }
+
+      return `<div class="combo-card${i===0?' selected':''}" onclick="showRoute(${i})" data-idx="${i}" style="overflow:hidden;border-radius:12px;margin-bottom:10px;background:var(--paper);box-shadow:0 1px 4px rgba(0,0,0,.06);border:1.5px solid ${i===0?'var(--blue)':'transparent'}">
+        <div style="display:flex;align-items:center;gap:10px;padding:11px 13px 9px">
+          <div style="font-size:20px;font-weight:700;color:var(--blue);min-width:24px">${i+1}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🟢 ${cleanName(combo.dep.name)}</div>
+            <div style="font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🔴 ${cleanName(combo.arr.name)}</div>
+            <div style="font-size:10px;color:var(--dim);margin-top:1px">${Math.round(combo.dist/1000*10)/10} km · ~${combo.rideMin} min${depDist}</div>
+          </div>
+          ${scoreBadge}
         </div>
+        ${body}
       </div>`;
     }).join('');
     const more=top.length>limit
@@ -1421,6 +1436,7 @@ async function showComboCourbes(combo){
 
 /* ═══ INIT ════════════════════════════════════════════ */
 function initRanges(){
+  onLbViewChange();
   const now=new Date();
   document.getElementById('lb-date').value=now.toISOString().slice(0,10);
 }
