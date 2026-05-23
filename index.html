@@ -22,7 +22,7 @@
   #top-nav{display:none}
   nav{display:none}
   main{padding:4px 8px 80px;margin-top:0}
-  .card{padding:14px}
+  .card{padding:14px;border:0.5px solid var(--border)}
   .loc-row{grid-template-columns:1fr}
   #map{height:calc(100vh - 116px)}
   #plan-map{height:260px}
@@ -39,8 +39,8 @@
 }
 #bottom-nav{
   position:fixed;bottom:0;left:0;right:0;z-index:300;
-  background:#2c2c2e;backdrop-filter:blur(14px);
-  border-top:none;
+  background:#1c1c1e;backdrop-filter:blur(14px);
+  border-top:0.5px solid #38383a;
   display:flex;padding:0;height:60px;
 }
 #bottom-nav .tab{
@@ -49,26 +49,26 @@
   font-size:18px;font-weight:600;color:#bbb;
   border-bottom:none;border-top:2px solid transparent;
 }
-#bottom-nav .tab span{font-size:11px;display:block}
+#bottom-nav .tab span{font-size:11px;display:block;color:var(--sub)}
 #bottom-nav .tab.on{color:#e0392d;border-top-color:#e0392d}
 :root{
-  --bg:#f5f5f7;--paper:#fff;--ink:#1d1d1f;--sub:#6e6e73;--dim:#aeaeb2;
-  --border:#d2d2d7;--blue:#e0392d;--green:#28cd41;--orange:#ff9f0a;--red:#ff3b30;
-  --radius:14px;--shadow:0 2px 14px rgba(0,0,0,.08);
+  --bg:#1c1c1e;--paper:#2c2c2e;--ink:#f5f5f7;--sub:#8e8e93;--dim:#636366;
+  --border:#38383a;--blue:#f5f5f7;--green:#30d158;--orange:#ff9f0a;--red:#ff453a;
+  --radius:14px;--shadow:0 2px 8px rgba(0,0,0,.4);
 }
-body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Arial,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased;letter-spacing:-0.01em}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Arial,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased;letter-spacing:-0.01em;color-scheme:dark}
 
 header{position:sticky;top:0;z-index:300;height:56px;background:#1c1c1e;backdrop-filter:blur(14px);border-bottom:none;display:flex;align-items:center;justify-content:space-between;padding:0 22px}
 .brand{font-weight:700;font-size:20px;color:#fff}.brand em{color:var(--blue);font-style:normal}
 .clock{font-size:12px;color:var(--dim)}
 
-nav{position:sticky;top:56px;z-index:250;background:#fff;border-bottom:1px solid #ececec;display:flex;padding:0 20px;overflow-x:auto}
-.tab{padding:14px 16px;cursor:pointer;color:#aaa;border-bottom:2px solid transparent;font-size:13px;font-weight:500;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
-.tab.on{color:var(--blue);border-bottom-color:var(--blue)}
+nav{position:sticky;top:56px;z-index:250;background:#1c1c1e;border-bottom:0.5px solid #38383a;display:flex;padding:0 20px;overflow-x:auto}
+nav{position:sticky;top:56px;z-index:250;background:#1c1c1e;border-bottom:0.5px solid #38383a;display:flex;padding:0 20px;overflow-x:auto}
+.tab.on{color:#fff;border-bottom-color:#ffffff55;background:transparent}
 
 main{max-width:1500px;margin:auto;padding:20px}
 .panel{display:none}.panel.on{display:block}
-.card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
+.card{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
 .card-title{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--sub);margin-bottom:14px}
 
 #map{height:calc(100vh - 140px);border-radius:var(--radius);overflow:hidden}
@@ -87,11 +87,11 @@ main{max-width:1500px;margin:auto;padding:20px}
 .loc-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .search{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none;transition:border-color .15s}
 .search:focus{border-color:var(--blue)}
-.dropdown{position:absolute;left:0;right:0;top:100%;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);display:none;z-index:100;max-height:220px;overflow-y:auto}
+.dropdown{position:absolute;left:0;right:0;top:100%;background:#2c2c2e;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);display:none;z-index:100;max-height:220px;overflow-y:auto}
 .dropdown.open{display:block}
 .opt{padding:9px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0f0}
 .opt:last-child{border-bottom:none}
-.opt:hover{background:#f0f7ff}
+.opt:hover{background:#3a3a3c}
 .opt-type{font-size:10px;color:var(--dim);float:right}
 
 /* params row */
@@ -104,9 +104,9 @@ main{max-width:1500px;margin:auto;padding:20px}
 
 
 /* results */
-.combo-card{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background .15s}
-.combo-card:hover{background:#f8f9ff}
-.combo-card.selected{background:#f0f7ff;border-left:3px solid var(--blue)}
+.combo-card{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
+.combo-card:hover{background:#2c2c2e}
+.combo-card.selected{background:#2c2c2e;border-left:3px solid var(--blue)}
 .combo-card:last-child{border-bottom:none}
 .combo-rank{font-size:22px;font-weight:700;color:var(--blue);min-width:32px;text-align:center}
 .combo-info{flex:1}
@@ -115,9 +115,9 @@ main{max-width:1500px;margin:auto;padding:20px}
 .combo-score{text-align:right;flex-shrink:0}
 .combo-pct{font-size:22px;font-weight:700}
 .combo-detail{font-size:11px;color:var(--dim)}
-.score-high{color:var(--green)}
-.score-med{color:var(--orange)}
-.score-low{color:var(--red)}
+.score-high{color:#30d158}
+.score-med{color:#ff9f0a}
+.score-low{color:#ff453a}
 
 /* courbes */
 .search-wrap{position:relative;margin-bottom:14px}
@@ -125,20 +125,20 @@ main{max-width:1500px;margin:auto;padding:20px}
 
 /* table leaderboard */
 #lb-table{width:100%;border-collapse:collapse;font-size:13px}
-#lb-table th{text-align:left;padding:10px 12px;border-bottom:2px solid var(--border);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--sub);background:#fff}
-#lb-table td{padding:9px 12px;border-bottom:1px solid #f0f0f0;font-variant-numeric:tabular-nums}
-#lb-table tr:hover td{background:#f8f8fa}
+#lb-table th{text-align:left;padding:10px 12px;border-bottom:2px solid var(--border);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--sub);background:#2c2c2e}
+#lb-table td{padding:9px 12px;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums}
+#lb-table tr:hover td{background:#2c2c2e}
 .rank-cell{font-weight:700;color:var(--blue);width:40px}
 .mv-bar{display:inline-block;height:6px;border-radius:3px;background:var(--blue);vertical-align:middle;margin-left:6px}
 .fill-pill{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
-.fill-high{background:rgba(40,205,65,.12);color:#1a7f2b}
-.fill-med{background:rgba(255,159,10,.12);color:#a56800}
-.fill-low{background:rgba(255,59,48,.12);color:#c0392b}
+.fill-high{background:#0d2b1a;color:#30d158}
+.fill-med{background:#2b1a00;color:#ff9f0a}
+.fill-low{background:#2b0a0a;color:#ff453a}
 
-.loader,.no-data{padding:40px;text-align:center;color:var(--dim)}
-.range{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+.loader,.no-data{padding:40px;text-align:center;color:var(--dim);background:var(--paper);border-radius:var(--radius)}
+.range{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--paper);padding:10px;border-radius:10px;margin-bottom:14px}
 .range select,.range input{padding:8px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none}
-.btn{padding:8px 18px;border-radius:10px;border:none;background:var(--blue);color:#fff;font-size:13px;font-weight:600;cursor:pointer}
+.btn{padding:8px 18px;border-radius:10px;border:none;background:#f5f5f7;color:#1c1c1e;font-size:13px;font-weight:600;cursor:pointer}
 .btn:hover{opacity:.85}
 </style>
 </head>
@@ -178,12 +178,12 @@ main{max-width:1500px;margin:auto;padding:20px}
   <div class="card">
     <div class="card-title">Période &amp; tri</div>
     <div class="range">
-      <label>Vue</label>
-      <select id="lb-view" onchange="onLbViewChange()" style="padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px">
-        <option value="day">Jour</option>
-        <option value="month">Mois</option>
-        <option value="year">Année</option>
-      </select>
+      <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px">
+        <button onclick="onLbViewChange('day')" id="lb-pill-day" style="padding:5px 14px;border:none;background:#3a3a3c;color:#fff;font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Jour</button>
+        <button onclick="onLbViewChange('month')" id="lb-pill-month" style="padding:5px 14px;border:none;background:transparent;color:var(--sub);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Mois</button>
+        <button onclick="onLbViewChange('year')" id="lb-pill-year" style="padding:5px 14px;border:none;background:transparent;color:var(--sub);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Année</button>
+      </div>
+      <input type="hidden" id="lb-view" value="day"/>
       <input type="date" id="lb-date"/>
       <input type="month" id="lb-month" style="display:none;padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px"/>
       <select id="lb-year" style="display:none;padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px"><option value="2025">2025</option><option value="2026" selected>2026</option></select>
@@ -230,7 +230,7 @@ main{max-width:1500px;margin:auto;padding:20px}
         <div class="dropdown" id="plan-from-dd"></div>
       </div>
       <div style="display:flex;justify-content:center;margin:4px 0">
-        <button onclick="swapPlanFromTo()" title="Inverser" style="width:28px;height:28px;border:1px solid var(--border);border-radius:50%;background:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.1)">⇅</button>
+        <button onclick="swapPlanFromTo()" title="Inverser" style="width:28px;height:28px;border:1px solid var(--border);border-radius:50%;background:var(--paper);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.1)">⇅</button>
       </div>
       <div style="position:relative">
         <div class="loc-label"><span class="loc-dot" style="background:var(--red)"></span>Point d'arrivée</div>
@@ -243,7 +243,7 @@ main{max-width:1500px;margin:auto;padding:20px}
 
 
     <div style="display:flex;background:var(--bg);border-radius:12px;padding:3px;margin-bottom:12px;position:relative;width:fit-content">
-      <div id="toggle-slider" style="position:absolute;top:3px;left:3px;height:calc(100% - 6px);width:50%;background:#fff;border-radius:9px;box-shadow:0 1px 4px rgba(0,0,0,.12);transition:transform .2s ease;pointer-events:none"></div>
+      <div id="toggle-slider" style="position:absolute;top:3px;left:3px;height:calc(100% - 6px);width:50%;background:var(--paper);border-radius:9px;box-shadow:0 1px 4px rgba(0,0,0,.12);transition:transform .2s ease;pointer-events:none"></div>
       <button id="btn-now" onclick="setModeNow()" style="position:relative;z-index:1;padding:8px 20px;border:none;background:transparent;font-size:13px;font-weight:600;cursor:pointer;border-radius:9px;color:var(--blue);min-width:140px">Maintenant</button>
       <button id="btn-plan" onclick="setModePlan()" style="position:relative;z-index:1;padding:8px 20px;border:none;background:transparent;font-size:13px;font-weight:600;cursor:pointer;border-radius:9px;color:var(--sub);min-width:140px">Planifier</button>
     </div>
@@ -279,7 +279,7 @@ main{max-width:1500px;margin:auto;padding:20px}
     <div id="type-now-row" style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
       <span style="font-size:12px;color:var(--sub);font-weight:600">Type</span>
       <div style="display:flex;background:var(--bg);border-radius:10px;padding:2px;position:relative;width:fit-content">
-        <div id="type-slider-now" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.1);transition:transform .15s ease;pointer-events:none"></div>
+        <div id="type-slider-now" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:var(--paper);border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.1);transition:transform .15s ease;pointer-events:none"></div>
         <button onclick="setBikeType('elec')" style="position:relative;z-index:1;padding:6px 16px;border:none;background:transparent;font-size:12px;font-weight:600;cursor:pointer;color:var(--blue)">⚡ Élec</button>
         <button onclick="setBikeType('meca')" style="position:relative;z-index:1;padding:6px 16px;border:none;background:transparent;font-size:12px;font-weight:600;cursor:pointer;color:var(--sub)">🔧 Méca</button>
       </div>
@@ -496,14 +496,40 @@ function initMap(){
   map=L.map('map').setView([45.757,4.832],13);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
     {attribution:'© OpenStreetMap © CARTO',maxZoom:20}).addTo(map);
+  map.on('zoomend', renderStations);
 }
 function renderStations(){
   if(markers) markers.clearLayers();
   markers=L.layerGroup().addTo(map);
+  const zoom=map?map.getZoom():13;
+
+  // Clustering au zoom faible
+  if(zoom < 13){
+    const cellSize=zoom>=11?0.015:0.03;
+    const cells={};
+    allStations.filter(s=>s.lat&&s.lng).forEach(st=>{
+      const cx=Math.round(st.lat/cellSize), cy=Math.round(st.lng/cellSize);
+      const key=cx+'_'+cy;
+      if(!cells[key]) cells[key]={lat:0,lng:0,count:0,bikes:0,stands:0};
+      cells[key].lat+=st.lat; cells[key].lng+=st.lng;
+      cells[key].count++; cells[key].bikes+=st.available_bikes||0; cells[key].stands+=st.bike_stands||1;
+    });
+    Object.values(cells).forEach(cell=>{
+      const lat=cell.lat/cell.count, lng=cell.lng/cell.count;
+      const ratio=cell.bikes/cell.stands;
+      const color=ratio>=0.4?'#1a7a3e':ratio>=0.15?'#f59e0b':'#b52a2a';
+      const r=Math.max(14,Math.min(26,10+cell.count*1.5));
+      const icon=L.divIcon({html:`<div style="width:${r*2}px;height:${r*2}px;border-radius:50%;background:${color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:2px solid rgba(255,255,255,.2);box-shadow:0 2px 6px rgba(0,0,0,.4)">${cell.count}</div>`,iconSize:[r*2,r*2],iconAnchor:[r,r],className:''});
+      markers.addLayer(L.marker([lat,lng],{icon}));
+    });
+    return;
+  }
+
+  // Stations individuelles avec taille variable
   allStations.forEach(st=>{
     if(!st.lat||!st.lng) return;
     const mv=todayMv[st.number]||0;
-    const m=L.circleMarker([st.lat,st.lng],{radius:8,fillColor:stationColor(st),color:'#fff',weight:1.5,fillOpacity:.9});
+    const m=L.circleMarker([st.lat,st.lng],{radius:Math.max(5,Math.min(14,5+(st.available_bikes||0)*0.5)),fillColor:stationColor(st),color:'#fff',weight:1.5,fillOpacity:.9});
     m.bindPopup(`<div style="min-width:190px;font-family:-apple-system,sans-serif">
       <b style="font-size:14px">${cleanName(st.name)}</b><br><br>
       ⚡ ${st.electrical_bikes} · 🔧 ${st.mechanical_bikes} · 🚲 ${st.available_bikes}<br>
@@ -719,11 +745,18 @@ async function renderCourbes(){
 
 /* ═══ LEADERBOARD ═════════════════════════════════════ */
 function quickLeaderboard(){ renderLbTable(todayMv); }
-function onLbViewChange(){
-  const v=document.getElementById('lb-view').value;
+function onLbViewChange(v){
+  if(v) document.getElementById('lb-view').value=v;
+  else v=document.getElementById('lb-view').value||'day';
   document.getElementById('lb-date').style.display  = v==='day'   ? '' : 'none';
   document.getElementById('lb-month').style.display = v==='month' ? '' : 'none';
   document.getElementById('lb-year').style.display  = v==='year'  ? '' : 'none';
+  ['day','month','year'].forEach(x=>{
+    const btn=document.getElementById('lb-pill-'+x);
+    if(!btn) return;
+    btn.style.background=x===v?'#3a3a3c':'transparent';
+    btn.style.color=x===v?'#fff':'var(--sub)';
+  });
 }
 
 async function computeLeaderboard(){
@@ -1224,7 +1257,7 @@ async function computePlan(){
 
       return `<div class="combo-card${i===0?' selected':''}" onclick="showRoute(${i})" data-idx="${i}" style="overflow:hidden;border-radius:12px;margin-bottom:10px;background:var(--paper);box-shadow:0 1px 4px rgba(0,0,0,.06);border:1.5px solid ${i===0?'var(--blue)':'transparent'}">
         <div style="display:flex;align-items:center;gap:10px;padding:11px 13px 9px">
-          <div style="font-size:20px;font-weight:700;color:var(--blue);min-width:24px">${i+1}</div>
+          <div style="font-size:20px;font-weight:700;color:#f5f5f7;min-width:24px">${i+1}</div>
           <div style="flex:1;min-width:0">
             <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🟢 ${cleanName(combo.dep.name)}</div>
             <div style="font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🔴 ${cleanName(combo.arr.name)}</div>
@@ -1563,10 +1596,10 @@ async function showStationDetail(number, targetEl=null){
   const mvLabel=view==='day'?'vélos moy.':'moy. vélos/j';
   const statsRow=document.getElementById('sd-stats-row');
   if(statsRow) statsRow.innerHTML=
-    '<div style="flex:1;background:var(--bg);border-radius:8px;padding:7px 10px">'+
+    '<div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px">'+
     '<div style="font-size:15px;font-weight:600;color:#1a7a3e">'+totalElec+'</div>'+
     '<div style="font-size:10px;color:var(--sub)">⚡ '+mvLabel+'</div></div>'+
-    '<div style="flex:1;background:var(--bg);border-radius:8px;padding:7px 10px">'+
+    '<div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px">'+
     '<div style="font-size:15px;font-weight:600;color:#b52a2a">'+totalMeca+'</div>'+
     '<div style="font-size:10px;color:var(--sub)">🔧 '+mvLabel+'</div></div>';
   _chartSD_elec=new Chart(document.getElementById('sd-combined'),{type:chartType,
