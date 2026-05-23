@@ -20,10 +20,11 @@
   header{height:48px;padding:0 14px}
   .brand{font-size:15px}
   #top-nav{display:none}
-  main{padding:12px 10px 80px}
+  nav{display:none}
+  main{padding:4px 8px 80px;margin-top:0}
   .card{padding:14px}
   .loc-row{grid-template-columns:1fr}
-  #map{height:calc(100vh - 180px)}
+  #map{height:calc(100vh - 116px)}
   #plan-map{height:260px}
   .params-row{gap:8px}
   .params-row select,.params-row input{font-size:12px;padding:6px 8px}
@@ -1178,23 +1179,44 @@ async function computePlan(){
                 const elec=l.electrical_bikes||0;
                 const elecStr=(bikeType!=='meca'&&elec>0)?` dont ${elec}⚡`:'';
                 const places=combo.arr.live?.available_bike_stands??'?';
-                const probaDep=combo.depProb!==null?` <span style="color:var(--dim)">(${combo.depProb}% prob. · remplissage moy. ${combo.depN??'?'} vélos)</span>`:'';
-                const probaArr=combo.arrProb!==null?` <span style="color:var(--dim)">(${combo.arrProb}% prob. · places dispo moy. ${combo.arrN??'?'})</span>`:'';
-                return `🚲 <b>${nb}</b> vélo${nb>1?'s':''} dispo${elecStr}${probaDep} · 🅿️ <b>${places}</b> place${places>1?'s':''}${probaArr}`;
+                const probaDep=''; const probaArr='';
+                const probaArrOld=''; // supprimé
+                return `🚲 <b>${nb}</b> vélo${nb>1?'s':''}${elecStr} · 🅿️ <b>${places}</b> place${places>1?'s':''}`;
               }
-              const depProbStr = combo.depProb!==null ? `${combo.depProb}%` : `${combo.depPct}%`;
-              const arrProbStr = combo.arrProb!==null ? `${combo.arrProb}%` : `${combo.arrPct}%`;
-              const depFillStr = combo.depN!==null ? ` <span style="color:var(--dim)">(remplissage moy. ${combo.depN} vélos)</span>` : '';
-              const arrFillStr = combo.arrN!==null ? ` <span style="color:var(--dim)">(places dispo moy. ${combo.arrN})</span>` : '';
-              return `${isRainy?'🌧️':'☀️'} vélo dispo : <b>${depProbStr}</b>${depFillStr} · 🅿️ place dispo : <b>${arrProbStr}</b>${arrFillStr}`;
+              const depProbStr = combo.depProb!==null ? (combo.depProb+'%') : (combo.depPct+'%');
+              const arrProbStr = combo.arrProb!==null ? (combo.arrProb+'%') : (combo.arrPct+'%');
+              const depFillStr = combo.depN!==null ? ` <span style="color:var(--dim)">(moy. ${combo.depN})</span>` : '';
+              const arrFillStr = combo.arrN!==null ? ` <span style="color:var(--dim)">(moy. ${combo.arrN})</span>` : '';
+              return (isRainy?'🌧️':'☀️')+' vélo dispo : <b>'+depProbStr+'</b>'+depFillStr+' · 🅿️ place dispo : <b>'+arrProbStr+'</b>'+arrFillStr;
             })()}
-            ${(!isNowMode&&combo.depPctInv!==null)?`· ${invertedRainy?'🌧️':'☀️'} <span style="color:var(--dim)">${combo.depPctInv}%/${combo.arrPctInv}%</span>`:''}
+
             ${combo.samples?` · <span style="color:var(--dim)">${combo.samples} mesures hist.</span>`:''}${arrDist}
           </div>
         </div>
         <div class="combo-score">
-          <div class="combo-pct ${cls}">${combo.score}%</div>
-          <div class="combo-detail">score conjoint</div>
+                return '🚲 <b>'+nb+'</b> vélo'+(nb>1?'s':'')+(elecStr||'')+' · 🅿️ <b>'+places+'</b> place'+(places>1?'s':'');
+              }
+              const depProbStr = combo.depProb!==null ? (combo.depProb+'%') : (combo.depPct+'%');
+              const arrProbStr = combo.arrProb!==null ? (combo.arrProb+'%') : (combo.arrPct+'%');
+              const depFillStr = combo.depN!==null ? ' (remplissage moy. '+combo.depN+' vélos)' : '';
+              const arrFillStr = combo.arrN!==null ? ' (places dispo moy. '+combo.arrN+')' : '';
+              return (isRainy?'🌧️':'☀️')+' vélo dispo : <b>'+depProbStr+'</b>'+depFillStr+' · 🅿️ place dispo : <b>'+arrProbStr+'</b>'+arrFillStr;
+            })()}
+
+            ${combo.samples?` · <span style="color:var(--dim)">${combo.samples} mesures hist.</span>`:''}${arrDist}
+          </div>
+        </div>
+          ${isNowMode && combo.dep.live ? `
+            <div style="font-size:12px;text-align:right">
+              <div><b style="font-size:16px;color:var(--ink)">${(()=>{const l=combo.dep.live;const k=bikeType==='elec'?'electrical_bikes':bikeType==='meca'?'mechanical_bikes':'available_bikes';return l[k]||0;})()} </b><span style="color:var(--sub);font-size:11px">vélos</span></div>
+              <div style="color:var(--dim);font-size:10px">${combo.depProb??combo.depPct??'?'}% prob.</div>
+              <div style="margin-top:3px"><b style="font-size:16px;color:var(--ink)">${combo.arr.live?.available_bike_stands??'?'} </b><span style="color:var(--sub);font-size:11px">places</span></div>
+              <div style="color:var(--dim);font-size:10px">${combo.arrProb??combo.arrPct??'?'}% prob.</div>
+            </div>
+          ` : `
+            <div class="combo-pct ${cls}">${combo.depProb??combo.score}%</div>
+            <div class="combo-detail">${isNowMode?'vélo prob.':'prob. départ'}</div>
+          `}
         </div>
       </div>`;
     }).join('');
@@ -1441,21 +1463,21 @@ async function showStationDetail(number, targetEl=null){
   if(row) row.style.background='var(--blue-l, #e8f0fe)';
 
   const detail=targetEl || document.getElementById('stats-detail');
-  detail.innerHTML=`
-    <div style="display:grid;grid-template-columns:120px 1fr;gap:10px;margin-bottom:10px;align-items:start">
-      <div id="sd-map" style="height:100px;border-radius:8px;overflow:hidden"></div>
-      <div>
-        <div style="font-size:13px;font-weight:600;margin-bottom:4px">${cleanName(st.name)}</div>
-        <div style="font-size:11px;color:var(--sub)">⚡${st.electrical_bikes} dispo · 🔧${st.mechanical_bikes} dispo · 🅿️${st.available_bike_stands} places</div>
-      </div>
-    </div>
-    <div style="margin-bottom:10px">
-      <div style="display:flex;gap:12px;font-size:11px;color:var(--sub);margin-bottom:4px">
-        <span><span style="display:inline-block;width:10px;height:2px;background:#1a7a3e;vertical-align:middle;margin-right:3px"></span>⚡ Élec</span>
-        <span><span style="display:inline-block;width:10px;height:2px;background:#b52a2a;vertical-align:middle;margin-right:3px"></span>🔧 Méca</span>
-      </div>
-      <canvas id="sd-combined" height="70"></canvas>
-    </div>`;
+  const view=document.getElementById('lb-view')?.value||'day';
+  const chartH=view==='day'?70:80;
+  const chartType=view==='day'?'line':'bar';
+  detail.innerHTML=
+    '<div style="display:grid;grid-template-columns:110px 1fr;gap:10px;margin-bottom:10px;align-items:start">'+
+    '<div id="sd-map" style="height:90px;border-radius:8px;overflow:hidden"></div>'+
+    '<div><div style="font-size:12px;font-weight:600;margin-bottom:3px">'+cleanName(st.name)+'</div>'+
+    '<div style="font-size:11px;color:var(--sub)">⚡'+st.electrical_bikes+' · 🔧'+st.mechanical_bikes+' · 🅿️'+st.available_bike_stands+'</div></div></div>'+
+    '<div style="display:flex;gap:12px;font-size:10px;color:var(--sub);margin-bottom:5px">'+
+    '<span><span style="display:inline-block;width:10px;height:2px;background:#1a7a3e;vertical-align:middle;margin-right:3px"></span>⚡ Élec</span>'+
+    '<span><span style="display:inline-block;width:10px;height:2px;background:#b52a2a;vertical-align:middle;margin-right:3px"></span>🔧 Méca</span></div>'+
+    '<canvas id="sd-combined" height="'+chartH+'"></canvas>'+
+    '<div id="sd-stats-row" style="display:flex;gap:8px;margin-top:10px"></div>';
+
+
   if(st.lat && st.lng){
     const sdMap=L.map('sd-map',{zoomControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false,keyboard:false,touchZoom:false})
       .setView([st.lat,st.lng],16);
@@ -1463,37 +1485,80 @@ async function showStationDetail(number, targetEl=null){
       {attribution:''}).addTo(sdMap);
     L.circleMarker([st.lat,st.lng],{radius:10,fillColor:stationColor(st),color:'#fff',weight:2,fillOpacity:.95}).addTo(sdMap);
   }
-
-  // Période depuis les inputs globaux
+  // Période selon la vue
   const d=document.getElementById('lb-date').value;
-  if(!d){ return; }
-  const snaps=await fetchDay(d)||[];
-  const startMs=new Date(d).getTime(), endMs=startMs+86400e3;
+  const mth=document.getElementById('lb-month')?.value;
+  const yr=document.getElementById('lb-year')?.value;
 
-  const labels=[],dataElec=[],dataMeca=[];
-  const days=(endMs-startMs)/86400e3;
-  snaps.forEach(snap=>{
-    const sts=getSts(snap), st2=sts.find(x=>x.number===number);
-    if(!st2) return;
-    const t=new Date(getTs(snap));
-    labels.push(days<=1
-      ? t.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})
-      : t.toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
-    );
-    dataElec.push(st2.electrical_bikes||0);
-    dataMeca.push(st2.mechanical_bikes||0);
-  });
+  let labels=[], dataElec=[], dataMeca=[];
+
+  if(view==='day'){
+    if(!d) return;
+    const snaps=await fetchDay(d)||[];
+    snaps.forEach(snap=>{
+      const sts=getSts(snap), st2=sts.find(x=>x.number===number);
+      if(!st2) return;
+      const t=new Date(getTs(snap));
+      labels.push(t.getHours()+'h');
+      dataElec.push(st2.electrical_bikes||0);
+      dataMeca.push(st2.mechanical_bikes||0);
+    });
+  } else if(view==='month'){
+    if(!mth) return;
+    const [y,mo]=mth.split('-').map(Number);
+    const daysInMonth=new Date(y,mo,0).getDate();
+    for(let day=1;day<=daysInMonth;day++){
+      const dateStr=y+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+      labels.push(day+'');
+      const snaps=await fetchDay(dateStr)||[];
+      let e=0,m=0;
+      snaps.forEach(snap=>{
+        const st2=getSts(snap).find(x=>x.number===number);
+        if(st2){e+=st2.electrical_bikes||0;m+=st2.mechanical_bikes||0;}
+      });
+      dataElec.push(Math.round(e/Math.max(1,snaps.length)));
+      dataMeca.push(Math.round(m/Math.max(1,snaps.length)));
+    }
+  } else {
+    if(!yr) return;
+    const today=new Date().toISOString().slice(0,10);
+    for(let mo=1;mo<=12;mo++){
+      labels.push(['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'][mo-1]);
+      const daysInM=new Date(yr,mo,0).getDate();
+      let e=0,m=0,cnt=0;
+      for(let day=1;day<=daysInM;day++){
+        const dateStr=yr+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+        if(dateStr>today) continue;
+        const snaps=await fetchDay(dateStr)||[];
+        snaps.forEach(snap=>{
+          const st2=getSts(snap).find(x=>x.number===number);
+          if(st2){e+=st2.electrical_bikes||0;m+=st2.mechanical_bikes||0;cnt++;}
+        });
+      }
+      dataElec.push(Math.round(e/Math.max(1,cnt)));
+      dataMeca.push(Math.round(m/Math.max(1,cnt)));
+    }
+  }
 
   _chartSD_elec?.destroy();
   _chartSD_meca?.destroy();
-  const pr=days<=1?0:2;
-  _chartSD_elec=new Chart(document.getElementById('sd-combined'),{type:'line',
+  const totalElec=dataElec.reduce((a,b)=>a+(b||0),0);
+  const totalMeca=dataMeca.reduce((a,b)=>a+(b||0),0);
+  const mvLabel=view==='day'?'vélos moy.':'moy. vélos/j';
+  const statsRow=document.getElementById('sd-stats-row');
+  if(statsRow) statsRow.innerHTML=
+    '<div style="flex:1;background:var(--bg);border-radius:8px;padding:7px 10px">'+
+    '<div style="font-size:15px;font-weight:600;color:#1a7a3e">'+totalElec+'</div>'+
+    '<div style="font-size:10px;color:var(--sub)">⚡ '+mvLabel+'</div></div>'+
+    '<div style="flex:1;background:var(--bg);border-radius:8px;padding:7px 10px">'+
+    '<div style="font-size:15px;font-weight:600;color:#b52a2a">'+totalMeca+'</div>'+
+    '<div style="font-size:10px;color:var(--sub)">🔧 '+mvLabel+'</div></div>';
+  _chartSD_elec=new Chart(document.getElementById('sd-combined'),{type:chartType,
     data:{labels,datasets:[
-      {label:'⚡ Élec',data:dataElec,borderColor:'#1a7a3e',backgroundColor:'#1a7a3e18',borderWidth:1.8,tension:0,pointRadius:pr,spanGaps:true,fill:true},
-      {label:'🔧 Méca',data:dataMeca,borderColor:'#b52a2a',backgroundColor:'#b52a2a18',borderWidth:1.8,tension:0,pointRadius:pr,spanGaps:true,fill:true}
+      {label:'Élec',data:dataElec,borderColor:'#1a7a3e',backgroundColor:chartType==='line'?'#1a7a3e18':'#1a7a3ebb',borderWidth:chartType==='line'?1.8:0,borderRadius:2,tension:0,pointRadius:0,spanGaps:true,fill:chartType==='line'},
+      {label:'Méca',data:dataMeca,borderColor:'#b52a2a',backgroundColor:chartType==='line'?'#b52a2a18':'#b52a2abb',borderWidth:chartType==='line'?1.8:0,borderRadius:2,tension:0,pointRadius:0,spanGaps:true,fill:chartType==='line'}
     ]},
     options:chartOpts()});
-
 } // fin showStationDetail
 
 function setModeNow(){
