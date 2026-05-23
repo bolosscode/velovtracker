@@ -220,9 +220,11 @@ main{max-width:1500px;margin:auto;padding:20px}
 </div>
 
 <!-- ═══ PLANIFIER ═══ -->
-<div class="panel" id="tab-plan">
-  <div class="card">
-    <div class="card-title">Planifier un trajet</div>
+<div class="panel" id="tab-plan" style="position:relative;overflow:hidden">
+  <div style="position:absolute;top:0;left:0;right:0;bottom:0;z-index:10;pointer-events:none;display:flex;flex-direction:column">
+    <!-- Formulaire flottant en haut -->
+    <div style="pointer-events:all;margin:10px;background:rgba(28,28,30,.95);backdrop-filter:blur(14px);border-radius:14px;border:0.5px solid #38383a;padding:12px 14px">
+    <div class="card-title" style="margin-bottom:8px">Planifier un trajet</div>
     <div style="margin-bottom:12px">
       <div style="position:relative">
         <div class="loc-label"><span class="loc-dot" style="background:var(--green)"></span>Point de départ</div>
@@ -298,9 +300,13 @@ main{max-width:1500px;margin:auto;padding:20px}
     </div>
   </div>
 
-  <div id="plan-map" style="height:300px;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);margin-bottom:16px;position:relative;z-index:1"></div>
+  <div id="plan-map" style="position:absolute;inset:0;z-index:0;border-radius:0"></div>
 
-  <div class="card" id="plan-results-card" style="display:none">
+    </div>
+    <!-- Résultats en bas coulissants -->
+    <div style="flex:1"></div>
+    <div id="plan-results-wrapper" style="pointer-events:all;max-height:55vh;overflow-y:auto;margin:0 10px 10px;background:rgba(28,28,30,.95);backdrop-filter:blur(14px);border-radius:14px;border:0.5px solid #38383a">
+  <div class="card" id="plan-results-card" style="display:none;background:transparent;box-shadow:none;border:none">
     <div class="card-title" id="plan-results-title">Meilleures combinaisons</div>
     <div id="plan-results"></div>
   </div>
