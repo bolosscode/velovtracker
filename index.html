@@ -19,7 +19,7 @@
   #stats-detail{display:block !important}
   header{height:48px;padding:0 14px}
   .brand{font-size:15px}
-  #top-nav{display:none}
+  #top-nav{display:none !important}
   #top-nav{display:none !important}
 
   .card{padding:14px;border:0.5px solid var(--border)}
@@ -36,7 +36,7 @@
   .combo-pct{font-size:18px}
 }
 @media(min-width:641px){
-  #bottom-nav{display:none}
+  #bottom-nav{display:none !important}
 }
 #bottom-nav{
   position:fixed;bottom:0;left:0;right:0;z-index:300;
@@ -145,21 +145,20 @@ main{max-width:1500px;margin:auto;padding:20px}
 </head>
 <body>
 
-<header>
-  <div class="brand">Vélo<em>'</em>v Lyon Analytics</div>
-  <div class="clock" id="clock"></div>
+<header style="display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:50px;background:#1c1c1e;border-bottom:0.5px solid #38383a;position:sticky;top:0;z-index:300">
+  <div style="font-size:15px;font-weight:700;color:#fff">Vélo'v</div>
+  <div style="display:flex;gap:2px">
+    <div class="tab on" data-tab="map" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:#fff;font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg> Carte</div>
+    <div class="tab" data-tab="stats" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:#636366;font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Stats</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div id="live-status"></div>
+    <div id="clock" style="font-size:12px;color:#8e8e93"></div>
+  </div>
 </header>
 
-<nav id="top-nav">
-  <div class="tab on" data-tab="map"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg> Carte</div>
-  <div class="tab" style="display:none" data-tab="plan"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg> Planifier</div>
-  <div class="tab" data-tab="stats"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Statistiques</div>
-</nav>
-<nav id="bottom-nav">
-  <div class="tab on" data-tab="map"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg><span>Carte</span></div>
-  <div class="tab" style="display:none" data-tab="plan"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg><span>Planifier</span></div>
-  <div class="tab" data-tab="stats"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Stats</span></div>
-</nav>
+
+
 
 <main>
 
@@ -168,7 +167,7 @@ main{max-width:1500px;margin:auto;padding:20px}
 <!-- ═══ CARTE ═══ -->
 <div class="panel on" id="tab-map" style="position:relative">
   <!-- Formulaire planifier flottant -->
-  <div id="plan-float" style="position:absolute;top:10px;left:10px;right:10px;z-index:200;background:rgba(28,28,30,.94);backdrop-filter:blur(20px);border-radius:14px;border:0.5px solid #38383a;padding:10px 12px;box-shadow:0 4px 24px rgba(0,0,0,.6)">
+  <div id="plan-float" style="position:absolute;top:10px;left:10px;width:min(340px,calc(100% - 20px));z-index:200;background:rgba(28,28,30,.94);backdrop-filter:blur(20px);border-radius:14px;border:0.5px solid #38383a;padding:10px 12px;box-shadow:0 4px 24px rgba(0,0,0,.6)">
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
       <div style="flex:1;background:#2c2c2e;border-radius:10px;overflow:hidden;border:0.5px solid #38383a">
         <div style="position:relative">
@@ -265,56 +264,6 @@ main{max-width:1500px;margin:auto;padding:20px}
 </div>
 
 <!-- ═══ PLANIFIER ═══ -->
-<div class="panel" id="tab-plan" style="position:relative;height:calc(100vh - 108px);overflow:hidden">
-
-  <!-- Carte plein écran -->
-  <div id="plan-map" style="position:absolute;inset:0;z-index:0"></div>
-
-  <!-- Fenêtre flottante -->
-  <div id="plan-float" style="position:absolute;top:10px;left:10px;right:10px;z-index:20;background:rgba(28,28,30,.94);backdrop-filter:blur(20px);border-radius:14px;border:0.5px solid #38383a;padding:10px 12px;box-shadow:0 4px 24px rgba(0,0,0,.6)">
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-      <div style="flex:1;background:#2c2c2e;border-radius:10px;overflow:hidden;border:0.5px solid #38383a">
-        <div style="position:relative">
-          <input id="plan-from" class="search" type="text" placeholder="Départ…" autocomplete="off" style="background:transparent;border-radius:0;border:none;border-bottom:0.5px solid #38383a"/>
-          <div class="dropdown" id="plan-from-dd"></div>
-        </div>
-        <div style="position:relative">
-          <input id="plan-to" class="search" type="text" placeholder="Arrivée…" autocomplete="off" style="background:transparent;border-radius:0;border:none"/>
-          <div class="dropdown" id="plan-to-dd"></div>
-        </div>
-      </div>
-      <button onclick="swapPlanFromTo()" style="width:30px;height:30px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;cursor:pointer;font-size:15px;color:#8e8e93;display:flex;align-items:center;justify-content:center;flex-shrink:0">⇅</button>
-    </div>
-    <div id="plan-meteo" style="font-size:10px;color:#636366;margin-bottom:8px"></div>
-    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-      <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px">
-        <button id="btn-now" onclick="setModeNow()" style="padding:4px 11px;border:none;background:#3a3a3c;color:#fff;font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">Maintenant</button>
-        <button id="btn-plan" onclick="setModePlan()" style="padding:4px 11px;border:none;background:transparent;color:#636366;font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">Planifier</button>
-      </div>
-      <div id="plan-params" style="display:none;gap:6px;align-items:center;flex-wrap:wrap">
-        <select id="plan-dow" style="padding:4px 8px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;color:#f5f5f7;font-size:11px"><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option><option value="6">Samedi</option><option value="0">Dimanche</option></select>
-        <input type="time" id="plan-hour-time" style="padding:4px 8px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;color:#f5f5f7;font-size:11px;outline:none" oninput="syncHourSelect()"/>
-        <select id="plan-hour" style="display:none"></select>
-        <select id="plan-radius" style="padding:4px 8px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;color:#f5f5f7;font-size:11px"><option value="300">300m</option><option value="500" selected>500m</option><option value="800">800m</option><option value="1200">1.2km</option></select>
-      </div>
-      <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px;position:relative">
-        <div id="type-slider-now" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:#3a3a3c;border-radius:18px;transition:transform .15s;pointer-events:none"></div>
-        <button onclick="setBikeType('elec')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:#fff">⚡ Élec</button>
-        <button onclick="setBikeType('meca')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:#636366">🔧 Méca</button>
-      </div>
-      <select id="plan-type" style="display:none"><option value="elec">elec</option><option value="meca">meca</option><option value="any" selected>any</option></select>
-      <button class="btn" onclick="computePlan()" style="margin-left:auto;padding:5px 14px;font-size:11px">Calculer</button>
-    </div>
-  </div>
-
-  <!-- Volet résultats -->
-  <div id="plan-results-card" style="display:none;position:absolute;bottom:0;left:0;right:0;z-index:20;background:rgba(28,28,30,.96);backdrop-filter:blur(16px);border-radius:16px 16px 0 0;border-top:0.5px solid #38383a;max-height:58vh;overflow-y:auto;padding:6px 14px 20px;box-shadow:0 -4px 20px rgba(0,0,0,.4)">
-    <div style="width:36px;height:4px;background:#48484a;border-radius:2px;margin:6px auto 10px"></div>
-    <div id="plan-results-title" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#8e8e93;margin-bottom:10px"></div>
-    <div id="plan-results"></div>
-  </div>
-
-</div>
 </main>
 <script>
 'use strict';
@@ -330,18 +279,27 @@ const fmt = d => d.toISOString().slice(0,16);
 const DOW_NAMES = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
 
 /* ═══ CLOCK & TABS ════════════════════════════════════ */
-setInterval(()=>{ document.getElementById('clock').textContent=new Date().toLocaleTimeString('fr-FR'); },1000);
+function updateLiveStatus(){
+  const el=document.getElementById('live-status');
+  if(!el) return;
+  const minAgo=Math.round((Date.now()-(window._lastStationUpdate||Date.now()))/60000);
+  if(minAgo<=1) el.innerHTML='<span style="color:#30d158;font-size:10px">● Live</span>';
+  else el.innerHTML=`<span style="color:#f59e0b;font-size:10px">● Màj il y a ${minAgo} min</span>`;
+}
+setInterval(()=>{
+  document.getElementById('clock').textContent=new Date().toLocaleTimeString('fr-FR');
+  updateLiveStatus();
+},1000);
 
 document.querySelectorAll('.tab').forEach(tab=>{
   tab.onclick=()=>{
     // Sync les deux navs
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+    document.querySelectorAll('.tab').forEach(t=>{ t.classList.remove('on'); t.style.color='#636366'; });
     document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
-    // Activer le bon tab dans les deux navs
-    document.querySelectorAll(`.tab[data-tab="${tab.dataset.tab}"]`).forEach(t=>t.classList.add('on'));
+    document.querySelectorAll(`.tab[data-tab="${tab.dataset.tab}"]`).forEach(t=>{ t.classList.add('on'); t.style.color='#fff'; });
     document.getElementById('tab-'+tab.dataset.tab).classList.add('on');
     setTimeout(()=>{ map?.invalidateSize(); planMap?.invalidateSize(); },150);
-    if(tab.dataset.tab==='map') setTimeout(()=>{ if(!map)initMap(); map?.invalidateSize(); renderStations(); },150);
+    if(tab.dataset.tab==='map') setTimeout(()=>{ if(!map)initMap(); map?.invalidateSize(); renderStations(); initPlanMap(); },150);
     if(tab.dataset.tab==='stats') quickLeaderboard();
     if(tab.dataset.tab==='plan') initPlanMap();
   };
@@ -873,8 +831,9 @@ let planHeatMvCache={};
 
 function initPlanMap(){
   if(planMap){ planMap.invalidateSize(); return; }
-  planMap=L.map('plan-map').setView([45.757,4.832],13);
-  planMap.on('click',()=>{ const rc=document.getElementById('plan-results-card'); if(rc&&rc.style.display!=='none') rc.style.display='none'; });
+  // Utiliser la carte principale
+  planMap = map;
+  if(map) map.on('click',()=>{ const rc=document.getElementById('plan-results-card'); if(rc&&rc.style.display!=='none') rc.style.display='none'; });
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
     {attribution:'© OpenStreetMap © CARTO',maxZoom:20}).addTo(planMap);
 
@@ -914,9 +873,7 @@ function initPlanMap(){
      const windStr=meteo.wind!==undefined?` · ${meteo.wind}km/h${windArr}`:''
     const meteoEl=document.getElementById('plan-meteo');
     if(meteoEl){
-      document.getElementById('plan-meteo-icon').textContent=m.icon;
-      document.getElementById('plan-meteo-label').textContent=`${m.label}${meteo.precipitation>0?' — '+meteo.precipitation.toFixed(1)+' mm/h':''}${tempStr}${windStr}`;
-      document.getElementById('plan-meteo-sub').textContent=
+      document.getElementById('plan-meteo').textContent=(m.icon||'')+(meteo.temp!==undefined?' '+meteo.temp+'°C':'')+(meteo.wind!==undefined?' · '+meteo.wind+' km/h':''); void 
         meteo.rain?'Conditions pluvieuses':'Conditions favorables au vélo';
       meteoEl.style.display='flex';
       meteoEl.style.background=meteo.rain?'rgba(0,113,227,.06)':'rgba(40,205,65,.06)';
@@ -965,13 +922,12 @@ async function computePlan(){
   const meteoEl=document.getElementById('plan-meteo');
   if(meteo&&meteoEl){
     const m=meteoFromCode(meteo.weathercode, meteo.rain);
-    document.getElementById('plan-meteo-icon').textContent=m.icon;
+    
      const tempStr=meteo.temp!==undefined?` · ${meteo.temp}°C`:''
      const windArr=meteo.winddir!==undefined?['↓','↙','←','↖','↑','↗','→','↘'][Math.round(meteo.winddir/45)%8]:''
      const windStr=meteo.wind!==undefined?` · ${meteo.wind}km/h${windArr}`:''
      document.getElementById('plan-meteo-label').textContent=`${m.label}${meteo.precipitation>0?' — '+meteo.precipitation.toFixed(1)+' mm/h':''}${tempStr}${windStr}`;
-    document.getElementById('plan-meteo-sub').textContent=
-      meteo.rain ? 'Conditions pluvieuses — usage vélo potentiellement réduit' : 'Conditions favorables au vélo';
+    
     meteoEl.style.display='flex';
     meteoEl.style.background=meteo.rain?'rgba(0,113,227,.06)':'rgba(40,205,65,.06)';
   }
@@ -1709,14 +1665,15 @@ function syncHourSelect(){
 
 /* ═══ BOOT ════════════════════════════════════════════ */
 async function boot(){
+  initPlanMap();
   initRanges();
-  allStations=await loadLatest();
+  allStations=await loadLatest(); window._lastStationUpdate=Date.now(); updateLiveStatus();
   await computeMovements();
   initMap();
   renderStations();
 }
 boot();
-setInterval(async()=>{ allStations=await loadLatest(); await computeMovements(); renderStations(); },5*60*1000);
+setInterval(async()=>{ allStations=await loadLatest(); await computeMovements(); renderStations(); },5*60*1000); window._lastStationUpdate=Date.now(); updateLiveStatus();
 </script>
 </body>
 </html>
