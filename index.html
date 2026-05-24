@@ -1289,19 +1289,58 @@ async function computePlan(){
         </div>`;
       }
 
-      return `<div class="combo-card${i===0?' selected':''}" onclick="toggleComboDetail(${i},this)" data-idx="${i}" style="overflow:hidden;border-radius:12px;margin-bottom:10px;background:var(--paper);box-shadow:var(--shadow);border:0.5px solid var(--border)">
+      const sc=Math.round(combo.score??0);
+      const scCol=sc>=60?"#1a7a3e":sc>=35?"#f59e0b":"#b52a2a";
+      const scBg=sc>=60?"#0d2b1a":sc>=35?"#2b1a00":"#2b0a0a";
+      const liveElec2=combo.dep.live?.electrical_bikes??0;
+      const liveMeca2=combo.dep.live?.mechanical_bikes??0;
+      const livePlaces2=combo.arr.live?.available_bike_stands??"?";
+
+      const cardBody = isNowMode && combo.dep.live ? `
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-top:0.5px solid var(--border)">
+          <div style="padding:8px 10px;border-right:0.5px solid var(--border)">
+            <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#1a7a3e;margin-bottom:2px">⚡ Élec</div>
+            <div style="font-size:17px;font-weight:700;color:#1a7a3e;line-height:1">${liveElec2}</div>
+            <div style="font-size:10px;color:var(--dim);margin-top:1px">${combo.depProb??"-"}% · moy ${combo.depN??"-"}</div>
+          </div>
+          <div style="padding:8px 10px;border-right:0.5px solid var(--border)">
+            <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#b52a2a;margin-bottom:2px">🔧 Méca</div>
+            <div style="font-size:17px;font-weight:700;color:#b52a2a;line-height:1">${liveMeca2}</div>
+            <div style="font-size:10px;color:var(--dim);margin-top:1px">${combo.depMecaProb??combo.depProb??"-"}%</div>
+          </div>
+          <div style="padding:8px 10px">
+            <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--sub);margin-bottom:2px">🅿️ Places</div>
+            <div style="font-size:17px;font-weight:700;color:var(--ink);line-height:1">${livePlaces2}</div>
+            <div style="font-size:10px;color:var(--dim);margin-top:1px">${combo.arrProb??"-"}% · moy ${combo.arrN??"-"}</div>
+          </div>
+        </div>` : `
+        <div style="display:grid;grid-template-columns:1fr 1fr;border-top:0.5px solid var(--border)">
+          <div style="padding:8px 10px;border-right:0.5px solid var(--border)">
+            <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--sub);margin-bottom:4px">🚲 Vélo départ</div>
+            <div style="display:flex;gap:10px">
+              <div><div style="font-size:17px;font-weight:700;color:${combo.depProb>=60?"#1a7a3e":combo.depProb>=35?"#f59e0b":"#b52a2a"}">${combo.depProb??"-"}%</div><div style="font-size:10px;color:#1a7a3e">⚡ Élec</div></div>
+              <div><div style="font-size:17px;font-weight:700;color:${(combo.depMecaProb??combo.depProb)>=60?"#1a7a3e":(combo.depMecaProb??combo.depProb)>=35?"#f59e0b":"#b52a2a"}">${combo.depMecaProb??combo.depProb??"-"}%</div><div style="font-size:10px;color:#b52a2a">🔧 Méca</div></div>
+            </div>
+          </div>
+          <div style="padding:8px 10px">
+            <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--sub);margin-bottom:4px">🅿️ Place arr.</div>
+            <div style="font-size:22px;font-weight:700;color:${combo.arrProb>=60?"#1a7a3e":combo.arrProb>=35?"#f59e0b":"#b52a2a"};margin-top:2px">${combo.arrProb??"-"}%</div>
+            <div style="font-size:10px;color:var(--dim)">moy ${combo.arrN??"-"} places</div>
+          </div>
+        </div>`;
+
+      return `<div class="combo-card${i===0?" selected":""}" onclick="toggleComboDetail(${i},this)" data-idx="${i}" style="overflow:hidden;border-radius:12px;margin-bottom:8px;background:var(--paper);border:0.5px solid var(--border)">
         <div style="display:flex;align-items:center;gap:8px;padding:10px 12px 8px;min-width:0">
-          <div style="font-size:20px;font-weight:700;color:#f5f5f7;min-width:24px">${i+1}</div>
+          <div style="font-size:20px;font-weight:700;color:#f5f5f7;min-width:22px">${i+1}</div>
           <div style="flex:1;min-width:0">
             <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🟢 ${cleanName(combo.dep.name)}</div>
             <div style="font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🔴 ${cleanName(combo.arr.name)}</div>
-            <div style="font-size:10px;color:var(--dim);margin-top:1px">${Math.round(combo.dist/1000*10)/10} km · ~${combo.rideMin} min${depDist}${combo.rideMin>30&&bikeType==='elec'?' · <span style="color:#f59e0b;font-weight:500">⚠️ >30 min</span>':''}</div>
+            <div style="font-size:10px;color:var(--dim);margin-top:1px">${Math.round(combo.dist/1000*10)/10} km · ~${combo.rideMin} min${depDist}</div>
           </div>
-          ${scoreBadge}
+          ${isNowMode?`<div style="width:36px;height:36px;border-radius:50%;background:${scBg};display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0"><div style="font-size:12px;font-weight:700;color:${scCol};line-height:1">${sc}%</div><div style="font-size:7px;color:${scCol};opacity:.8">score</div></div>`:""}
         </div>
-        ${body}
-        ${body}
-        ${combo.rideMin>30&&bikeType==='elec'?`<div style="padding:7px 12px;background:#2b1a00;border-top:0.5px solid #38383a;font-size:10px;color:#f59e0b">⚠️ Trajet >30 min — pensez à déposer le VAE à ~26 min pour éviter la surfacturation</div>`:''}
+        ${cardBody}
+        ${combo.rideMin>30&&bikeType==="elec"?`<div style="padding:6px 12px;background:#2b1a00;border-top:0.5px solid #38383a;font-size:10px;color:#f59e0b">⚠️ >30 min — déposer le VAE à ~26 min</div>`:""}
         <div id="combo-detail-${i}" style="display:none;border-top:0.5px solid var(--border)">
           <div id="combo-detail-inner-${i}" style="padding:12px"></div>
         </div>
