@@ -858,11 +858,17 @@ async function showDayMeteo(date){
 let planHeatMvCache={};
 
 
+let _planDropdownsInit = false;
 function initPlanMap(){
-  if(planMap){ planMap.invalidateSize(); return; }
   // Utiliser la carte principale
-  planMap = map;
-  if(map) map.on('click',()=>{ const rc=document.getElementById('plan-results-card'); if(rc&&rc.style.display!=='none') rc.style.display='none'; });
+  if(!planMap && map){
+    planMap = map;
+    map.on('click',()=>{ const rc=document.getElementById('plan-results-card'); if(rc&&rc.style.display!=='none') rc.style.display='none'; });
+  }
+  if(planMap) planMap.invalidateSize();
+  // Initialiser les dropdowns une seule fois
+  if(_planDropdownsInit) return;
+  _planDropdownsInit = true;
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
     {attribution:'© OpenStreetMap © CARTO',maxZoom:20}).addTo(planMap);
 
