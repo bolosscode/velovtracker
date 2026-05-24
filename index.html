@@ -157,7 +157,7 @@ main{max-width:1500px;margin:auto;padding:20px}
 </head>
 <body>
 
-<header style="display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:50px;background:#1c1c1e;border-bottom:0.5px solid #38383a;position:sticky;top:0;z-index:300">
+<header style="display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:50px;background:rgba(28,28,30,.88);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);border-bottom:0.5px solid rgba(255,255,255,.1);position:sticky;top:0;z-index:300">
   <div style="font-size:15px;font-weight:700;color:#fff">Vélo'v</div>
   <div style="display:flex;gap:2px">
     <div class="tab on" data-tab="map" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:#fff;font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg> Carte</div>
@@ -189,7 +189,7 @@ main{max-width:1500px;margin:auto;padding:20px}
       <!-- État étendu -->
       <div id="plan-float-expanded" style="padding:10px 12px">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-          <div style="flex:1;background:rgba(44,44,46,.6);border-radius:10px;overflow:visible;border:0.5px solid rgba(255,255,255,.09)">
+          <div style="flex:1;background:rgba(255,255,255,.07);border-radius:10px;overflow:visible;border:0.5px solid rgba(255,255,255,.12)">
             <div style="position:relative">
               <input id="plan-from" class="search" type="text" placeholder="Départ…" autocomplete="off" style="background:transparent;border-radius:0;border:none;border-bottom:0.5px solid #38383a"/>
               <div class="dropdown" id="plan-from-dd"></div>
@@ -203,7 +203,7 @@ main{max-width:1500px;margin:auto;padding:20px}
         </div>
         <div id="plan-meteo" style="font-size:10px;color:#636366;margin-bottom:8px"></div>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-          <div style="display:flex;background:rgba(44,44,46,.6);border-radius:20px;padding:2px;border:0.5px solid rgba(255,255,255,.07)">
+          <div style="display:flex;background:rgba(255,255,255,.07);border-radius:20px;padding:2px;border:0.5px solid rgba(255,255,255,.12)">
             <button id="btn-now" onclick="setModeNow()" style="padding:4px 11px;border:none;background:#3a3a3c;color:#fff;font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">Maintenant</button>
             <button id="btn-plan" onclick="setModePlan()" style="padding:4px 11px;border:none;background:transparent;color:#636366;font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">Planifier</button>
           </div>
@@ -237,7 +237,7 @@ main{max-width:1500px;margin:auto;padding:20px}
   </div>
 
   <!-- Volet résultats fixe en bas -->
-  <div id="plan-results-card" style="display:none;flex-shrink:0;height:48vh;background:rgba(18,18,22,.82);backdrop-filter:blur(24px) saturate(150%);-webkit-backdrop-filter:blur(24px) saturate(150%);border-top:0.5px solid rgba(255,255,255,.08);overflow-y:auto;padding:6px 12px 12px">
+  <div id="plan-results-card" style="display:none;flex-shrink:0;height:48vh;background:rgba(30,30,32,.82);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);border:0.5px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 8px 32px rgba(0,0,0,.5);border-radius:0;border-left:none;border-right:none;border-bottom:none;overflow-y:auto;padding:6px 12px 12px">
     <div id="plan-results-title" style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#8e8e93;margin-bottom:6px;padding-top:2px"></div>
     <div id="plan-results"></div>
   </div>
@@ -251,7 +251,7 @@ main{max-width:1500px;margin:auto;padding:20px}
   <div class="card">
     <div class="card-title">Période &amp; tri</div>
     <div class="range">
-      <div style="display:flex;background:rgba(44,44,46,.6);border-radius:20px;padding:2px;border:0.5px solid rgba(255,255,255,.07)">
+      <div style="display:flex;background:rgba(255,255,255,.07);border-radius:20px;padding:2px;border:0.5px solid rgba(255,255,255,.12)">
         <button onclick="onLbViewChange('day')" id="lb-pill-day" style="padding:5px 14px;border:none;background:#3a3a3c;color:#fff;font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Jour</button>
         <button onclick="onLbViewChange('month')" id="lb-pill-month" style="padding:5px 14px;border:none;background:transparent;color:var(--sub);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Mois</button>
         <button onclick="onLbViewChange('year')" id="lb-pill-year" style="padding:5px 14px;border:none;background:transparent;color:var(--sub);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Année</button>
@@ -1350,7 +1350,7 @@ async function computePlan(){
           </div>
         </div>`;
 
-      return `<div class="combo-card${i===0?" selected":""}" onclick="toggleComboDetail(${i},this)" data-idx="${i}" style="overflow:hidden;border-radius:10px;margin-bottom:6px;background:rgba(28,28,32,.65);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:0.5px solid rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)">
+      return `<div class="combo-card${i===0?" selected":""}" onclick="toggleComboDetail(${i},this)" data-idx="${i}" style="overflow:hidden;border-radius:10px;margin-bottom:6px;background:rgba(30,30,32,.82);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);border:0.5px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 8px 32px rgba(0,0,0,.5)">
         <div style="padding:8px 10px 5px">
           <div style="display:flex;align-items:flex-start;gap:8px">
             <div style="font-size:14px;font-weight:700;color:var(--dim);min-width:18px;padding-top:1px">${i+1}</div>
@@ -1690,9 +1690,10 @@ async function showStationDetail(number, targetEl=null){
 
   let labels=[], dataElec=[], dataMeca=[];
 
+  const effectiveDate = d || new Date().toISOString().slice(0,10);
   if(view==='day'){
-    if(!d) return;
-    const snaps=await fetchDay(d)||[];
+    if(!effectiveDate) return;
+    const snaps=await fetchDay(effectiveDate)||[];
     snaps.forEach(snap=>{
       const sts=getSts(snap), st2=sts.find(x=>x.number===number);
       if(!st2) return;
@@ -1702,8 +1703,9 @@ async function showStationDetail(number, targetEl=null){
       dataMeca.push(st2.mechanical_bikes||0);
     });
   } else if(view==='month'){
-    if(!mth) return;
-    const [y,mo]=mth.split('-').map(Number);
+    const effectiveMth = mth || new Date().toISOString().slice(0,7);
+    if(!effectiveMth) return;
+    const [y,mo]=effectiveMth.split('-').map(Number);
     const daysInMonth=new Date(y,mo,0).getDate();
     // Charger en parallèle par batch de 7 jours
     const allDays=Array.from({length:daysInMonth},(_,i)=>{
@@ -1726,12 +1728,13 @@ async function showStationDetail(number, targetEl=null){
     }
     if(!yr) return;
     const today=new Date().toISOString().slice(0,10);
+    const yr2=effectiveYr;
     for(let mo=1;mo<=12;mo++){
       labels.push(['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'][mo-1]);
-      const daysInM=new Date(yr,mo,0).getDate();
+      const daysInM=new Date(yr2,mo,0).getDate();
       let e=0,m=0,cnt=0;
       for(let day=1;day<=daysInM;day++){
-        const dateStr=yr+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+        const dateStr=yr2+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
         if(dateStr>today) continue;
         const snaps=await fetchDay(dateStr)||[];
         snaps.forEach(snap=>{
