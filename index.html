@@ -89,6 +89,7 @@ main{max-width:1500px;margin:auto;padding:20px}
 .search{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none;transition:border-color .15s}
 .search:focus{border-color:var(--blue)}
 .dropdown{position:fixed;background:#2c2c2e;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.8);display:none;z-index:999999;max-height:240px;overflow-y:auto;min-width:280px}
+.dropdown.open{display:block !important}
 .dropdown.open{display:block}
 .opt{padding:9px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0f0}
 .opt:last-child{border-bottom:none}
@@ -141,6 +142,8 @@ main{max-width:1500px;margin:auto;padding:20px}
 .range select,.range input{padding:8px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none}
 .btn{padding:8px 18px;border-radius:10px;border:none;background:#f5f5f7;color:#1c1c1e;font-size:13px;font-weight:600;cursor:pointer}
 .btn:hover{opacity:.85}
+/* leaflet popup */
+.leaflet-popup-content-wrapper{background:#1c1c1e !important;color:#f5f5f7;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.6);border:0.5px solid #38383a;padding:0}.leaflet-popup-tip{background:#1c1c1e !important;border:0.5px solid #38383a}.leaflet-popup-content{margin:10px 12px;color:#f5f5f7}
 </style>
 </head>
 <body>
@@ -513,7 +516,27 @@ function renderStations(){
     allStations.forEach(st=>{
       if(!st.lat||!st.lng) return;
       const m = L.circleMarker([st.lat,st.lng],{radius:8,fillColor:stationColor(st),color:'#fff',weight:1.5,fillOpacity:.9});
-      m.on('click',()=>{ if(typeof showStationDetail==='function') showStationDetail(st.number); });
+      const mv = todayMv[st.number]||0;
+      m.bindPopup(`
+        <div style="font-family:-apple-system,sans-serif;min-width:200px;background:#1c1c1e;color:#f5f5f7;margin:-10px -12px;padding:12px 14px;border-radius:8px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:#fff;line-height:1.3">${cleanName(st.name)}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center">
+            <div style="background:#2c2c2e;padding:6px 4px;border-radius:6px">
+              <div style="font-size:16px;font-weight:700;color:#1a7a3e;line-height:1">${st.electrical_bikes||0}</div>
+              <div style="font-size:9px;color:#8e8e93;margin-top:2px">⚡ Élec</div>
+            </div>
+            <div style="background:#2c2c2e;padding:6px 4px;border-radius:6px">
+              <div style="font-size:16px;font-weight:700;color:#b52a2a;line-height:1">${st.mechanical_bikes||0}</div>
+              <div style="font-size:9px;color:#8e8e93;margin-top:2px">🔧 Méca</div>
+            </div>
+            <div style="background:#2c2c2e;padding:6px 4px;border-radius:6px">
+              <div style="font-size:16px;font-weight:700;color:#fff;line-height:1">${st.available_bike_stands||0}</div>
+              <div style="font-size:9px;color:#8e8e93;margin-top:2px">🅿️ Places</div>
+            </div>
+          </div>
+          <div style="margin-top:8px;text-align:center;font-size:11px;color:#8e8e93">↕ ${mv} mouvements/j</div>
+        </div>
+      `, {closeButton:false, className:'station-popup-dark'});
       markers.addLayer(m);
       _stationMarkers[st.number] = m;
     });
@@ -607,14 +630,14 @@ function buildDropdown(inputId, ddId, opts){
     // Repositionner le dropdown au scroll/resize
     window.addEventListener('scroll', ()=>{
       const dd = document.getElementById(ddId);
-      if(dd && dd.style.display === 'block') positionDropdown(inputId, ddId);
+      if(dd && dd.classList.contains('open')) positionDropdown(inputId, ddId);
     }, true);
     window.addEventListener('resize', ()=>{
       const dd = document.getElementById(ddId);
-      if(dd && dd.style.display === 'block') positionDropdown(inputId, ddId);
+      if(dd && dd.classList.contains('open')) positionDropdown(inputId, ddId);
     });
   }
-  const input2=document.getElementById(inputId), dd=document.getElementById(ddId);
+  const dd=document.getElementById(ddId);
 
   input.addEventListener('input',()=>{
     const q=input.value.trim();
@@ -663,7 +686,7 @@ function buildDropdown(inputId, ddId, opts){
         el.onclick=()=>{ input.value=l.name; dd.classList.remove('open'); opts.onGeoPos?.({lat:l.lat,lng:l.lng}); };
         dd.appendChild(el);
       });
-      if(stMatches.length||geoResults.length||lieuMatches.length) dd.classList.add('open');
+      if(stMatches.length||geoResults.length||lieuMatches.length){ positionDropdown(inputId, ddId); dd.classList.add('open'); }
       else dd.classList.remove('open');
     };
 
