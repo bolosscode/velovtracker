@@ -169,53 +169,54 @@ main{max-width:1500px;margin:auto;padding:20px}
 
 <!-- ═══ CARTE ═══ -->
 <div class="panel on" id="tab-map" style="position:relative;display:flex;flex-direction:column;height:calc(100vh - 50px);overflow:hidden">
-  <!-- Formulaire planifier flottant -->
 
-  <!-- Volet résultats -->
-    <div id="map" style="height:calc(100vh - 140px);border-radius:var(--radius);overflow:hidden"></div>
+  <!-- Carte + flottant -->
+  <div class="map-rel" style="position:relative;flex:1;overflow:hidden">
+    <div id="map" style="height:100%;width:100%"></div>
+
+    <!-- Fenêtre flottante recherche -->
+    <div id="plan-float" style="position:absolute;top:10px;left:10px;width:min(340px,calc(100% - 20px));z-index:200;background:rgba(28,28,30,.94);backdrop-filter:blur(20px);border-radius:14px;border:0.5px solid #38383a;padding:10px 12px;box-shadow:0 4px 24px rgba(0,0,0,.6);overflow:visible">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+        <div style="flex:1;background:#2c2c2e;border-radius:10px;overflow:visible;border:0.5px solid #38383a">
+          <div style="position:relative">
+            <input id="plan-from" class="search" type="text" placeholder="Départ…" autocomplete="off" style="background:transparent;border-radius:0;border:none;border-bottom:0.5px solid #38383a"/>
+            <div class="dropdown" id="plan-from-dd"></div>
+          </div>
+          <div style="position:relative">
+            <input id="plan-to" class="search" type="text" placeholder="Arrivée…" autocomplete="off" style="background:transparent;border-radius:0;border:none"/>
+            <div class="dropdown" id="plan-to-dd"></div>
+          </div>
+        </div>
+        <button onclick="swapPlanFromTo()" style="width:30px;height:30px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;cursor:pointer;font-size:15px;color:#8e8e93;display:flex;align-items:center;justify-content:center;flex-shrink:0">⇅</button>
+      </div>
+      <div id="plan-meteo" style="font-size:10px;color:#636366;margin-bottom:8px"></div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px">
+          <button id="btn-now" onclick="setModeNow()" style="padding:4px 11px;border:none;background:#3a3a3c;color:#fff;font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">Maintenant</button>
+          <button id="btn-plan" onclick="setModePlan()" style="padding:4px 11px;border:none;background:transparent;color:#636366;font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">Planifier</button>
+        </div>
+        <div id="plan-params" style="display:none;gap:6px;align-items:center;flex-wrap:wrap">
+          <select id="plan-dow" style="padding:4px 8px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;color:#f5f5f7;font-size:11px"><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option><option value="6">Samedi</option><option value="0">Dimanche</option></select>
+          <input type="time" id="plan-hour-time" style="padding:4px 8px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;color:#f5f5f7;font-size:11px;outline:none" oninput="syncHourSelect()"/>
+          <select id="plan-hour" style="display:none"></select>
+          <select id="plan-radius" style="padding:4px 8px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;color:#f5f5f7;font-size:11px"><option value="300">300m</option><option value="500" selected>500m</option><option value="800">800m</option><option value="1200">1.2km</option></select>
+        </div>
+        <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px;position:relative">
+          <div id="type-slider-now" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:#3a3a3c;border-radius:18px;transition:transform .15s;pointer-events:none"></div>
+          <button onclick="setBikeType('elec')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:#fff">⚡ Élec</button>
+          <button onclick="setBikeType('meca')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:#636366">🔧 Méca</button>
+        </div>
+        <select id="plan-type" style="display:none"><option value="elec">elec</option><option value="meca">meca</option><option value="any" selected>any</option></select>
+        <button class="btn" onclick="computePlan()" style="margin-left:auto;padding:5px 14px;font-size:11px">Calculer</button>
+      </div>
+    </div>
   </div>
+
+  <!-- Volet résultats fixe en bas -->
   <div id="plan-results-card" style="display:none;flex-shrink:0;height:48vh;background:#1c1c1e;border-top:0.5px solid #38383a;overflow-y:auto;padding:6px 12px 12px">
     <div id="plan-results-title" style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#8e8e93;margin-bottom:6px;padding-top:2px"></div>
     <div id="plan-results"></div>
   </div>
-
-  <div class="map-rel" style="position:relative;flex:1;overflow:hidden">
-  <div id="plan-float" style="position:absolute;top:10px;left:10px;width:min(340px,calc(100% - 20px));z-index:200;background:rgba(28,28,30,.94);backdrop-filter:blur(20px);border-radius:14px;border:0.5px solid #38383a;padding:10px 12px;box-shadow:0 4px 24px rgba(0,0,0,.6);overflow:visible">
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-      <div style="flex:1;background:#2c2c2e;border-radius:10px;overflow:hidden;border:0.5px solid #38383a">
-        <div style="position:relative">
-          <input id="plan-from" class="search" type="text" placeholder="Départ…" autocomplete="off" style="background:transparent;border-radius:0;border:none;border-bottom:0.5px solid #38383a"/>
-          <div class="dropdown" id="plan-from-dd"></div>
-        </div>
-        <div style="position:relative">
-          <input id="plan-to" class="search" type="text" placeholder="Arrivée…" autocomplete="off" style="background:transparent;border-radius:0;border:none"/>
-          <div class="dropdown" id="plan-to-dd"></div>
-        </div>
-      </div>
-      <button onclick="swapPlanFromTo()" style="width:30px;height:30px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;cursor:pointer;font-size:15px;color:#8e8e93;display:flex;align-items:center;justify-content:center;flex-shrink:0">⇅</button>
-    </div>
-    <div id="plan-meteo" style="font-size:10px;color:#636366;margin-bottom:8px"></div>
-    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-      <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px">
-        <button id="btn-now" onclick="setModeNow()" style="padding:4px 11px;border:none;background:#3a3a3c;color:#fff;font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">Maintenant</button>
-        <button id="btn-plan" onclick="setModePlan()" style="padding:4px 11px;border:none;background:transparent;color:#636366;font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">Planifier</button>
-      </div>
-      <div id="plan-params" style="display:none;gap:6px;align-items:center;flex-wrap:wrap">
-        <select id="plan-dow" style="padding:4px 8px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;color:#f5f5f7;font-size:11px"><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option><option value="6">Samedi</option><option value="0">Dimanche</option></select>
-        <input type="time" id="plan-hour-time" style="padding:4px 8px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;color:#f5f5f7;font-size:11px;outline:none" oninput="syncHourSelect()"/>
-        <select id="plan-hour" style="display:none"></select>
-        <select id="plan-radius" style="padding:4px 8px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;color:#f5f5f7;font-size:11px"><option value="300">300m</option><option value="500" selected>500m</option><option value="800">800m</option><option value="1200">1.2km</option></select>
-      </div>
-      <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px;position:relative">
-        <div id="type-slider-now" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:#3a3a3c;border-radius:18px;transition:transform .15s;pointer-events:none"></div>
-        <button onclick="setBikeType('elec')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:#fff">⚡ Élec</button>
-        <button onclick="setBikeType('meca')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:#636366">🔧 Méca</button>
-      </div>
-      <select id="plan-type" style="display:none"><option value="elec">elec</option><option value="meca">meca</option><option value="any" selected>any</option></select>
-      <button class="btn" onclick="computePlan()" style="margin-left:auto;padding:5px 14px;font-size:11px">Calculer</button>
-    </div>
-  </div>
-
 
 </div>
 
