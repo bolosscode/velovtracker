@@ -866,8 +866,6 @@ function initPlanMap(){
   // Initialiser les dropdowns une seule fois
   if(_planDropdownsInit) return;
   _planDropdownsInit = true;
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-    {attribution:'© OpenStreetMap © CARTO',maxZoom:20}).addTo(planMap);
 
 
   function resetPlan(){
@@ -1710,6 +1708,7 @@ async function boot(){
   await computeMovements();
   initMap();
   renderStations();
+  initPlanMap();
 }
 boot();
 setInterval(async()=>{
