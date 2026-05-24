@@ -24,7 +24,7 @@
 
   .card{padding:14px;border:0.5px solid var(--border)}
   .loc-row{grid-template-columns:1fr}
-  #map{height:calc(100vh - 50px)}
+  #map{height:100%}
 #tab-plan{height:calc(100vh - 50px)}
   #plan-map{height:260px}
   .params-row{gap:8px}
@@ -72,7 +72,7 @@ main{max-width:1500px;margin:auto;padding:20px}
 .card{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
 .card-title{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--sub);margin-bottom:14px}
 
-#map{height:calc(100vh - 50px);border-radius:var(--radius);overflow:hidden;position:relative;z-index:1}
+#map{height:100%;border-radius:var(--radius);overflow:hidden;position:relative;z-index:1}
 .map-ctrl{position:absolute;top:10px;right:10px;z-index:500;display:flex;gap:6px}
 .map-btn{padding:6px 14px;border-radius:20px;border:none;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);box-shadow:var(--shadow);font-size:12px;font-weight:600;cursor:pointer;color:var(--sub);transition:all .15s}
 .map-btn.on{background:var(--blue);color:#fff}
@@ -168,7 +168,7 @@ main{max-width:1500px;margin:auto;padding:20px}
 
 
 <!-- ═══ CARTE ═══ -->
-<div class="panel on" id="tab-map" style="position:relative">
+<div class="panel on" id="tab-map" style="position:relative;display:flex;flex-direction:column;height:calc(100vh - 50px);overflow:hidden">
   <!-- Formulaire planifier flottant -->
   <div id="plan-float" style="position:absolute;top:10px;left:10px;width:min(340px,calc(100% - 20px));z-index:200;background:rgba(28,28,30,.94);backdrop-filter:blur(20px);border-radius:14px;border:0.5px solid #38383a;padding:10px 12px;box-shadow:0 4px 24px rgba(0,0,0,.6);overflow:visible">
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
@@ -207,15 +207,15 @@ main{max-width:1500px;margin:auto;padding:20px}
   </div>
 
   <!-- Volet résultats -->
-  <div id="plan-results-card" style="display:none;position:absolute;bottom:60px;left:0;right:0;z-index:200;background:rgba(28,28,30,.96);backdrop-filter:blur(16px);border-radius:16px 16px 0 0;border-top:0.5px solid #38383a;max-height:58vh;overflow-y:auto;padding:6px 14px 20px;box-shadow:0 -4px 20px rgba(0,0,0,.4)">
-    <div style="width:36px;height:4px;background:#48484a;border-radius:2px;margin:6px auto 10px"></div>
+    <div id="map" style="height:calc(100vh - 140px);border-radius:var(--radius);overflow:hidden"></div>
+  </div>
+  <div id="plan-results-card" style="display:none;flex-shrink:0;height:40vh;background:#1c1c1e;border-top:0.5px solid #38383a;overflow-y:auto;padding:8px 14px 14px">
     <div id="plan-results-title" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#8e8e93;margin-bottom:10px"></div>
     <div id="plan-results"></div>
   </div>
 
-  <div class="map-rel" style="position:relative">
-    <div id="map" style="height:calc(100vh - 140px);border-radius:var(--radius);overflow:hidden"></div>
-  </div>
+  <div class="map-rel" style="position:relative;flex:1;overflow:hidden">
+
 </div>
 
 <!-- ═══ STATISTIQUES ═══ -->
@@ -904,7 +904,7 @@ function initPlanMap(){
   // Utiliser la carte principale
   if(!planMap && map){
     planMap = map;
-    map.on('click',()=>{ const rc=document.getElementById('plan-results-card'); if(rc&&rc.style.display!=='none') rc.style.display='none'; });
+    map.on('click',()=>{ const rc=document.getElementById('plan-results-card'); if(rc&&rc.style.display!=='none'){ rc.style.display='none'; } });
   }
   if(planMap) planMap.invalidateSize();
   // Initialiser les dropdowns une seule fois
@@ -988,8 +988,10 @@ async function fetchCurrentMeteo(){
 async function computePlan(){
   const resultsCard=document.getElementById('plan-results-card');
   const results=document.getElementById('plan-results');
-  resultsCard.style.display='';
+  resultsCard.style.display='block';
   results.innerHTML='<div class="loader">Analyse de l\'historique…</div>';
+  // Réduire le flottant
+  const pf=document.getElementById('plan-float'); if(pf) pf.style.transform='translateY(0)';
 
   // Météo actuelle
   const meteo=await fetchCurrentMeteo();
