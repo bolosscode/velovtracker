@@ -988,7 +988,12 @@ async function fetchCurrentMeteo(){
 async function computePlan(){
   const resultsCard=document.getElementById('plan-results-card');
   const results=document.getElementById('plan-results');
+  // Reset état précédent
+  _openComboIdx = null;
+  window._planCombos = null;
+  if(planLayerGroup){ planLayerGroup.clearLayers(); }
   resultsCard.style.display='block';
+  resultsCard.scrollTop=0;
   results.innerHTML='<div class="loader">Analyse de l\'historique…</div>';
   // Réduire le flottant
   const pf=document.getElementById('plan-float'); if(pf) pf.style.transform='translateY(0)';
@@ -1032,16 +1037,8 @@ async function computePlan(){
 
 
   if(!planFromPos && !planFromFixed){ results.innerHTML='<div class="no-data">Sélectionnez un point de départ.</div>'; return; }
-  if(!planToPos && !planToFixed){ results.innerHTML='<div class="no-data">Sélectionnez une destination.</div>'; return; }
+  if(!planToPos && !planToFixed){ results.innerHTML='<div class="no-data">Destination manquante.</div>'; return; }
 
-  if(!planFromPos && !planFromFixed){
-    results.innerHTML='<div class="no-data">Sélectionnez un point de départ.</div>';
-    return;
-  }
-  if(!planToPos && !planToFixed){
-    results.innerHTML='<div class="no-data">Sélectionnez un point d\u0027arrivée.</div>';
-    return;
-  }
 
   if(!planFromPos && !planFromFixed){
     results.innerHTML='<div class="no-data">Sélectionnez un point de départ.</div>';
@@ -1362,7 +1359,9 @@ async function computePlan(){
   window._showMoreCombos=()=>{ results.innerHTML=renderComboList(top.length); showRoute(0); };
   window._planCombos=top;
   initPlanMap(); // s'assurer que la carte est initialisée
-  _openComboIdx = null; // reset à chaque nouveau calcul
+  _openComboIdx = null;
+  // Fermer les détails ouverts
+  document.querySelectorAll('[id^="combo-detail-"]').forEach(d=>d.style.display='none');
 }
 
 let planLayerGroup=null;
