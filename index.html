@@ -53,7 +53,7 @@
 #bottom-nav .tab span{font-size:11px;display:block;color:var(--sub)}
 #bottom-nav .tab.on{color:#fff;border-top-color:rgba(255,255,255,.3)}
 :root{
-  --bg:#1c1c1e;--paper:#2c2c2e;--ink:#f5f5f7;--sub:#8e8e93;--dim:#636366;
+  --bg:#1c1c1e;--paper:rgba(28,28,30,.75);--ink:#f5f5f7;--sub:#8e8e93;--dim:#636366;
   --border:#38383a;--blue:#f5f5f7;--green:#30d158;--orange:#ff9f0a;--red:#ff453a;
   --radius:14px;--shadow:0 2px 8px rgba(0,0,0,.4);
 }
@@ -143,7 +143,16 @@ main{max-width:1500px;margin:auto;padding:20px}
 .btn{padding:8px 18px;border-radius:10px;border:none;background:#f5f5f7;color:#1c1c1e;font-size:13px;font-weight:600;cursor:pointer}
 .btn:hover{opacity:.85}
 /* leaflet popup */
-.leaflet-popup-content-wrapper{background:#1c1c1e !important;color:#f5f5f7;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.6);border:0.5px solid #38383a;padding:0}.leaflet-popup-tip{background:#1c1c1e !important;border:0.5px solid #38383a}.leaflet-popup-content{margin:10px 12px;color:#f5f5f7}
+.leaflet-popup-content-wrapper{background:rgba(20,20,26,.85) !important;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);color:#f5f5f7;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.6);border:0.5px solid #38383a;padding:0}.leaflet-popup-tip{background:#1c1c1e !important;border:0.5px solid #38383a}.leaflet-popup-content{margin:10px 12px;color:#f5f5f7}
+
+/* Glass morphism */
+.glass-card{
+  background:rgba(28,28,30,.72) !important;
+  backdrop-filter:blur(20px) saturate(160%);
+  -webkit-backdrop-filter:blur(20px) saturate(160%);
+  border:0.5px solid rgba(255,255,255,.1) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 4px 20px rgba(0,0,0,.35) !important;
+}
 </style>
 </head>
 <body>
@@ -180,7 +189,7 @@ main{max-width:1500px;margin:auto;padding:20px}
       <!-- État étendu -->
       <div id="plan-float-expanded" style="padding:10px 12px">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-          <div style="flex:1;background:#2c2c2e;border-radius:10px;overflow:visible;border:0.5px solid #38383a">
+          <div style="flex:1;background:rgba(44,44,46,.6);border-radius:10px;overflow:visible;border:0.5px solid rgba(255,255,255,.09)">
             <div style="position:relative">
               <input id="plan-from" class="search" type="text" placeholder="Départ…" autocomplete="off" style="background:transparent;border-radius:0;border:none;border-bottom:0.5px solid #38383a"/>
               <div class="dropdown" id="plan-from-dd"></div>
@@ -194,7 +203,7 @@ main{max-width:1500px;margin:auto;padding:20px}
         </div>
         <div id="plan-meteo" style="font-size:10px;color:#636366;margin-bottom:8px"></div>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-          <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px">
+          <div style="display:flex;background:rgba(44,44,46,.6);border-radius:20px;padding:2px;border:0.5px solid rgba(255,255,255,.07)">
             <button id="btn-now" onclick="setModeNow()" style="padding:4px 11px;border:none;background:#3a3a3c;color:#fff;font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">Maintenant</button>
             <button id="btn-plan" onclick="setModePlan()" style="padding:4px 11px;border:none;background:transparent;color:#636366;font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">Planifier</button>
           </div>
@@ -228,7 +237,7 @@ main{max-width:1500px;margin:auto;padding:20px}
   </div>
 
   <!-- Volet résultats fixe en bas -->
-  <div id="plan-results-card" style="display:none;flex-shrink:0;height:48vh;background:#1c1c1e;border-top:0.5px solid #38383a;overflow-y:auto;padding:6px 12px 12px">
+  <div id="plan-results-card" style="display:none;flex-shrink:0;height:48vh;background:rgba(18,18,22,.82);backdrop-filter:blur(24px) saturate(150%);-webkit-backdrop-filter:blur(24px) saturate(150%);border-top:0.5px solid rgba(255,255,255,.08);overflow-y:auto;padding:6px 12px 12px">
     <div id="plan-results-title" style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#8e8e93;margin-bottom:6px;padding-top:2px"></div>
     <div id="plan-results"></div>
   </div>
@@ -242,7 +251,7 @@ main{max-width:1500px;margin:auto;padding:20px}
   <div class="card">
     <div class="card-title">Période &amp; tri</div>
     <div class="range">
-      <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px">
+      <div style="display:flex;background:rgba(44,44,46,.6);border-radius:20px;padding:2px;border:0.5px solid rgba(255,255,255,.07)">
         <button onclick="onLbViewChange('day')" id="lb-pill-day" style="padding:5px 14px;border:none;background:#3a3a3c;color:#fff;font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Jour</button>
         <button onclick="onLbViewChange('month')" id="lb-pill-month" style="padding:5px 14px;border:none;background:transparent;color:var(--sub);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Mois</button>
         <button onclick="onLbViewChange('year')" id="lb-pill-year" style="padding:5px 14px;border:none;background:transparent;color:var(--sub);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Année</button>
@@ -1341,7 +1350,7 @@ async function computePlan(){
           </div>
         </div>`;
 
-      return `<div class="combo-card${i===0?" selected":""}" onclick="toggleComboDetail(${i},this)" data-idx="${i}" style="overflow:hidden;border-radius:10px;margin-bottom:6px;background:var(--paper);border:0.5px solid var(--border)">
+      return `<div class="combo-card${i===0?" selected":""}" onclick="toggleComboDetail(${i},this)" data-idx="${i}" style="overflow:hidden;border-radius:10px;margin-bottom:6px;background:rgba(28,28,32,.65);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:0.5px solid rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)">
         <div style="padding:8px 10px 5px">
           <div style="display:flex;align-items:flex-start;gap:8px">
             <div style="font-size:14px;font-weight:700;color:var(--dim);min-width:18px;padding-top:1px">${i+1}</div>
