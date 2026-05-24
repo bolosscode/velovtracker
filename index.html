@@ -295,9 +295,11 @@ document.querySelectorAll('.tab').forEach(tab=>{
   tab.onclick=()=>{
     // Sync les deux navs
     document.querySelectorAll('.tab').forEach(t=>{ t.classList.remove('on'); t.style.color='#636366'; });
-    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+    document.querySelectorAll('.panel').forEach(p=>{ p.classList.remove('on'); p.style.display='none'; });
     document.querySelectorAll(`.tab[data-tab="${tab.dataset.tab}"]`).forEach(t=>{ t.classList.add('on'); t.style.color='#fff'; });
-    document.getElementById('tab-'+tab.dataset.tab).classList.add('on');
+    const activePanel=document.getElementById('tab-'+tab.dataset.tab);
+    activePanel.classList.add('on');
+    activePanel.style.display = tab.dataset.tab==='map' ? 'flex' : 'block';
     setTimeout(()=>{ map?.invalidateSize(); planMap?.invalidateSize(); },150);
     if(tab.dataset.tab==='map') setTimeout(()=>{ if(!map)initMap(); map?.invalidateSize(); renderStations(); initPlanMap(); },150);
     if(tab.dataset.tab==='stats') quickLeaderboard();
