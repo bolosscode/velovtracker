@@ -1034,8 +1034,10 @@ async function computePlan(){
   const topN=10; // calcule 10, affiche 3 par défaut
   const isNowMode = (window._planMode||'now') === 'now';
   const now2 = new Date();
-  const targetDow = isNowMode ? now2.getDay()   : parseInt(document.getElementById('plan-dow').value);
-  const targetH   = isNowMode ? now2.getHours() : parseInt(document.getElementById('plan-hour').value);
+  const targetDow = isNowMode ? now2.getDay() : parseInt(document.getElementById('plan-dow')?.value)||now2.getDay();
+  const planHourEl = document.getElementById('plan-hour-time');
+  const planHourVal = planHourEl?.value ? parseInt(planHourEl.value.split(':')[0]) : now2.getHours();
+  const targetH = isNowMode ? now2.getHours() : planHourVal;
   const bikeSpeedKmh=bikeType==='meca'?16:21;
 
   // Charger historique pour ce jour de semaine
@@ -1059,14 +1061,6 @@ async function computePlan(){
   if(!planToPos && !planToFixed){ results.innerHTML='<div class="no-data">Destination manquante.</div>'; return; }
 
 
-  if(!planFromPos && !planFromFixed){
-    results.innerHTML='<div class="no-data">Sélectionnez un point de départ.</div>';
-    return;
-  }
-  if(!planToPos && !planToFixed){
-    results.innerHTML='<div class="no-data">Destination manquante.</div>';
-    return;
-  }
 
   // Stations proches du départ — station fixe en tête, puis les proches
   const depCenter = planFromFixed ? {lat:planFromFixed.lat,lng:planFromFixed.lng} : planFromPos;
