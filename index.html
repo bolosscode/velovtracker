@@ -996,14 +996,10 @@ async function computePlan(){
   const meteoEl=document.getElementById('plan-meteo');
   if(meteo&&meteoEl){
     const m=meteoFromCode(meteo.weathercode, meteo.rain);
-    
-     const tempStr=meteo.temp!==undefined?` · ${meteo.temp}°C`:''
-     const windArr=meteo.winddir!==undefined?['↓','↙','←','↖','↑','↗','→','↘'][Math.round(meteo.winddir/45)%8]:''
-     const windStr=meteo.wind!==undefined?` · ${meteo.wind}km/h${windArr}`:''
-     document.getElementById('plan-meteo-label').textContent=`${m.label}${meteo.precipitation>0?' — '+meteo.precipitation.toFixed(1)+' mm/h':''}${tempStr}${windStr}`;
-    
-    meteoEl.style.display='flex';
-    meteoEl.style.background=meteo.rain?'rgba(0,113,227,.06)':'rgba(40,205,65,.06)';
+    const parts=[];
+    if(meteo.temp!==undefined) parts.push((m.icon||'')+' '+meteo.temp+'°C');
+    if(meteo.wind!==undefined) parts.push(meteo.wind+' km/h');
+    meteoEl.textContent=parts.join(' · ');
   }
   const isRainy=(meteo?.precipitation??0)>0.1;
 
