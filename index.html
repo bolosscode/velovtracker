@@ -232,13 +232,10 @@ main{max-width:1500px;margin:auto;padding:20px}
        <input type="month" id="lb-month" style="display:none;padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;background:#2c2c2e;color:#f5f5f7;color-scheme:dark"/>
       <select id="lb-year" style="display:none;padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px"><option value="2025">2025</option><option value="2026" selected>2026</option></select>
       <select id="lb-sort">
-        <option value="mv">Mouvements ↕</option>
-        <option value="rotation">Taux de rotation</option>
-        <option value="bikes">Vélos dispo</option>
-        <option value="elec">⚡ Électriques</option>
-        <option value="meca">🔧 Mécaniques</option>
-        <option value="stands">Places libres</option>
-        <option value="fill">% remplissage</option>
+        <option value="mv">↕ Mouvements</option>
+        <option value="fill">Remplissage %</option>
+        <option value="elec">⚡ Part électrique</option>
+        <option value="meca">🔧 Part mécanique</option>
       </select>
       <button class="btn" onclick="computeLeaderboard()">Calculer</button>
       <span id="lb-meteo" style="font-size:12px;color:var(--sub)"></span>
@@ -804,7 +801,7 @@ async function computeLeaderboard(){
 function renderLbTable(mvData){
   const head=document.getElementById('lb-head'), body=document.getElementById('lb-body');
   if(!head||!body) return;
-  head.innerHTML='<tr><th>#</th><th>Station</th><th>⚡/🔧</th><th>🚲</th><th>🅿️</th><th>↕</th><th>%</th></tr>';
+  head.innerHTML='<tr><th>#</th><th>Station</th><th>↕ Mvts</th><th>Rempli</th><th>⚡/🔧</th></tr>';
   const sortKey=document.getElementById('lb-sort').value;
   const maxMv=Math.max(1,...Object.values(mvData));
   const rows=allStations.map(st=>{
@@ -818,14 +815,14 @@ function renderLbTable(mvData){
   body.innerHTML=rows.map((st,i)=>{
     const pct=Math.round(st.fill*100), cls=pct>=50?'fill-high':pct>=25?'fill-med':'fill-low';
     const bw=Math.round(st.mv/maxMv*60);
+    const elecPct = st.bike_stands ? Math.round(st.electrical_bikes/st.bike_stands*100) : 0;
+    const mecaPct = st.bike_stands ? Math.round(st.mechanical_bikes/st.bike_stands*100) : 0;
     return `<tr onclick="toggleStationDetail(${st.number},this)" style="cursor:pointer" id="lb-row-${st.number}">
       <td class="rank-cell">${i+1}</td>
-      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cleanName(st.name)}</td>
-      <td style="font-size:12px;color:var(--sub)">⚡${st.electrical_bikes} 🔧${st.mechanical_bikes}</td>
-      <td><b>${st.available_bikes}</b></td>
-      <td>${st.available_bike_stands}</td>
+      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500">${cleanName(st.name)}</td>
       <td>${st.mv}<span class="mv-bar" style="width:${bw}px"></span></td>
-      <td><span class="fill-pill ${cls}">${pct}%</span></td></tr>
+      <td><span class="fill-pill ${cls}">${pct}%</span></td>
+      <td style="font-size:12px"><span style="color:#1a7a3e;font-weight:600">${elecPct}%</span><span style="color:var(--dim)"> / </span><span style="color:#b52a2a;font-weight:600">${mecaPct}%</span></td></tr>
       <tr class="detail-row" id="lb-detail-${st.number}" style="display:none">
         <td colspan="7" style="padding:0">
           <div id="stats-detail-${st.number}" style="padding:14px;background:var(--bg);border-bottom:1px solid var(--border)"></div>
