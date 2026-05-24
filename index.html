@@ -175,40 +175,55 @@ main{max-width:1500px;margin:auto;padding:20px}
     <div id="map" style="height:100%;width:100%"></div>
 
     <!-- Fenêtre flottante recherche -->
-    <div id="plan-float" style="position:absolute;top:10px;left:10px;width:min(340px,calc(100% - 20px));z-index:200;background:rgba(28,28,30,.94);backdrop-filter:blur(20px);border-radius:14px;border:0.5px solid #38383a;padding:10px 12px;box-shadow:0 4px 24px rgba(0,0,0,.6);overflow:visible">
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-        <div style="flex:1;background:#2c2c2e;border-radius:10px;overflow:visible;border:0.5px solid #38383a">
-          <div style="position:relative">
-            <input id="plan-from" class="search" type="text" placeholder="Départ…" autocomplete="off" style="background:transparent;border-radius:0;border:none;border-bottom:0.5px solid #38383a"/>
-            <div class="dropdown" id="plan-from-dd"></div>
+    <div id="plan-float" style="position:absolute;top:10px;left:10px;width:min(360px,calc(100% - 20px));z-index:200;background:rgba(28,28,30,.94);backdrop-filter:blur(20px);border-radius:14px;border:0.5px solid #38383a;box-shadow:0 4px 24px rgba(0,0,0,.6);overflow:visible;transition:padding .2s">
+
+      <!-- État étendu -->
+      <div id="plan-float-expanded" style="padding:10px 12px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+          <div style="flex:1;background:#2c2c2e;border-radius:10px;overflow:visible;border:0.5px solid #38383a">
+            <div style="position:relative">
+              <input id="plan-from" class="search" type="text" placeholder="Départ…" autocomplete="off" style="background:transparent;border-radius:0;border:none;border-bottom:0.5px solid #38383a"/>
+              <div class="dropdown" id="plan-from-dd"></div>
+            </div>
+            <div style="position:relative">
+              <input id="plan-to" class="search" type="text" placeholder="Arrivée…" autocomplete="off" style="background:transparent;border-radius:0;border:none"/>
+              <div class="dropdown" id="plan-to-dd"></div>
+            </div>
           </div>
-          <div style="position:relative">
-            <input id="plan-to" class="search" type="text" placeholder="Arrivée…" autocomplete="off" style="background:transparent;border-radius:0;border:none"/>
-            <div class="dropdown" id="plan-to-dd"></div>
+          <button onclick="swapPlanFromTo()" style="width:30px;height:30px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;cursor:pointer;font-size:15px;color:#8e8e93;display:flex;align-items:center;justify-content:center;flex-shrink:0">⇅</button>
+        </div>
+        <div id="plan-meteo" style="font-size:10px;color:#636366;margin-bottom:8px"></div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px">
+            <button id="btn-now" onclick="setModeNow()" style="padding:4px 11px;border:none;background:#3a3a3c;color:#fff;font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">Maintenant</button>
+            <button id="btn-plan" onclick="setModePlan()" style="padding:4px 11px;border:none;background:transparent;color:#636366;font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">Planifier</button>
           </div>
+          <div id="plan-params" style="display:none;gap:6px;align-items:center;flex-wrap:wrap">
+            <select id="plan-dow" style="padding:4px 8px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;color:#f5f5f7;font-size:11px"><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option><option value="6">Samedi</option><option value="0">Dimanche</option></select>
+            <input type="time" id="plan-hour-time" style="padding:4px 8px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;color:#f5f5f7;font-size:11px;outline:none" oninput="syncHourSelect()"/>
+            <select id="plan-hour" style="display:none"></select>
+            <select id="plan-radius" style="padding:4px 8px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;color:#f5f5f7;font-size:11px"><option value="300">300m</option><option value="500" selected>500m</option><option value="800">800m</option><option value="1200">1.2km</option></select>
+          </div>
+          <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px;position:relative">
+            <div id="type-slider-now" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:#3a3a3c;border-radius:18px;transition:transform .15s;pointer-events:none"></div>
+            <button onclick="setBikeType('elec')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:#fff">⚡ Élec</button>
+            <button onclick="setBikeType('meca')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:#636366">🔧 Méca</button>
+          </div>
+          <select id="plan-type" style="display:none"><option value="elec">elec</option><option value="meca">meca</option><option value="any" selected>any</option></select>
+          <button class="btn" onclick="computePlan()" style="margin-left:auto;padding:5px 14px;font-size:11px">Calculer</button>
         </div>
-        <button onclick="swapPlanFromTo()" style="width:30px;height:30px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;cursor:pointer;font-size:15px;color:#8e8e93;display:flex;align-items:center;justify-content:center;flex-shrink:0">⇅</button>
       </div>
-      <div id="plan-meteo" style="font-size:10px;color:#636366;margin-bottom:8px"></div>
-      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-        <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px">
-          <button id="btn-now" onclick="setModeNow()" style="padding:4px 11px;border:none;background:#3a3a3c;color:#fff;font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">Maintenant</button>
-          <button id="btn-plan" onclick="setModePlan()" style="padding:4px 11px;border:none;background:transparent;color:#636366;font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">Planifier</button>
+
+      <!-- État compact (pill) -->
+      <div id="plan-float-compact" style="display:none;align-items:center;gap:10px;padding:9px 12px;cursor:pointer" onclick="expandPlanFloat()">
+        <div style="font-size:15px">🔍</div>
+        <div style="flex:1;min-width:0">
+          <div id="plan-compact-from" style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+          <div id="plan-compact-to" style="font-size:11px;color:#8e8e93;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
         </div>
-        <div id="plan-params" style="display:none;gap:6px;align-items:center;flex-wrap:wrap">
-          <select id="plan-dow" style="padding:4px 8px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;color:#f5f5f7;font-size:11px"><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option><option value="6">Samedi</option><option value="0">Dimanche</option></select>
-          <input type="time" id="plan-hour-time" style="padding:4px 8px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;color:#f5f5f7;font-size:11px;outline:none" oninput="syncHourSelect()"/>
-          <select id="plan-hour" style="display:none"></select>
-          <select id="plan-radius" style="padding:4px 8px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;color:#f5f5f7;font-size:11px"><option value="300">300m</option><option value="500" selected>500m</option><option value="800">800m</option><option value="1200">1.2km</option></select>
-        </div>
-        <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px;position:relative">
-          <div id="type-slider-now" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:#3a3a3c;border-radius:18px;transition:transform .15s;pointer-events:none"></div>
-          <button onclick="setBikeType('elec')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:#fff">⚡ Élec</button>
-          <button onclick="setBikeType('meca')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:#636366">🔧 Méca</button>
-        </div>
-        <select id="plan-type" style="display:none"><option value="elec">elec</option><option value="meca">meca</option><option value="any" selected>any</option></select>
-        <button class="btn" onclick="computePlan()" style="margin-left:auto;padding:5px 14px;font-size:11px">Calculer</button>
+        <div style="width:26px;height:26px;border-radius:50%;border:0.5px solid #38383a;background:#2c2c2e;color:#8e8e93;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px">✎</div>
       </div>
+
     </div>
   </div>
 
@@ -908,7 +923,7 @@ function initPlanMap(){
   // Utiliser la carte principale
   if(!planMap && map){
     planMap = map;
-    map.on('click',()=>{ const rc=document.getElementById('plan-results-card'); if(rc&&rc.style.display!=='none'){ rc.style.display='none'; } });
+    map.on('click',()=>{ const rc=document.getElementById('plan-results-card'); if(rc&&rc.style.display!=='none'){ rc.style.display='none'; } expandPlanFloat(); });
   }
   if(planMap) planMap.invalidateSize();
   // Initialiser les dropdowns une seule fois
@@ -1301,48 +1316,48 @@ async function computePlan(){
 
       const cardBody = isNowMode && combo.dep.live ? `
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-top:0.5px solid var(--border)">
-          <div style="padding:6px 8px;border-right:0.5px solid var(--border)">
-            <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#1a7a3e;margin-bottom:2px">⚡ Élec</div>
-            <div style="font-size:15px;font-weight:700;color:#1a7a3e;line-height:1">${liveElec2}</div>
-            <div style="font-size:10px;color:var(--dim);margin-top:1px">${combo.depProb??"-"}% · moy ${combo.depN??"-"}</div>
+          <div style="padding:6px 10px;border-right:0.5px solid var(--border)">
+            <div style="font-size:9px;font-weight:600;letter-spacing:.04em;color:#1a7a3e;margin-bottom:2px">⚡ ÉLEC</div>
+            <div style="font-size:20px;font-weight:700;color:#1a7a3e;line-height:1">${liveElec2}</div>
+            <div style="font-size:10px;color:var(--dim)">${combo.depProb??"-"}% · moy ${combo.depN??"-"}</div>
           </div>
-          <div style="padding:6px 8px;border-right:0.5px solid var(--border)">
-            <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#b52a2a;margin-bottom:2px">🔧 Méca</div>
-            <div style="font-size:15px;font-weight:700;color:#b52a2a;line-height:1">${liveMeca2}</div>
-            <div style="font-size:10px;color:var(--dim);margin-top:1px">${combo.depMecaProb??combo.depProb??"-"}%</div>
+          <div style="padding:6px 10px;border-right:0.5px solid var(--border)">
+            <div style="font-size:9px;font-weight:600;letter-spacing:.04em;color:#b52a2a;margin-bottom:2px">🔧 MÉCA</div>
+            <div style="font-size:20px;font-weight:700;color:#b52a2a;line-height:1">${liveMeca2}</div>
+            <div style="font-size:10px;color:var(--dim)">${combo.depMecaProb??combo.depProb??"-"}%</div>
           </div>
-          <div style="padding:8px 10px">
-            <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--sub);margin-bottom:2px">🅿️ Places</div>
-            <div style="font-size:15px;font-weight:700;color:var(--ink);line-height:1">${livePlaces2}</div>
-            <div style="font-size:10px;color:var(--dim);margin-top:1px">${combo.arrProb??"-"}% · moy ${combo.arrN??"-"}</div>
+          <div style="padding:6px 10px">
+            <div style="font-size:9px;font-weight:600;letter-spacing:.04em;color:var(--sub);margin-bottom:2px">🅿️ PLACES</div>
+            <div style="font-size:20px;font-weight:700;color:var(--ink);line-height:1">${livePlaces2}</div>
+            <div style="font-size:10px;color:var(--dim)">${combo.arrProb??"-"}% · moy ${combo.arrN??"-"}</div>
           </div>
         </div>` : `
         <div style="display:grid;grid-template-columns:1fr 1fr;border-top:0.5px solid var(--border)">
-          <div style="padding:6px 8px;border-right:0.5px solid var(--border)">
-            <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--sub);margin-bottom:4px">🚲 Vélo départ</div>
-            <div style="display:flex;gap:10px">
-              <div><div style="font-size:17px;font-weight:700;color:${combo.depProb>=60?"#1a7a3e":combo.depProb>=35?"#f59e0b":"#b52a2a"}">${combo.depProb??"-"}%</div><div style="font-size:10px;color:#1a7a3e">⚡ Élec</div></div>
-              <div><div style="font-size:17px;font-weight:700;color:${(combo.depMecaProb??combo.depProb)>=60?"#1a7a3e":(combo.depMecaProb??combo.depProb)>=35?"#f59e0b":"#b52a2a"}">${combo.depMecaProb??combo.depProb??"-"}%</div><div style="font-size:10px;color:#b52a2a">🔧 Méca</div></div>
+          <div style="padding:6px 10px;border-right:0.5px solid var(--border)">
+            <div style="font-size:9px;font-weight:600;letter-spacing:.04em;color:var(--sub);margin-bottom:4px">🚲 DÉPART</div>
+            <div style="display:flex;gap:12px">
+              <div><div style="font-size:18px;font-weight:700;color:${combo.depProb>=60?"#1a7a3e":combo.depProb>=35?"#f59e0b":"#b52a2a"}">${combo.depProb??"-"}%</div><div style="font-size:9px;color:#1a7a3e">⚡ Élec</div></div>
+              <div><div style="font-size:18px;font-weight:700;color:${(combo.depMecaProb??0)>=60?"#1a7a3e":(combo.depMecaProb??0)>=35?"#f59e0b":"#b52a2a"}">${combo.depMecaProb??"-"}%</div><div style="font-size:9px;color:#b52a2a">🔧 Méca</div></div>
             </div>
           </div>
-          <div style="padding:8px 10px">
-            <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--sub);margin-bottom:4px">🅿️ Place arr.</div>
-            <div style="font-size:22px;font-weight:700;color:${combo.arrProb>=60?"#1a7a3e":combo.arrProb>=35?"#f59e0b":"#b52a2a"};margin-top:2px">${combo.arrProb??"-"}%</div>
-            <div style="font-size:10px;color:var(--dim)">moy ${combo.arrN??"-"} places</div>
+          <div style="padding:6px 10px">
+            <div style="font-size:9px;font-weight:600;letter-spacing:.04em;color:var(--sub);margin-bottom:4px">🅿️ ARRIVÉE</div>
+            <div style="font-size:22px;font-weight:700;color:${combo.arrProb>=60?"#1a7a3e":combo.arrProb>=35?"#f59e0b":"#b52a2a"}">${combo.arrProb??"-"}%</div>
+            <div style="font-size:10px;color:var(--dim)">moy ${combo.arrN??"-"}</div>
           </div>
         </div>`;
 
       return `<div class="combo-card${i===0?" selected":""}" onclick="toggleComboDetail(${i},this)" data-idx="${i}" style="overflow:hidden;border-radius:10px;margin-bottom:6px;background:var(--paper);border:0.5px solid var(--border)">
-        <div style="display:flex;align-items:center;gap:8px;padding:10px 12px 8px;min-width:0">
-          <div style="font-size:17px;font-weight:700;color:#f5f5f7;min-width:20px">${i+1}</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🟢 ${cleanName(combo.dep.name)}</div>
-            <div style="font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🔴 ${cleanName(combo.arr.name)}</div>
-            <div style="font-size:10px;color:var(--dim);margin-top:1px">${Math.round(combo.dist/1000*10)/10} km · ~${combo.rideMin} min${depDist}</div>
+        <div style="padding:8px 10px 5px">
+          <div style="display:flex;align-items:flex-start;gap:8px">
+            <div style="font-size:14px;font-weight:700;color:var(--dim);min-width:18px;padding-top:1px">${i+1}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🟢 ${cleanName(combo.dep.name)}</div>
+              <div style="font-size:11px;color:var(--sub);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🔴 ${cleanName(combo.arr.name)}</div>
+              <div style="font-size:10px;color:var(--dim);margin-top:2px">${Math.round(combo.dist/1000*10)/10} km · ~${combo.rideMin} min</div>
+            </div>
+            ${isNowMode?`<div style="background:${scBg};border-radius:6px;padding:3px 8px;flex-shrink:0"><span style="font-size:13px;font-weight:700;color:${scCol}">${sc}%</span></div>`:""}
           </div>
-          ${isNowMode?`<div style="width:32px;height:32px;border-radius:50%;background:${scBg};display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0"><div style="font-size:12px;font-weight:700;color:${scCol};line-height:1">${sc}%</div><div style="font-size:7px;color:${scCol};opacity:.8">score</div></div>`:""}
-        </div>
-        ${cardBody}
         ${combo.rideMin>30&&bikeType==="elec"?`<div style="padding:6px 12px;background:#2b1a00;border-top:0.5px solid #38383a;font-size:10px;color:#f59e0b">⚠️ >30 min — déposer le VAE à ~26 min</div>`:""}
         <div id="combo-detail-${i}" style="display:none;border-top:0.5px solid var(--border)">
           <div id="combo-detail-inner-${i}" style="padding:12px"></div>
@@ -1374,6 +1389,19 @@ let planLayerGroup=null;
 
 let _openComboIdx = null;
 
+async function compactPlanFloat(){
+  const from=document.getElementById('plan-from')?.value||'';
+  const to=document.getElementById('plan-to')?.value||'';
+  document.getElementById('plan-compact-from').textContent='🟢 '+from;
+  document.getElementById('plan-compact-to').textContent='🔴 '+to;
+  document.getElementById('plan-float-expanded').style.display='none';
+  document.getElementById('plan-float-compact').style.display='flex';
+}
+function expandPlanFloat(){
+  document.getElementById('plan-float-expanded').style.display='block';
+  document.getElementById('plan-float-compact').style.display='none';
+}
+
 async function toggleComboDetail(idx, el){
   const detailDiv = document.getElementById('combo-detail-'+idx);
   if(!detailDiv) return;
@@ -1395,6 +1423,7 @@ async function toggleComboDetail(idx, el){
   _openComboIdx=idx;
   // Routing sur la carte
   await showRoute(idx);
+  compactPlanFloat();
   // Courbes dans la zone accordéon
   const inner=document.getElementById('combo-detail-inner-'+idx);
   inner.innerHTML='<div class="loader">Chargement…</div>';
