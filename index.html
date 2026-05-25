@@ -199,18 +199,6 @@ main{max-width:1500px;margin:auto;padding:20px}
     flex: 1 !important;
   }
 
-  /* plan-float en mode sidebar */
-  #plan-float {
-    position: static !important;
-    width: auto !important;
-    border-radius: 0 !important;
-    border: none !important;
-    box-shadow: none !important;
-    background: transparent !important;
-    -webkit-padding: 14px 14px 10px !important;
-    border-bottom: 0.5px solid rgba(255,255,255,.08) !important;
-    overflow: visible !important;
-  }
 
   /* Compact pill cachée sur desktop */
   #plan-float-compact { display: none !important; }
@@ -1930,12 +1918,7 @@ function syncHourSelect(){
 
 /* ═══ BOOT ════════════════════════════════════════════ */
 async function boot(){
-  // Sur desktop, déplacer plan-float dans la sidebar
-  if(window.innerWidth >= 768){
-    const wrapper = document.getElementById('plan-float-wrapper');
-    const pf = document.getElementById('plan-float');
-    if(wrapper && pf) wrapper.insertBefore(pf, wrapper.firstChild);
-  } // desktop init
+
   initRanges();
   allStations=await loadLatest(); window._lastStationUpdate=Date.now(); updateLiveStatus();
   await computeMovements();
