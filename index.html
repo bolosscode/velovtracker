@@ -162,9 +162,9 @@ main{max-width:1500px;margin:auto;padding:20px}
     height: calc(100vh - 52px) !important;
   }
 
-  /* Sidebar gauche */
+  /* Sidebar gauche — cachée par défaut, visible quand résultats */
   #plan-float-wrapper {
-    width: 320px;
+    width: 0;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
@@ -175,6 +175,10 @@ main{max-width:1500px;margin:auto;padding:20px}
     overflow: hidden;
     position: static !important;
     height: 100%;
+    transition: width .3s cubic-bezier(.4,0,.2,1);
+  }
+  #plan-float-wrapper.has-results {
+    width: 320px;
   }
 
   /* Masquer le volet bas sur desktop */
@@ -217,6 +221,9 @@ main{max-width:1500px;margin:auto;padding:20px}
   /* Compact pill cachée sur desktop */
   #plan-float-compact { display: none !important; }
 }
+
+.cluster-icon { z-index: 500 !important; }
+.cluster-icon > div { position: relative; z-index: 1; }
 </style>
 </head>
 <body>
@@ -603,8 +610,8 @@ function renderStations(){
       const ratio=cell.bikes/cell.stands;
       const color=ratio>=0.4?'#1a7a3e':ratio>=0.15?'#f59e0b':'#b52a2a';
       const r=Math.max(14,Math.min(26,10+cell.count*1.5));
-      const icon=L.divIcon({html:`<div style="width:${r*2}px;height:${r*2}px;border-radius:50%;background:${color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:2px solid rgba(255,255,255,.2);box-shadow:0 2px 6px rgba(0,0,0,.4)">${cell.count}</div>`,iconSize:[r*2,r*2],iconAnchor:[r,r],className:''});
-      markers.addLayer(L.marker([lat,lng],{icon}));
+      const icon=L.divIcon({html:`<div style="width:${r*2}px;height:${r*2}px;border-radius:50%;background:${color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:2px solid rgba(255,255,255,.3);box-shadow:0 2px 8px rgba(0,0,0,.5)">${cell.count}</div>`,iconSize:[r*2,r*2],iconAnchor:[r,r],className:'cluster-icon'});
+      markers.addLayer(L.marker([lat,lng],{icon,zIndexOffset:1000}));
     });
     _lastZoomMode = 'cluster';
     return;
@@ -1007,7 +1014,7 @@ function initPlanMap(){
   // Utiliser la carte principale
   if(!planMap && map){
     planMap = map;
-    map.on('click',()=>{ const rc=document.getElementById('plan-results-card'); if(rc&&rc.style.display!=='none'){ rc.style.display='none'; } expandPlanFloat(); });
+    map.on('click',()=>{ const rc=document.getElementById('plan-results-card'); if(rc&&rc.style.display!=='none'){ rc.style.display='none'; } expandPlanFloat(); document.getElementById('plan-float-wrapper')?.classList.remove('has-results'); if(markers&&!map.hasLayer(markers)) markers.addTo(map); });
   }
   if(planMap) planMap.invalidateSize();
   // Initialiser les dropdowns une seule fois
@@ -1455,6 +1462,8 @@ async function computePlan(){
   results.innerHTML=renderComboList(autoLimit);
   // Desktop: dupliquer dans sidebar
   if(window.innerWidth >= 768){
+    const wrapper=document.getElementById('plan-float-wrapper');
+    if(wrapper) wrapper.classList.add('has-results');
     const da=document.getElementById('desktop-results-area');
     if(da){
       da.innerHTML='<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.28);margin-bottom:8px">'+
