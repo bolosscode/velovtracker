@@ -25,8 +25,7 @@
   .card{padding:14px;border:0.5px solid var(--border)}
   .loc-row{grid-template-columns:1fr}
   #map{height:100%}
-#tab-plan{height:calc(100vh - 50px)}
-  #plan-map{height:260px}
+
   .params-row{gap:8px}
   .params-row select,.params-row input{font-size:12px;padding:6px 8px}
   #stats-detail{display:none}
@@ -36,11 +35,12 @@
   .combo-pct{font-size:18px}
 }
 @media(min-width:641px){
-  #bottom-nav{display:none !important}
+  #bottom-nav{display:none}
 }
 #bottom-nav{
   position:fixed;bottom:0;left:0;right:0;z-index:300;
-  background:#1c1c1e;border-top:0.5px solid #38383a;
+  background:#1c1c1e;backdrop-filter:blur(14px);
+  border-top:0.5px solid #38383a;
   display:flex;padding:0;height:60px;
 }
 #bottom-nav .tab{
@@ -52,13 +52,13 @@
 #bottom-nav .tab span{font-size:11px;display:block;color:var(--sub)}
 #bottom-nav .tab.on{color:#fff;border-top-color:rgba(255,255,255,.3)}
 :root{
-  --bg:#1c1c1e;--paper:rgba(28,28,30,.75);--ink:#f5f5f7;--sub:#8e8e93;--dim:#636366;
+  --bg:#1c1c1e;--paper:#2c2c2e;--ink:#f5f5f7;--sub:#8e8e93;--dim:#636366;
   --border:#38383a;--blue:#f5f5f7;--green:#30d158;--orange:#ff9f0a;--red:#ff453a;
   --radius:14px;--shadow:0 2px 8px rgba(0,0,0,.4);
 }
-body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Arial,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased;letter-spacing:-0.01em;color-scheme:dark}
+body{background:#1c1c1e;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Arial,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased;letter-spacing:-0.01em;color-scheme:dark}
 
-header{position:sticky;top:0;z-index:300;height:56px;background:#1c1c1e;border-bottom:none;display:flex;align-items:center;justify-content:space-between;padding:0 22px}
+header{position:sticky;top:0;z-index:300;height:56px;background:#1c1c1e;backdrop-filter:blur(14px);border-bottom:none;display:flex;align-items:center;justify-content:space-between;padding:0 22px}
 .brand{font-weight:700;font-size:20px;color:#fff}.brand em{color:#fff;font-style:normal}
 .clock{font-size:12px;color:var(--dim)}
 
@@ -71,9 +71,9 @@ main{max-width:1500px;margin:auto;padding:20px}
 .card{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
 .card-title{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--sub);margin-bottom:14px}
 
-#map{height:100%;border-radius:var(--radius);overflow:hidden;position:relative;z-index:1}
+#map{height:calc(100vh - 140px);border-radius:var(--radius);overflow:hidden;position:relative;z-index:1}
 .map-ctrl{position:absolute;top:10px;right:10px;z-index:500;display:flex;gap:6px}
-.map-btn{padding:6px 14px;border-radius:20px;border:none;background:rgba(255,255,255,.92);box-shadow:var(--shadow);font-size:12px;font-weight:600;cursor:pointer;color:var(--sub);transition:all .15s}
+.map-btn{padding:6px 14px;border-radius:20px;border:none;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);box-shadow:var(--shadow);font-size:12px;font-weight:600;cursor:pointer;color:var(--sub);transition:all .15s}
 .map-btn.on{background:var(--blue);color:#fff}
 .map-rel{position:relative;overflow:hidden}
 
@@ -87,8 +87,7 @@ main{max-width:1500px;margin:auto;padding:20px}
 .loc-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .search{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none;transition:border-color .15s}
 .search:focus{border-color:var(--blue)}
-.dropdown{position:fixed;background:#2c2c2e;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.8);display:none;z-index:999999;max-height:240px;overflow-y:auto;min-width:280px}
-.dropdown.open{display:block !important}
+.dropdown{position:fixed;z-index:9999;background:#2c2c2e;border:1px solid rgba(255,255,255,.12);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.6);display:none;max-height:240px;overflow-y:auto;min-width:280px;background:#2c2c2e;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);display:none;z-index:100;max-height:220px;overflow-y:auto}
 .dropdown.open{display:block}
 .opt{padding:9px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0f0}
 .opt:last-child{border-bottom:none}
@@ -141,62 +140,18 @@ main{max-width:1500px;margin:auto;padding:20px}
 .range select,.range input{padding:8px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none}
 .btn{padding:8px 18px;border-radius:10px;border:none;background:#f5f5f7;color:#1c1c1e;font-size:13px;font-weight:600;cursor:pointer}
 .btn:hover{opacity:.85}
-/* leaflet popup */
-.leaflet-popup-content-wrapper{background:rgba(20,20,26,.85) !important;-webkit-color:#f5f5f7;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.6);border:0.5px solid #38383a;padding:0}.leaflet-popup-tip{background:#1c1c1e !important;border:0.5px solid #38383a}.leaflet-popup-content{margin:10px 12px;color:#f5f5f7}
-
-/* Glass morphism */
-.glass-card{
-  background:rgba(28,28,30,.72) !important;
-  -webkit-border:0.5px solid rgba(255,255,255,.1) !important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 4px 20px rgba(0,0,0,.35) !important;
-}
-
-/* ═══ DESKTOP ═══════════════════════════════════════════ */
-
-
-  /* Sidebar gauche — cachée par défaut, visible quand résultats */
-
-  /* Masquer le volet bas sur desktop */
-  /* Résultats dans la sidebar */
-
-  /* map-rel prend tout l'espace restant */
-  .map-rel {
-    flex: 1 !important;
-  }
-
-
-  /* Compact pill cachée sur desktop */
-  #plan-float-compact { display: none !important; }
-
-  /* plan-float dans wrapper : style sidebar */
-  #plan-float {
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    border: none !important;
-    border-bottom: 0.5px solid rgba(255,255,255,.08) !important;
-    width: 100% !important;
-    position: relative !important;
-    top: auto !important;
-    left: auto !important;
-  }
-}
-
-/* Mobile : sidebar cachée, float repositionné sur la carte */
-
-  /* Sur mobile, dupliquer le float via JS dans map-rel */
-}
 </style>
 </head>
 <body>
 
-<header style="display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:50px;background:rgba(28,28,30,.88);-webkit-border-bottom:0.5px solid rgba(255,255,255,.1);position:sticky;top:0;z-index:300">
+<header style="display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:50px;background:#1c1c1e;border-bottom:0.5px solid #38383a;position:sticky;top:0;z-index:300">
   <div style="font-size:15px;font-weight:700;color:#fff">Vélo'v</div>
   <div style="display:flex;gap:2px">
-    <div class="tab on" data-tab="map" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:#fff;font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg> Carte</div>
-    <div class="tab" data-tab="stats" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:#636366;font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Stats</div>
+    <div class="tab on" data-tab="map" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:#fff;font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg> Carte</div>
+    <div class="tab" data-tab="stats" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:#636366;font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Stats</div>
   </div>
   <div style="display:flex;align-items:center;gap:8px">
-    <div id="live-status"></div>
+    <div id="live-status" style="font-size:10px"></div>
     <div id="clock" style="font-size:12px;color:#8e8e93"></div>
   </div>
 </header>
@@ -211,14 +166,15 @@ main{max-width:1500px;margin:auto;padding:20px}
 <!-- ═══ CARTE ═══ -->
 <div class="panel on" id="tab-map" style="position:relative;display:flex;flex-direction:column;height:calc(100vh - 50px);overflow:hidden">
   <div class="map-rel" style="position:relative;flex:1;overflow:hidden">
-    <div id="plan-float" style="position:absolute;top:10px;left:10px;width:min(380px,calc(100% - 20px));z-index:200;background:rgba(40,40,48,.72);border-radius:16px;border:0.5px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 8px 32px rgba(0,0,0,.5);overflow:hidden;transition:max-height .35s cubic-bezier(.4,0,.2,1);max-height:300px">
+    <div id="map" style="height:100%;width:100%"></div>
 
-      <!-- État étendu -->
+    <!-- Flottant glass -->
+    <div id="plan-float" style="position:absolute;top:10px;left:10px;width:min(360px,calc(100% - 20px));z-index:200;background:rgba(30,30,38,.78);border-radius:14px;border:0.5px solid rgba(255,255,255,.15);box-shadow:0 8px 32px rgba(0,0,0,.5);overflow:hidden;transition:max-height .3s cubic-bezier(.4,0,.2,1);max-height:250px">
       <div id="plan-float-expanded" style="padding:10px 12px">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-          <div style="flex:1;background:rgba(255,255,255,.07);border-radius:10px;overflow:visible;border:0.5px solid rgba(255,255,255,.12)">
+          <div style="flex:1;background:rgba(255,255,255,.08);border-radius:10px;overflow:visible;border:0.5px solid rgba(255,255,255,.12)">
             <div style="position:relative">
-              <input id="plan-from" class="search" type="text" placeholder="Départ…" autocomplete="off" style="background:transparent;border-radius:0;border:none;border-bottom:0.5px solid #38383a"/>
+              <input id="plan-from" class="search" type="text" placeholder="Départ…" autocomplete="off" style="background:transparent;border-radius:0;border:none;border-bottom:0.5px solid rgba(255,255,255,.08)"/>
               <div class="dropdown" id="plan-from-dd"></div>
             </div>
             <div style="position:relative">
@@ -226,76 +182,77 @@ main{max-width:1500px;margin:auto;padding:20px}
               <div class="dropdown" id="plan-to-dd"></div>
             </div>
           </div>
-          <button onclick="swapPlanFromTo()" style="width:30px;height:30px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;cursor:pointer;font-size:15px;color:#8e8e93;display:flex;align-items:center;justify-content:center;flex-shrink:0">⇅</button>
+          <button onclick="swapPlanFromTo()" style="width:30px;height:30px;border-radius:8px;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);cursor:pointer;font-size:15px;color:#8e8e93;display:flex;align-items:center;justify-content:center;flex-shrink:0">⇅</button>
         </div>
-        <div id="plan-meteo" style="font-size:10px;color:#636366;margin-bottom:8px"></div>
+        <div id="plan-meteo" style="font-size:10px;color:rgba(255,255,255,.35);margin-bottom:8px"></div>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-          <div style="display:flex;background:rgba(255,255,255,.07);border-radius:20px;padding:2px;border:0.5px solid rgba(255,255,255,.12)">
-            <button id="btn-now" onclick="setModeNow()" style="padding:4px 11px;border:none;background:#3a3a3c;color:#fff;font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">Maintenant</button>
-            <button id="btn-plan" onclick="setModePlan()" style="padding:4px 11px;border:none;background:transparent;color:#636366;font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">Planifier</button>
+          <div style="display:flex;background:rgba(255,255,255,.08);border-radius:20px;padding:2px">
+            <button id="btn-now" onclick="setModeNow()" style="padding:4px 11px;border:none;background:rgba(255,255,255,.15);color:#fff;font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">Maintenant</button>
+            <button id="btn-plan" onclick="setModePlan()" style="padding:4px 11px;border:none;background:transparent;color:rgba(255,255,255,.38);font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">Planifier</button>
           </div>
           <div id="plan-params" style="display:none;gap:6px;align-items:center;flex-wrap:wrap">
-            <select id="plan-dow" style="padding:4px 8px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;color:#f5f5f7;font-size:11px"><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option><option value="6">Samedi</option><option value="0">Dimanche</option></select>
-            <input type="time" id="plan-hour-time" style="padding:4px 8px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;color:#f5f5f7;font-size:11px;outline:none" oninput="syncHourSelect()"/>
+            <select id="plan-dow" style="padding:4px 8px;border-radius:8px;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#f5f5f7;font-size:11px"><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option><option value="6">Samedi</option><option value="0">Dimanche</option></select>
+            <input type="time" id="plan-hour-time" style="padding:4px 8px;border-radius:8px;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#f5f5f7;font-size:11px;outline:none" oninput="syncHourSelect()"/>
             <select id="plan-hour" style="display:none"></select>
-            <select id="plan-radius" style="padding:4px 8px;border-radius:8px;border:0.5px solid #38383a;background:#2c2c2e;color:#f5f5f7;font-size:11px"><option value="300">300m</option><option value="500" selected>500m</option><option value="800">800m</option><option value="1200">1.2km</option></select>
+            <select id="plan-radius" style="padding:4px 8px;border-radius:8px;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#f5f5f7;font-size:11px"><option value="300">300m</option><option value="500" selected>500m</option><option value="800">800m</option><option value="1200">1.2km</option></select>
           </div>
-          <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px;position:relative">
-            <div id="type-slider-now" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:#3a3a3c;border-radius:18px;transition:transform .15s;pointer-events:none"></div>
+          <div style="display:flex;background:rgba(255,255,255,.08);border-radius:20px;padding:2px;position:relative">
+            <div id="type-slider-now" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:rgba(255,255,255,.15);border-radius:18px;transition:transform .15s;pointer-events:none"></div>
             <button onclick="setBikeType('elec')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:#fff">⚡ Élec</button>
-            <button onclick="setBikeType('meca')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:#636366">🔧 Méca</button>
+            <button onclick="setBikeType('meca')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:rgba(255,255,255,.38)">🔧 Méca</button>
           </div>
           <select id="plan-type" style="display:none"><option value="elec">elec</option><option value="meca">meca</option><option value="any" selected>any</option></select>
-          <button class="btn" onclick="computePlan()" style="margin-left:auto;padding:5px 14px;font-size:11px">Calculer</button>
+          <button class="btn" onclick="computePlan()" style="margin-left:auto;padding:5px 14px;font-size:11px;border-radius:20px;background:rgba(255,255,255,.9);color:#111;border:none;font-weight:700;cursor:pointer">Calculer</button>
         </div>
       </div>
 
-      <!-- État compact (pill) -->
+      <!-- État compact -->
       <div id="plan-float-compact" style="display:none;align-items:center;gap:10px;padding:9px 12px;cursor:pointer" onclick="expandPlanFloat()">
         <div style="font-size:15px">🔍</div>
         <div style="flex:1;min-width:0">
           <div id="plan-compact-from" style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
           <div id="plan-compact-to" style="font-size:11px;color:#8e8e93;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
         </div>
-        <div style="width:26px;height:26px;border-radius:50%;border:0.5px solid #38383a;background:#2c2c2e;color:#8e8e93;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px">✎</div>
+        <div style="width:26px;height:26px;border-radius:50%;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#8e8e93;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px">✎</div>
       </div>
+
+      <!-- Résultats (liste compacte) -->
+      <div id="plan-results-divider" style="display:none;height:0.5px;background:rgba(255,255,255,.08)"></div>
+      <div id="plan-results-inner-header" style="display:none;padding:6px 12px 4px;display:none">
+        <div id="plan-results-title" style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.3)"></div>
+      </div>
+      <div id="plan-results" style="overflow-y:auto;max-height:calc(80vh - 220px);padding:0 10px 10px"></div>
 
     </div>
 
-    <div id="map" style="height:100%;width:100%"></div>
-
-    <!-- Fenêtre flottante recherche -->
+    <!-- Volet bas mobile (caché, les résultats vont dans le flottant) -->
+    <div id="plan-results-card" style="display:none"></div>
   </div>
-
-  <!-- Volet résultats fixe en bas -->
-  <div id="plan-results-card" style="display:none;flex-shrink:0;max-height:48vh;overflow-y:auto;background:rgba(30,30,32,.82);-webkit-border:0.5px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 8px 32px rgba(0,0,0,.5);border-radius:0;border-left:none;border-right:none;border-bottom:none;overflow-y:auto;padding:6px 12px 12px">
-    <div id="plan-results-title" style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#8e8e93;margin-bottom:6px;padding-top:2px"></div>
-    <div id="plan-results"></div>
-  </div>
-
 </div>
 
-<!-- ═══ STATISTIQUES ═══ -->
 <div class="panel" id="tab-stats">
   <!-- Contrôles globaux -->
   <!-- Contrôles globaux -->
   <div class="card">
     <div class="card-title">Période &amp; tri</div>
     <div class="range">
-      <div style="display:flex;background:rgba(255,255,255,.07);border-radius:20px;padding:2px;border:0.5px solid rgba(255,255,255,.12)">
+      <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px">
         <button onclick="onLbViewChange('day')" id="lb-pill-day" style="padding:5px 14px;border:none;background:#3a3a3c;color:#fff;font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Jour</button>
         <button onclick="onLbViewChange('month')" id="lb-pill-month" style="padding:5px 14px;border:none;background:transparent;color:var(--sub);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Mois</button>
         <button onclick="onLbViewChange('year')" id="lb-pill-year" style="padding:5px 14px;border:none;background:transparent;color:var(--sub);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Année</button>
       </div>
       <input type="hidden" id="lb-view" value="day"/>
       <input type="date" id="lb-date"/>
-       <input type="month" id="lb-month" style="display:none;padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;background:#2c2c2e;color:#f5f5f7;color-scheme:dark"/>
+      <input type="month" id="lb-month" style="display:none;padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px"/>
       <select id="lb-year" style="display:none;padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px"><option value="2025">2025</option><option value="2026" selected>2026</option></select>
       <select id="lb-sort">
-        <option value="mv">↕ Mouvements</option>
-        <option value="fill">Remplissage %</option>
-        <option value="elec">⚡ Part électrique</option>
-        <option value="meca">🔧 Part mécanique</option>
+        <option value="mv">Mouvements ↕</option>
+        <option value="rotation">Taux de rotation</option>
+        <option value="bikes">Vélos dispo</option>
+        <option value="elec">⚡ Électriques</option>
+        <option value="meca">🔧 Mécaniques</option>
+        <option value="stands">Places libres</option>
+        <option value="fill">% remplissage</option>
       </select>
       <button class="btn" onclick="computeLeaderboard()">Calculer</button>
       <span id="lb-meteo" style="font-size:12px;color:var(--sub)"></span>
@@ -321,9 +278,34 @@ main{max-width:1500px;margin:auto;padding:20px}
 </div>
 
 <!-- ═══ PLANIFIER ═══ -->
+
 </main>
 <script>
 'use strict';
+function positionDropdown(inputId,ddId){
+  const input=document.getElementById(inputId);
+  const dd=document.getElementById(ddId);
+  if(!input||!dd) return;
+  const rect=input.getBoundingClientRect();
+  dd.style.left=rect.left+'px';
+  dd.style.top=(rect.bottom+4)+'px';
+  dd.style.width=rect.width+'px';
+}
+
+function compactPlanFloat(){
+  const from=document.getElementById('plan-from')?.value||'';
+  const to=document.getElementById('plan-to')?.value||'';
+  document.getElementById('plan-compact-from').textContent='🟢 '+from;
+  document.getElementById('plan-compact-to').textContent='🔴 '+to;
+  document.getElementById('plan-float-expanded').style.display='none';
+  document.getElementById('plan-float-compact').style.display='flex';
+}
+function expandPlanFloat(){
+  document.getElementById('plan-float-expanded').style.display='block';
+  document.getElementById('plan-float-compact').style.display='none';
+}
+function updateLiveStatus2(){}
+
 
 /* ═══ STATE ═══════════════════════════════════════════ */
 let allStations=[], map=null, markers=null, heatLayer=null, heatOn=false;
@@ -343,26 +325,18 @@ function updateLiveStatus(){
   if(minAgo<=1) el.innerHTML='<span style="color:#30d158;font-size:10px">● Live</span>';
   else el.innerHTML=`<span style="color:#f59e0b;font-size:10px">● Màj il y a ${minAgo} min</span>`;
 }
-setInterval(()=>{
-  document.getElementById('clock').textContent=new Date().toLocaleTimeString('fr-FR');
-  updateLiveStatus();
-},1000);
+setInterval(()=>{ document.getElementById('clock').textContent=new Date().toLocaleTimeString('fr-FR'); updateLiveStatus(); },1000);
 
 document.querySelectorAll('.tab').forEach(tab=>{
   tab.onclick=()=>{
-    // Réafficher stations si on quitte la carte
-    if(tab.dataset.tab !== 'map' && markers && !map.hasLayer(markers)){
-      markers.addTo(map);
-    }
     // Sync les deux navs
-    document.querySelectorAll('.tab').forEach(t=>{ t.classList.remove('on'); t.style.color='#636366'; });
-    document.querySelectorAll('.panel').forEach(p=>{ p.classList.remove('on'); p.style.display='none'; });
-    document.querySelectorAll(`.tab[data-tab="${tab.dataset.tab}"]`).forEach(t=>{ t.classList.add('on'); t.style.color='#fff'; });
-    const activePanel=document.getElementById('tab-'+tab.dataset.tab);
-    activePanel.classList.add('on');
-    activePanel.style.display = tab.dataset.tab==='map' ? 'flex' : 'block';
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+    // Activer le bon tab dans les deux navs
+    document.querySelectorAll(`.tab[data-tab="${tab.dataset.tab}"]`).forEach(t=>t.classList.add('on'));
+    document.getElementById('tab-'+tab.dataset.tab).classList.add('on');
     setTimeout(()=>{ map?.invalidateSize(); planMap?.invalidateSize(); },150);
-    if(tab.dataset.tab==='map') setTimeout(()=>{ if(!map)initMap(); map?.invalidateSize(); renderStations(); initPlanMap(); },150);
+    if(tab.dataset.tab==='map') setTimeout(()=>{ if(!map)initMap(); map?.invalidateSize(); renderStations(); },150);
     if(tab.dataset.tab==='stats') quickLeaderboard();
     if(tab.dataset.tab==='plan') initPlanMap();
   };
@@ -422,9 +396,7 @@ async function loadLatest(){
     const r=await fetch(`data/latest.json?t=${Date.now()}`,{cache:'no-store'}); const d=await r.json(); return d.stations||[];
   }
 }
-const _fetchDayCache = {};
 async function fetchDay(date){
-  if(_fetchDayCache[date]) return _fetchDayCache[date];
   try{
     const today=new Date().toISOString().slice(0,10);
     if(date===today){
@@ -447,9 +419,8 @@ async function fetchDay(date){
       } else {
         data=await r.json();
       }
-      const result = data.base&&data.deltas ? expandDeltas(data) : Array.isArray(data)?data:null;
-      if(result && date !== new Date().toISOString().slice(0,10)) _fetchDayCache[date]=result;
-      return result;
+      if(data.base&&data.deltas) return expandDeltas(data);
+      if(Array.isArray(data)) return data;
     }
     return null;
   }catch{ return null; }
@@ -531,26 +502,15 @@ function initMap(){
     {attribution:'© OpenStreetMap © CARTO',maxZoom:20}).addTo(map);
   map.on('zoomend', renderStations);
 }
-let _lastZoomMode = null;
-let _stationMarkers = {}; // cache des markers par numéro
-
 function renderStations(){
-  if(!map) return;
-  const zoom = map.getZoom();
-  const mode = zoom < 13 ? 'cluster' : 'individual';
+  if(markers) markers.clearLayers();
+  markers=L.layerGroup().addTo(map);
+  const zoom=map?map.getZoom():13;
 
-  if(mode === 'cluster'){
-    // Cluster — recréer si changement de mode seulement
-    if(_lastZoomMode !== 'cluster'){
-      if(markers) markers.clearLayers();
-      markers = L.layerGroup().addTo(map);
-      _stationMarkers = {};
-    } else {
-      // Mettre à jour les couleurs des clusters
-      if(markers) markers.clearLayers();
-    }
-    const cellSize = zoom>=11 ? 0.015 : 0.03;
-    const cells = {};
+  // Clustering au zoom faible
+  if(zoom < 13){
+    const cellSize=zoom>=11?0.015:0.03;
+    const cells={};
     allStations.filter(s=>s.lat&&s.lng).forEach(st=>{
       const cx=Math.round(st.lat/cellSize), cy=Math.round(st.lng/cellSize);
       const key=cx+'_'+cy;
@@ -563,54 +523,23 @@ function renderStations(){
       const ratio=cell.bikes/cell.stands;
       const color=ratio>=0.4?'#1a7a3e':ratio>=0.15?'#f59e0b':'#b52a2a';
       const r=Math.max(14,Math.min(26,10+cell.count*1.5));
-      const icon=L.divIcon({html:`<div style="width:${r*2}px;height:${r*2}px;border-radius:50%;background:${color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:2px solid rgba(255,255,255,.3);box-shadow:0 2px 8px rgba(0,0,0,.5)">${cell.count}</div>`,iconSize:[r*2,r*2],iconAnchor:[r,r],className:'cluster-icon'});
-      markers.addLayer(L.marker([lat,lng],{icon,zIndexOffset:1000}));
+      const icon=L.divIcon({html:`<div style="width:${r*2}px;height:${r*2}px;border-radius:50%;background:${color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:2px solid rgba(255,255,255,.2);box-shadow:0 2px 6px rgba(0,0,0,.4)">${cell.count}</div>`,iconSize:[r*2,r*2],iconAnchor:[r,r],className:''});
+      markers.addLayer(L.marker([lat,lng],{icon}));
     });
-    _lastZoomMode = 'cluster';
     return;
   }
 
-  // Mode individuel
-  if(_lastZoomMode !== 'individual'){
-    // Premier rendu individuel — créer tous les markers
-    if(markers) markers.clearLayers();
-    markers = L.layerGroup().addTo(map);
-    _stationMarkers = {};
-    allStations.forEach(st=>{
-      if(!st.lat||!st.lng) return;
-      const m = L.circleMarker([st.lat,st.lng],{radius:8,fillColor:stationColor(st),color:'#fff',weight:1.5,fillOpacity:.9});
-      const mv = todayMv[st.number]||0;
-      m.bindPopup(`
-        <div style="font-family:-apple-system,sans-serif;min-width:200px;background:#1c1c1e;color:#f5f5f7;margin:-10px -12px;padding:12px 14px;border-radius:8px">
-          <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:#fff;line-height:1.3">${cleanName(st.name)}</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center">
-            <div style="background:#2c2c2e;padding:6px 4px;border-radius:6px">
-              <div style="font-size:16px;font-weight:700;color:#1a7a3e;line-height:1">${st.electrical_bikes||0}</div>
-              <div style="font-size:9px;color:#8e8e93;margin-top:2px">⚡ Élec</div>
-            </div>
-            <div style="background:#2c2c2e;padding:6px 4px;border-radius:6px">
-              <div style="font-size:16px;font-weight:700;color:#b52a2a;line-height:1">${st.mechanical_bikes||0}</div>
-              <div style="font-size:9px;color:#8e8e93;margin-top:2px">🔧 Méca</div>
-            </div>
-            <div style="background:#2c2c2e;padding:6px 4px;border-radius:6px">
-              <div style="font-size:16px;font-weight:700;color:#fff;line-height:1">${st.available_bike_stands||0}</div>
-              <div style="font-size:9px;color:#8e8e93;margin-top:2px">🅿️ Places</div>
-            </div>
-          </div>
-          <div style="margin-top:8px;text-align:center;font-size:11px;color:#8e8e93">↕ ${mv} mouvements/j</div>
-        </div>
-      `, {closeButton:false, className:'station-popup-dark'});
-      markers.addLayer(m);
-      _stationMarkers[st.number] = m;
-    });
-    _lastZoomMode = 'individual';
-  } else {
-    // Mise à jour des couleurs uniquement — pas de recréation
-    allStations.forEach(st=>{
-      const m = _stationMarkers[st.number];
-      if(m) m.setStyle({fillColor: stationColor(st)});
-    });
-  }
+  // Stations individuelles avec taille variable
+  allStations.forEach(st=>{
+    if(!st.lat||!st.lng) return;
+    const mv=todayMv[st.number]||0;
+    const m=L.circleMarker([st.lat,st.lng],{radius:Math.max(5,Math.min(14,5+(st.available_bikes||0)*0.5)),fillColor:stationColor(st),color:'#fff',weight:1.5,fillOpacity:.9});
+    m.bindPopup(`<div style="min-width:190px;font-family:-apple-system,sans-serif">
+      <b style="font-size:14px">${cleanName(st.name)}</b><br><br>
+      ⚡ ${st.electrical_bikes} · 🔧 ${st.mechanical_bikes} · 🚲 ${st.available_bikes}<br>
+      🅿️ ${st.available_bike_stands} places · ↕ ${mv} mvts/j</div>`);
+    markers.addLayer(m);
+  });
   buildHeatLayer();
 }
 function buildHeatLayer(){
@@ -678,29 +607,8 @@ const LIEUX_LYON = [
   {name:'Saint-Priest', lat:45.6966, lng:4.9428, type:'📍'},
 ];
 
-function positionDropdown(inputId, ddId){
-  const input = document.getElementById(inputId);
-  const dd = document.getElementById(ddId);
-  if(!input || !dd) return;
-  const rect = input.getBoundingClientRect();
-  dd.style.left = rect.left + 'px';
-  dd.style.top = (rect.bottom + 4) + 'px';
-  dd.style.width = rect.width + 'px';
-}
 function buildDropdown(inputId, ddId, opts){
-  const input=document.getElementById(inputId);
-  if(input){
-    // Repositionner le dropdown au scroll/resize
-    window.addEventListener('scroll', ()=>{
-      const dd = document.getElementById(ddId);
-      if(dd && dd.classList.contains('open')) positionDropdown(inputId, ddId);
-    }, true);
-    window.addEventListener('resize', ()=>{
-      const dd = document.getElementById(ddId);
-      if(dd && dd.classList.contains('open')) positionDropdown(inputId, ddId);
-    });
-  }
-  const dd=document.getElementById(ddId);
+  const input=document.getElementById(inputId), dd=document.getElementById(ddId);
 
   input.addEventListener('input',()=>{
     const q=input.value.trim();
@@ -749,7 +657,7 @@ function buildDropdown(inputId, ddId, opts){
         el.onclick=()=>{ input.value=l.name; dd.classList.remove('open'); opts.onGeoPos?.({lat:l.lat,lng:l.lng}); };
         dd.appendChild(el);
       });
-      if(stMatches.length||geoResults.length||lieuMatches.length){ positionDropdown(inputId, ddId); dd.classList.add('open'); }
+      if(stMatches.length||geoResults.length||lieuMatches.length) dd.classList.add('open');
       else dd.classList.remove('open');
     };
 
@@ -878,12 +786,8 @@ async function computeLeaderboard(){
       for(let d=1;d<=days;d++) dates.push(`${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
     } else {
       const y=document.getElementById('lb-year').value;
-      const todayY=new Date().toISOString().slice(0,10);
-      // Par semaine pour aller plus vite en mode annuel
-      const startY=new Date(y+'-01-01');
-      const endY=new Date(Math.min(new Date(y+'-12-31'),new Date()));
-      for(let d=new Date(startY);d<=endY;d.setDate(d.getDate()+7))
-        dates.push(d.toISOString().slice(0,10));
+      for(let mo=1;mo<=12;mo++) for(let d=1;d<=new Date(y,mo,0).getDate();d++)
+        dates.push(`${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
     }
     // Limiter aux dates passées
     const today=new Date().toISOString().slice(0,10);
@@ -908,7 +812,7 @@ async function computeLeaderboard(){
 function renderLbTable(mvData){
   const head=document.getElementById('lb-head'), body=document.getElementById('lb-body');
   if(!head||!body) return;
-  head.innerHTML='<tr><th>#</th><th>Station</th><th>↕ Mvts</th><th>Rempli</th><th>⚡/🔧</th></tr>';
+  head.innerHTML='<tr><th>#</th><th>Station</th><th>⚡/🔧</th><th>🚲</th><th>🅿️</th><th>↕</th><th>%</th></tr>';
   const sortKey=document.getElementById('lb-sort').value;
   const maxMv=Math.max(1,...Object.values(mvData));
   const rows=allStations.map(st=>{
@@ -922,14 +826,14 @@ function renderLbTable(mvData){
   body.innerHTML=rows.map((st,i)=>{
     const pct=Math.round(st.fill*100), cls=pct>=50?'fill-high':pct>=25?'fill-med':'fill-low';
     const bw=Math.round(st.mv/maxMv*60);
-    const elecPct = st.bike_stands ? Math.round(st.electrical_bikes/st.bike_stands*100) : 0;
-    const mecaPct = st.bike_stands ? Math.round(st.mechanical_bikes/st.bike_stands*100) : 0;
     return `<tr onclick="toggleStationDetail(${st.number},this)" style="cursor:pointer" id="lb-row-${st.number}">
       <td class="rank-cell">${i+1}</td>
-      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500">${cleanName(st.name)}</td>
+      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cleanName(st.name)}</td>
+      <td style="font-size:12px;color:var(--sub)">⚡${st.electrical_bikes} 🔧${st.mechanical_bikes}</td>
+      <td><b>${st.available_bikes}</b></td>
+      <td>${st.available_bike_stands}</td>
       <td>${st.mv}<span class="mv-bar" style="width:${bw}px"></span></td>
-      <td><span class="fill-pill ${cls}">${pct}%</span></td>
-      <td style="font-size:12px"><span style="color:#1a7a3e;font-weight:600">${elecPct}%</span><span style="color:var(--dim)"> / </span><span style="color:#b52a2a;font-weight:600">${mecaPct}%</span></td></tr>
+      <td><span class="fill-pill ${cls}">${pct}%</span></td></tr>
       <tr class="detail-row" id="lb-detail-${st.number}" style="display:none">
         <td colspan="7" style="padding:0">
           <div id="stats-detail-${st.number}" style="padding:14px;background:var(--bg);border-bottom:1px solid var(--border)"></div>
@@ -962,17 +866,15 @@ async function showDayMeteo(date){
 let planHeatMvCache={};
 
 
-let _planDropdownsInit = false;
+let _planDropdownsInit=false;
 function initPlanMap(){
-  // Utiliser la carte principale
-  if(!planMap && map){
-    planMap = map;
-    map.on('click',()=>{ const rc=document.getElementById('plan-results-card'); if(rc&&rc.style.display!=='none'){ rc.style.display='none'; const pf3=document.getElementById('plan-float'); if(pf3){ pf3.style.maxHeight='300px'; } } expandPlanFloat(); });
-  }
-  if(planMap) planMap.invalidateSize();
-  // Initialiser les dropdowns une seule fois
+  if(!planMap && map){ planMap=map; map.on('click',()=>{ document.getElementById('plan-float').style.maxHeight='250px'; expandPlanFloat(); }); }
+  if(planMap) planMap.invalidateSize?.();
   if(_planDropdownsInit) return;
-  _planDropdownsInit = true;
+  _planDropdownsInit=true;
+  planMap=L.map('plan-map').setView([45.757,4.832],13);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    {attribution:'© OpenStreetMap © CARTO',maxZoom:20}).addTo(planMap);
 
 
   function resetPlan(){
@@ -1010,7 +912,9 @@ function initPlanMap(){
      const windStr=meteo.wind!==undefined?` · ${meteo.wind}km/h${windArr}`:''
     const meteoEl=document.getElementById('plan-meteo');
     if(meteoEl){
-      document.getElementById('plan-meteo').textContent=(m.icon||'')+(meteo.temp!==undefined?' '+meteo.temp+'°C':'')+(meteo.wind!==undefined?' · '+meteo.wind+' km/h':''); void 
+      document.getElementById('plan-meteo-icon').textContent=m.icon;
+      document.getElementById('plan-meteo-label').textContent=`${m.label}${meteo.precipitation>0?' — '+meteo.precipitation.toFixed(1)+' mm/h':''}${tempStr}${windStr}`;
+      document.getElementById('plan-meteo-sub').textContent=
         meteo.rain?'Conditions pluvieuses':'Conditions favorables au vélo';
       meteoEl.style.display='flex';
       meteoEl.style.background=meteo.rain?'rgba(0,113,227,.06)':'rgba(40,205,65,.06)';
@@ -1051,27 +955,28 @@ async function fetchCurrentMeteo(){
 async function computePlan(){
   const resultsCard=document.getElementById('plan-results-card');
   const results=document.getElementById('plan-results');
-  // Reset état précédent
-  _openComboIdx = null;
-  window._planCombos = null;
-  if(planLayerGroup){ planLayerGroup.clearLayers(); }
-  resultsCard.style.display='block';
-  const pf2=document.getElementById('plan-float');
-  if(pf2){ pf2.style.maxHeight='80vh'; pf2.style.overflowY='hidden'; }
-  resultsCard.scrollTop=0;
+  // Expansion du flottant
+  const pfEl=document.getElementById('plan-float');
+  if(pfEl) pfEl.style.maxHeight='80vh';
+  document.getElementById('plan-results-divider').style.display='';
+  document.getElementById('plan-results-inner-header').style.display='block';
+  resultsCard.style.display='';
   results.innerHTML='<div class="loader">Analyse de l\'historique…</div>';
-  // Réduire le flottant
-  const pf=document.getElementById('plan-float'); if(pf) pf.style.transform='translateY(0)';
 
   // Météo actuelle
   const meteo=await fetchCurrentMeteo();
   const meteoEl=document.getElementById('plan-meteo');
   if(meteo&&meteoEl){
     const m=meteoFromCode(meteo.weathercode, meteo.rain);
-    const parts=[];
-    if(meteo.temp!==undefined) parts.push((m.icon||'')+' '+meteo.temp+'°C');
-    if(meteo.wind!==undefined) parts.push(meteo.wind+' km/h');
-    meteoEl.textContent=parts.join(' · ');
+    document.getElementById('plan-meteo-icon').textContent=m.icon;
+     const tempStr=meteo.temp!==undefined?` · ${meteo.temp}°C`:''
+     const windArr=meteo.winddir!==undefined?['↓','↙','←','↖','↑','↗','→','↘'][Math.round(meteo.winddir/45)%8]:''
+     const windStr=meteo.wind!==undefined?` · ${meteo.wind}km/h${windArr}`:''
+     document.getElementById('plan-meteo-label').textContent=`${m.label}${meteo.precipitation>0?' — '+meteo.precipitation.toFixed(1)+' mm/h':''}${tempStr}${windStr}`;
+    document.getElementById('plan-meteo-sub').textContent=
+      meteo.rain ? 'Conditions pluvieuses — usage vélo potentiellement réduit' : 'Conditions favorables au vélo';
+    meteoEl.style.display='flex';
+    meteoEl.style.background=meteo.rain?'rgba(0,113,227,.06)':'rgba(40,205,65,.06)';
   }
   const isRainy=(meteo?.precipitation??0)>0.1;
 
@@ -1080,10 +985,8 @@ async function computePlan(){
   const topN=10; // calcule 10, affiche 3 par défaut
   const isNowMode = (window._planMode||'now') === 'now';
   const now2 = new Date();
-  const targetDow = isNowMode ? now2.getDay() : parseInt(document.getElementById('plan-dow')?.value)||now2.getDay();
-  const planHourEl = document.getElementById('plan-hour-time');
-  const planHourVal = planHourEl?.value ? parseInt(planHourEl.value.split(':')[0]) : now2.getHours();
-  const targetH = isNowMode ? now2.getHours() : planHourVal;
+  const targetDow = isNowMode ? now2.getDay()   : parseInt(document.getElementById('plan-dow').value);
+  const targetH   = isNowMode ? now2.getHours() : parseInt(document.getElementById('plan-hour').value);
   const bikeSpeedKmh=bikeType==='meca'?16:21;
 
   // Charger historique pour ce jour de semaine
@@ -1104,9 +1007,25 @@ async function computePlan(){
 
 
   if(!planFromPos && !planFromFixed){ results.innerHTML='<div class="no-data">Sélectionnez un point de départ.</div>'; return; }
-  if(!planToPos && !planToFixed){ results.innerHTML='<div class="no-data">Destination manquante.</div>'; return; }
+  if(!planToPos && !planToFixed){ results.innerHTML='<div class="no-data">Sélectionnez une destination.</div>'; return; }
 
+  if(!planFromPos && !planFromFixed){
+    results.innerHTML='<div class="no-data">Sélectionnez un point de départ.</div>';
+    return;
+  }
+  if(!planToPos && !planToFixed){
+    results.innerHTML='<div class="no-data">Sélectionnez un point d\u0027arrivée.</div>';
+    return;
+  }
 
+  if(!planFromPos && !planFromFixed){
+    results.innerHTML='<div class="no-data">Sélectionnez un point de départ.</div>';
+    return;
+  }
+  if(!planToPos && !planToFixed){
+    results.innerHTML='<div class="no-data">Destination manquante.</div>';
+    return;
+  }
 
   // Stations proches du départ — station fixe en tête, puis les proches
   const depCenter = planFromFixed ? {lat:planFromFixed.lat,lng:planFromFixed.lng} : planFromPos;
@@ -1310,17 +1229,17 @@ async function computePlan(){
         body=`<div style="border-top:0.5px solid var(--border);padding:8px 12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:0">
           <div style="padding-right:10px;border-right:0.5px solid var(--border)">
             <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#1a7a3e;margin-bottom:2px">⚡ Élec</div>
-            <div style="font-size:15px;font-weight:700;color:#1a7a3e;line-height:1">${liveElec}</div>
+            <div style="font-size:17px;font-weight:700;color:#1a7a3e;line-height:1">${liveElec}</div>
             <div style="font-size:10px;color:var(--dim);margin-top:2px">${combo.depProb??'?'}% · moy ${combo.depN??'?'}</div>
           </div>
           <div style="padding:0 10px;border-right:0.5px solid var(--border)">
             <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#b52a2a;margin-bottom:2px">🔧 Méca</div>
-            <div style="font-size:15px;font-weight:700;color:#b52a2a;line-height:1">${liveMeca}</div>
+            <div style="font-size:17px;font-weight:700;color:#b52a2a;line-height:1">${liveMeca}</div>
             <div style="font-size:10px;color:var(--dim);margin-top:2px">${combo.depMecaProb??combo.depProb??'?'}%</div>
           </div>
           <div style="padding-left:10px">
             <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--sub);margin-bottom:2px">🅿️ Places</div>
-            <div style="font-size:15px;font-weight:700;color:var(--ink);line-height:1">${livePlaces}</div>
+            <div style="font-size:17px;font-weight:700;color:var(--ink);line-height:1">${livePlaces}</div>
             <div style="font-size:10px;color:var(--dim);margin-top:2px">${combo.arrProb??'?'}% · moy ${combo.arrN??'?'}</div>
           </div>
         </div>`;
@@ -1347,58 +1266,18 @@ async function computePlan(){
         </div>`;
       }
 
-      const sc=Math.round(combo.score??0);
-      const scCol=sc>=60?"#1a7a3e":sc>=35?"#f59e0b":"#b52a2a";
-      const scBg=sc>=60?"#0d2b1a":sc>=35?"#2b1a00":"#2b0a0a";
-      const liveElec2=combo.dep.live?.electrical_bikes??0;
-      const liveMeca2=combo.dep.live?.mechanical_bikes??0;
-      const livePlaces2=combo.arr.live?.available_bike_stands??"?";
-
-      const cardBody = isNowMode && combo.dep.live ? `
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-top:0.5px solid var(--border)">
-          <div style="padding:6px 10px;border-right:0.5px solid var(--border)">
-            <div style="font-size:9px;font-weight:600;letter-spacing:.04em;color:#1a7a3e;margin-bottom:2px">⚡ ÉLEC</div>
-            <div style="font-size:20px;font-weight:700;color:#1a7a3e;line-height:1">${liveElec2}</div>
-            <div style="font-size:10px;color:var(--dim)">${combo.depProb??"-"}% · moy ${combo.depN??"-"}</div>
+      return `<div class="combo-card${i===0?' selected':''}" onclick="toggleComboDetail(${i},this)" data-idx="${i}" style="overflow:hidden;border-radius:12px;margin-bottom:10px;background:var(--paper);box-shadow:var(--shadow);border:0.5px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 12px 8px;min-width:0">
+          <div style="font-size:20px;font-weight:700;color:#f5f5f7;min-width:24px">${i+1}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🟢 ${cleanName(combo.dep.name)}</div>
+            <div style="font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🔴 ${cleanName(combo.arr.name)}</div>
+            <div style="font-size:10px;color:var(--dim);margin-top:1px">${Math.round(combo.dist/1000*10)/10} km · ~${combo.rideMin} min${depDist}</div>
           </div>
-          <div style="padding:6px 10px;border-right:0.5px solid var(--border)">
-            <div style="font-size:9px;font-weight:600;letter-spacing:.04em;color:#b52a2a;margin-bottom:2px">🔧 MÉCA</div>
-            <div style="font-size:20px;font-weight:700;color:#b52a2a;line-height:1">${liveMeca2}</div>
-            <div style="font-size:10px;color:var(--dim)">${combo.depMecaProb??combo.depProb??"-"}%</div>
-          </div>
-          <div style="padding:6px 10px">
-            <div style="font-size:9px;font-weight:600;letter-spacing:.04em;color:var(--sub);margin-bottom:2px">🅿️ PLACES</div>
-            <div style="font-size:20px;font-weight:700;color:var(--ink);line-height:1">${livePlaces2}</div>
-            <div style="font-size:10px;color:var(--dim)">${combo.arrProb??"-"}% · moy ${combo.arrN??"-"}</div>
-          </div>
-        </div>` : `
-        <div style="display:grid;grid-template-columns:1fr 1fr;border-top:0.5px solid var(--border)">
-          <div style="padding:6px 10px;border-right:0.5px solid var(--border)">
-            <div style="font-size:9px;font-weight:600;letter-spacing:.04em;color:var(--sub);margin-bottom:4px">🚲 DÉPART</div>
-            <div style="display:flex;gap:12px">
-              <div><div style="font-size:18px;font-weight:700;color:${combo.depProb>=60?"#1a7a3e":combo.depProb>=35?"#f59e0b":"#b52a2a"}">${combo.depProb??"-"}%</div><div style="font-size:9px;color:#1a7a3e">⚡ Élec</div></div>
-              <div><div style="font-size:18px;font-weight:700;color:${(combo.depMecaProb??0)>=60?"#1a7a3e":(combo.depMecaProb??0)>=35?"#f59e0b":"#b52a2a"}">${combo.depMecaProb??"-"}%</div><div style="font-size:9px;color:#b52a2a">🔧 Méca</div></div>
-            </div>
-          </div>
-          <div style="padding:6px 10px">
-            <div style="font-size:9px;font-weight:600;letter-spacing:.04em;color:var(--sub);margin-bottom:4px">🅿️ ARRIVÉE</div>
-            <div style="font-size:22px;font-weight:700;color:${combo.arrProb>=60?"#1a7a3e":combo.arrProb>=35?"#f59e0b":"#b52a2a"}">${combo.arrProb??"-"}%</div>
-            <div style="font-size:10px;color:var(--dim)">moy ${combo.arrN??"-"}</div>
-          </div>
-        </div>`;
-
-      return `<div class="combo-card${i===0?" selected":""}" onclick="toggleComboDetail(${i},this)" data-idx="${i}" style="overflow:hidden;border-radius:10px;margin-bottom:6px;background:rgba(30,30,32,.82);-webkit-border:0.5px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 8px 32px rgba(0,0,0,.5)">
-        <div style="padding:8px 10px 5px">
-          <div style="display:flex;align-items:flex-start;gap:8px">
-            <div style="font-size:14px;font-weight:700;color:var(--dim);min-width:18px;padding-top:1px">${i+1}</div>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:12px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🟢 ${cleanName(combo.dep.name)}</div>
-              <div style="font-size:11px;color:var(--sub);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🔴 ${cleanName(combo.arr.name)}</div>
-              <div style="font-size:10px;color:var(--dim);margin-top:2px">${Math.round(combo.dist/1000*10)/10} km · ~${combo.rideMin} min</div>
-            </div>
-            ${isNowMode?`<div style="background:${scBg};border-radius:6px;padding:3px 8px;flex-shrink:0"><span style="font-size:13px;font-weight:700;color:${scCol}">${sc}%</span></div>`:""}
-          </div>
-        ${combo.rideMin>30&&bikeType==="elec"?`<div style="padding:6px 12px;background:#2b1a00;border-top:0.5px solid #38383a;font-size:10px;color:#f59e0b">⚠️ >30 min — déposer le VAE à ~26 min</div>`:""}
+          ${scoreBadge}
+        </div>
+        ${body}
+        ${body}
         <div id="combo-detail-${i}" style="display:none;border-top:0.5px solid var(--border)">
           <div id="combo-detail-inner-${i}" style="padding:12px"></div>
         </div>
@@ -1415,41 +1294,15 @@ async function computePlan(){
   const topScore=top[0]?.score??0;
   const autoLimit=topScore<30 ? top.length : topScore<50 ? Math.min(5,top.length) : 3;
   results.innerHTML=renderComboList(autoLimit);
-  // Desktop: dupliquer dans sidebar
-  if(window.innerWidth >= 768){
-
-  }
   window._showMoreCombos=()=>{ results.innerHTML=renderComboList(top.length); showRoute(0); };
   window._planCombos=top;
-  initPlanMap();
-  _openComboIdx = null;
-  // Afficher le premier itinéraire automatiquement
-  showRoute(0);
-  // Fermer les détails ouverts
-  document.querySelectorAll('[id^="combo-detail-"]').forEach(d=>d.style.display='none');
+  initPlanMap(); // s'assurer que la carte est initialisée
+  _openComboIdx = null; // reset à chaque nouveau calcul
 }
 
 let planLayerGroup=null;
-const ROUTE_COLORS_ELEC = ['#1a6b36','#2a8a4a','#3eaa62'];
-const ROUTE_COLORS_MECA = ['#8b1a1a','#b52a2a','#d94f4f'];
-const ROUTE_WEIGHTS = [4,3.5,3];
-const ROUTE_OPACITIES = [0.95,0.8,0.65];
-let _routeLines = [];;
 
 let _openComboIdx = null;
-
-async function compactPlanFloat(){
-  const from=document.getElementById('plan-from')?.value||'';
-  const to=document.getElementById('plan-to')?.value||'';
-  document.getElementById('plan-compact-from').textContent='🟢 '+from;
-  document.getElementById('plan-compact-to').textContent='🔴 '+to;
-  document.getElementById('plan-float-expanded').style.display='none';
-  document.getElementById('plan-float-compact').style.display='flex';
-}
-function expandPlanFloat(){
-  document.getElementById('plan-float-expanded').style.display='block';
-  document.getElementById('plan-float-compact').style.display='none';
-}
 
 async function toggleComboDetail(idx, el){
   const detailDiv = document.getElementById('combo-detail-'+idx);
@@ -1472,7 +1325,6 @@ async function toggleComboDetail(idx, el){
   _openComboIdx=idx;
   // Routing sur la carte
   await showRoute(idx);
-  compactPlanFloat();
   // Courbes dans la zone accordéon
   const inner=document.getElementById('combo-detail-inner-'+idx);
   inner.innerHTML='<div class="loader">Chargement…</div>';
@@ -1662,9 +1514,9 @@ async function showComboCourbes(combo, targetEl=null){
 
 /* ═══ INIT ════════════════════════════════════════════ */
 function initRanges(){
+  const lbDate=document.getElementById('lb-date'); if(lbDate&&!lbDate.value) lbDate.value=new Date().toISOString().slice(0,10);
+  const lbMonth=document.getElementById('lb-month'); if(lbMonth&&!lbMonth.value) lbMonth.value=new Date().toISOString().slice(0,7);
   onLbViewChange();
-  const lbDate=document.getElementById('lb-date'); if(lbDate) lbDate.value=new Date().toISOString().slice(0,10);
-  const lbMonth=document.getElementById('lb-month'); if(lbMonth) lbMonth.value=new Date().toISOString().slice(0,7);
   const now=new Date();
   document.getElementById('lb-date').value=now.toISOString().slice(0,10);
 }
@@ -1736,10 +1588,9 @@ async function showStationDetail(number, targetEl=null){
 
   let labels=[], dataElec=[], dataMeca=[];
 
-  const effectiveDate = d || new Date().toISOString().slice(0,10);
   if(view==='day'){
-    if(!effectiveDate) return;
-    const snaps=await fetchDay(effectiveDate)||[];
+    if(!d) return;
+    const snaps=await fetchDay(d)||[];
     snaps.forEach(snap=>{
       const sts=getSts(snap), st2=sts.find(x=>x.number===number);
       if(!st2) return;
@@ -1749,38 +1600,30 @@ async function showStationDetail(number, targetEl=null){
       dataMeca.push(st2.mechanical_bikes||0);
     });
   } else if(view==='month'){
-    const effectiveMth = mth || new Date().toISOString().slice(0,7);
-    if(!effectiveMth) return;
-    const [y,mo]=effectiveMth.split('-').map(Number);
+    if(!mth) return;
+    const [y,mo]=mth.split('-').map(Number);
     const daysInMonth=new Date(y,mo,0).getDate();
-    // Charger en parallèle par batch de 7 jours
-    const allDays=Array.from({length:daysInMonth},(_,i)=>{
-      const d=i+1, ds=y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-      labels.push(d+''); return ds;
-    });
-    for(let i=0;i<allDays.length;i+=7){
-      const batch=allDays.slice(i,i+7);
-      const results=await Promise.all(batch.map(ds=>fetchDay(ds)));
-      results.forEach(snaps=>{
-        snaps=snaps||[];
-        let e=0,m=0;
-        snaps.forEach(snap=>{
-          const st2=getSts(snap).find(x=>x.number===number);
-          if(st2){e+=st2.electrical_bikes||0;m+=st2.mechanical_bikes||0;}
-        });
-        dataElec.push(Math.round(e/Math.max(1,snaps.length)));
-        dataMeca.push(Math.round(m/Math.max(1,snaps.length)));
+    for(let day=1;day<=daysInMonth;day++){
+      const dateStr=y+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+      labels.push(day+'');
+      const snaps=await fetchDay(dateStr)||[];
+      let e=0,m=0;
+      snaps.forEach(snap=>{
+        const st2=getSts(snap).find(x=>x.number===number);
+        if(st2){e+=st2.electrical_bikes||0;m+=st2.mechanical_bikes||0;}
       });
+      dataElec.push(Math.round(e/Math.max(1,snaps.length)));
+      dataMeca.push(Math.round(m/Math.max(1,snaps.length)));
     }
+  } else {
     if(!yr) return;
     const today=new Date().toISOString().slice(0,10);
-    const yr2=effectiveYr;
     for(let mo=1;mo<=12;mo++){
       labels.push(['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'][mo-1]);
-      const daysInM=new Date(yr2,mo,0).getDate();
+      const daysInM=new Date(yr,mo,0).getDate();
       let e=0,m=0,cnt=0;
       for(let day=1;day<=daysInM;day++){
-        const dateStr=yr2+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+        const dateStr=yr+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
         if(dateStr>today) continue;
         const snaps=await fetchDay(dateStr)||[];
         snaps.forEach(snap=>{
@@ -1870,25 +1713,15 @@ function syncHourSelect(){
 
 /* ═══ BOOT ════════════════════════════════════════════ */
 async function boot(){
-  // Desktop : déplacer plan-float dans la sidebar
-
-
   initRanges();
-  allStations=await loadLatest(); window._lastStationUpdate=Date.now(); updateLiveStatus();
+  allStations=await loadLatest();
   await computeMovements();
   initMap();
   renderStations();
   initPlanMap();
 }
 boot();
-setInterval(async()=>{
-  allStations=await loadLatest();
-  window._lastStationUpdate=Date.now(); updateLiveStatus();
-  await computeMovements();
-  // Update couleurs seulement, pas recréation complète
-  _lastZoomMode=null; // force re-render au prochain renderStations
-  renderStations();
-},5*60*1000); window._lastStationUpdate=Date.now(); updateLiveStatus();
+setInterval(async()=>{ allStations=await loadLatest(); await computeMovements(); renderStations(); },5*60*1000);
 </script>
 </body>
 </html>
