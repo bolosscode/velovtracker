@@ -125,8 +125,8 @@ main{max-width:1500px;margin:auto;padding:20px}
 
 /* table leaderboard */
 #lb-table{width:100%;border-collapse:collapse;font-size:13px}
-#lb-table th{text-align:left;padding:10px 12px;border-bottom:2px solid var(--border);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--sub);background:#2c2c2e}
-#lb-table td{padding:9px 12px;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums}
+#lb-table th{text-align:left;padding:4px 7px;border-bottom:1px solid var(--border);font-size:10px;font-weight:600;text-transform:uppercase;color:var(--sub);background:#2c2c2e;white-space:nowrap}
+#lb-table td{padding:4px 7px;border-bottom:0.5px solid var(--border);font-variant-numeric:tabular-nums;font-size:12px}
 #lb-table tr:hover td{background:#2c2c2e}
 .rank-cell{font-weight:700;color:var(--blue);width:40px}
 .mv-bar{display:inline-block;height:6px;border-radius:3px;background:var(--blue);vertical-align:middle;margin-left:6px}
@@ -237,12 +237,12 @@ main{max-width:1500px;margin:auto;padding:20px}
   </div>
 </div>
 
-<div class="panel" id="tab-stats" style="padding:16px;overflow-y:auto;max-height:100vh">
+<div class="panel" id="tab-stats" style="padding:10px;overflow-y:auto;max-height:100vh">
   <!-- Contrôles globaux -->
   <!-- Contrôles globaux -->
-  <div class="card">
-    <div class="card-title">Période &amp; tri</div>
-    <div class="range">
+  <div class="card" style="padding:12px;margin-bottom:8px">
+    <div class="card-title" style="margin-bottom:8px;font-size:10px">Période &amp; tri</div>
+    <div class="range" style="gap:5px;padding:8px">
       <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px">
         <button onclick="onLbViewChange('day')" id="lb-pill-day" style="padding:5px 14px;border:none;background:#3a3a3c;color:#fff;font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Jour</button>
         <button onclick="onLbViewChange('month')" id="lb-pill-month" style="padding:5px 14px;border:none;background:transparent;color:var(--sub);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Mois</button>
@@ -255,9 +255,6 @@ main{max-width:1500px;margin:auto;padding:20px}
       <select id="lb-sort">
         <option value="mv">Mouvements ↕</option>
         <option value="rotation">Taux de rotation</option>
-        <option value="bikes">Vélos dispo</option>
-        <option value="elec">⚡ Électriques</option>
-        <option value="meca">🔧 Mécaniques</option>
         <option value="stands">Places libres</option>
         <option value="fill">% remplissage</option>
       </select>
@@ -417,7 +414,9 @@ async function loadLatest(){
     const r=await fetch(`data/latest.json?t=${Date.now()}`,{cache:'no-store'}); const d=await r.json(); return d.stations||[];
   }
 }
+const _fetchDayCache={};
 async function fetchDay(date){
+  if(_fetchDayCache[date]) return _fetchDayCache[date];
   try{
     const today=new Date().toISOString().slice(0,10);
     if(date===today){
@@ -440,8 +439,9 @@ async function fetchDay(date){
       } else {
         data=await r.json();
       }
-      if(data.base&&data.deltas) return expandDeltas(data);
-      if(Array.isArray(data)) return data;
+      const result=data.base&&data.deltas?expandDeltas(data):Array.isArray(data)?data:null;
+      if(result && date!==new Date().toISOString().slice(0,10)) _fetchDayCache[date]=result;
+      return result;
     }
     return null;
   }catch{ return null; }
@@ -678,8 +678,10 @@ function buildDropdown(inputId, ddId, opts){
         el.onclick=()=>{ input.value=l.name; dd.classList.remove('open'); opts.onGeoPos?.({lat:l.lat,lng:l.lng}); };
         dd.appendChild(el);
       });
-      if(stMatches.length||geoResults.length||lieuMatches.length) dd.classList.add('open');
-      else dd.classList.remove('open');
+      if(stMatches.length||geoResults.length||lieuMatches.length){
+        positionDropdown(inputId, ddId);
+        dd.classList.add('open');
+      } else dd.classList.remove('open');
     };
 
     render(); // afficher les stations tout de suite
@@ -834,7 +836,7 @@ async function computeLeaderboard(){
 function renderLbTable(mvData){
   const head=document.getElementById('lb-head'), body=document.getElementById('lb-body');
   if(!head||!body) return;
-  head.innerHTML='<tr><th>#</th><th>Station</th><th>⚡/🔧</th><th>🚲</th><th>🅿️</th><th>↕</th><th>%</th></tr>';
+  head.innerHTML='<tr><th>#</th><th>Station</th><th>⚡</th><th>🔧</th><th>🚲</th><th>🅿️</th><th>↕</th><th>%</th></tr>';
   const sortKey=document.getElementById('lb-sort').value;
   const maxMv=Math.max(1,...Object.values(mvData));
   const rows=allStations.map(st=>{
@@ -847,14 +849,14 @@ function renderLbTable(mvData){
   rows.sort(sorters[sortKey]||sorters.mv);
   body.innerHTML=rows.map((st,i)=>{
     const pct=Math.round(st.fill*100), cls=pct>=50?'fill-high':pct>=25?'fill-med':'fill-low';
-    const bw=Math.round(st.mv/maxMv*60);
-    return `<tr onclick="toggleStationDetail(${st.number},this)" style="cursor:pointer" id="lb-row-${st.number}">
+        return `<tr onclick="toggleStationDetail(${st.number},this)" style="cursor:pointer" id="lb-row-${st.number}">
       <td class="rank-cell">${i+1}</td>
       <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cleanName(st.name)}</td>
-      <td style="font-size:12px;color:var(--sub)">⚡${st.electrical_bikes} 🔧${st.mechanical_bikes}</td>
+      <td style="color:#1a7a3e;font-weight:600">${st.electrical_bikes}</td>
+      <td style="color:#b52a2a;font-weight:600">${st.mechanical_bikes}</td>
       <td><b>${st.available_bikes}</b></td>
-      <td>${st.available_bike_stands}</td>
-      <td>${st.mv}<span class="mv-bar" style="width:${bw}px"></span></td>
+      <td style="color:var(--sub)">${st.available_bike_stands}</td>
+      <td>${st.mv}</td>
       <td><span class="fill-pill ${cls}">${pct}%</span></td></tr>
       <tr class="detail-row" id="lb-detail-${st.number}" style="display:none">
         <td colspan="7" style="padding:0">
@@ -1548,7 +1550,7 @@ async function showStationDetail(number, targetEl=null){
 
   const detail=targetEl || document.getElementById('stats-detail');
   const view=document.getElementById('lb-view')?.value||'day';
-  const chartH=view==='day'?70:80;
+  const chartH=view==='day'?60:65;
   const chartType=view==='day'?'line':'bar';
   detail.innerHTML=
     '<div style="display:grid;grid-template-columns:110px 1fr;gap:10px;margin-bottom:10px;align-items:start">'+
@@ -1606,6 +1608,7 @@ async function showStationDetail(number, targetEl=null){
   } else {
     if(!yr) return;
     const today=new Date().toISOString().slice(0,10);
+    const yr2=yr;
     for(let mo=1;mo<=12;mo++){
       labels.push(['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'][mo-1]);
       const daysInM=new Date(yr,mo,0).getDate();
@@ -1626,9 +1629,14 @@ async function showStationDetail(number, targetEl=null){
 
   _chartSD_elec?.destroy();
   _chartSD_meca?.destroy();
-  const totalElec=dataElec.reduce((a,b)=>a+(b||0),0);
-  const totalMeca=dataMeca.reduce((a,b)=>a+(b||0),0);
-  const mvLabel=view==='day'?'vélos moy.':'moy. vélos/j';
+  // Moyenne réelle (pas somme cumulée)
+  const validElec=dataElec.filter(v=>v!==null&&v>0);
+  const validMeca=dataMeca.filter(v=>v!==null&&v>0);
+  const avgElec=validElec.length?Math.round(validElec.reduce((a,b)=>a+b,0)/validElec.length):0;
+  const avgMeca=validMeca.length?Math.round(validMeca.reduce((a,b)=>a+b,0)/validMeca.length):0;
+  const totalElec=avgElec;
+  const totalMeca=avgMeca;
+  const mvLabel=view==='day'?'vélos en moy.':'moy. vélos/j';
   const statsRow=document.getElementById('sd-stats-row');
   if(statsRow) statsRow.innerHTML=
     '<div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px">'+
@@ -1702,14 +1710,14 @@ function syncHourSelect(){
 /* ═══ BOOT ════════════════════════════════════════════ */
 async function boot(){
   initRanges();
-  allStations=await loadLatest();
+  allStations=await loadLatest(); window._lastStationUpdate=Date.now(); updateLiveStatus();
   await computeMovements();
   initMap();
   renderStations();
   initPlanMap();
 }
 boot();
-setInterval(async()=>{ allStations=await loadLatest(); await computeMovements(); renderStations(); },5*60*1000);
+setInterval(async()=>{ allStations=await loadLatest(); window._lastStationUpdate=Date.now(); updateLiveStatus(); await computeMovements(); renderStations(); },5*60*1000);
 </script>
 </body>
 </html>
