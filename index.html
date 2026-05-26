@@ -85,7 +85,7 @@ main{max-width:1500px;margin:auto;padding:20px}
 .loc-box{position:relative}
 .loc-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--sub);margin-bottom:5px;display:flex;align-items:center;gap:6px}
 .loc-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.search{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none;transition:border-color .15s}
+.search{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none;transition:border-color .15s;color:#fff;}
 .search:focus{border-color:var(--blue)}
 .dropdown{position:fixed;z-index:9999;background:#2c2c2e;border:1px solid rgba(255,255,255,.12);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.6);display:none;max-height:240px;overflow-y:auto;min-width:280px;background:#2c2c2e;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);display:none;z-index:100;max-height:220px;overflow-y:auto}
 .dropdown.open{display:block}
@@ -140,6 +140,14 @@ main{max-width:1500px;margin:auto;padding:20px}
 .range select,.range input{padding:8px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none}
 .btn{padding:8px 18px;border-radius:10px;border:none;background:#f5f5f7;color:#1c1c1e;font-size:13px;font-weight:600;cursor:pointer}
 .btn:hover{opacity:.85}
+.search::placeholder{color:rgba(255,255,255,.4)}
+
+@media(min-width:768px){
+  body{overflow:hidden}
+  #tab-map{height:100vh !important;width:100vw !important}
+  .map-rel{height:100% !important}
+  main{padding:0 !important;margin:0 !important;max-width:100vw !important}
+}
 </style>
 </head>
 <body>
@@ -159,7 +167,7 @@ main{max-width:1500px;margin:auto;padding:20px}
 
 
 
-<main style="padding:0">
+<main style="padding:0;overflow:hidden">
 
 
 
@@ -170,15 +178,15 @@ main{max-width:1500px;margin:auto;padding:20px}
 
     <!-- Flottant glass -->
     <div id="plan-float" style="position:absolute;top:58px;left:10px;width:min(360px,calc(100% - 20px));z-index:200;background:rgba(30,30,38,.78);border-radius:14px;border:0.5px solid rgba(255,255,255,.15);box-shadow:0 8px 32px rgba(0,0,0,.5);overflow:hidden;transition:max-height .3s cubic-bezier(.4,0,.2,1);max-height:250px">
-      <div id="plan-float-expanded" style="padding:10px 12px">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <div id="plan-float-expanded" style="padding:8px 10px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
           <div style="flex:1;background:rgba(255,255,255,.08);border-radius:10px;overflow:visible;border:0.5px solid rgba(255,255,255,.12)">
             <div style="position:relative">
               <input id="plan-from" class="search" type="text" placeholder="Départ…" autocomplete="off" style="background:transparent;border-radius:0;border:none;border-bottom:0.5px solid rgba(255,255,255,.08)"/>
               <div class="dropdown" id="plan-from-dd"></div>
             </div>
             <div style="position:relative">
-              <input id="plan-to" class="search" type="text" placeholder="Arrivée…" autocomplete="off" style="background:transparent;border-radius:0;border:none"/>
+              <input id="plan-to" class="search" type="text" placeholder="Arrivée…" autocomplete="off" style="background:transparent;border-radius:0;border:none;color:#fff"/>
               <div class="dropdown" id="plan-to-dd"></div>
             </div>
           </div>
@@ -229,7 +237,7 @@ main{max-width:1500px;margin:auto;padding:20px}
   </div>
 </div>
 
-<div class="panel" id="tab-stats">
+<div class="panel" id="tab-stats" style="padding:16px;overflow-y:auto;max-height:100vh">
   <!-- Contrôles globaux -->
   <!-- Contrôles globaux -->
   <div class="card">
@@ -294,8 +302,8 @@ function positionDropdown(inputId,ddId){
 function compactPlanFloat(){
   const from=document.getElementById('plan-from')?.value||'';
   const to=document.getElementById('plan-to')?.value||'';
-  document.getElementById('plan-compact-from').textContent='🟢 '+from;
-  document.getElementById('plan-compact-to').textContent='🔴 '+to;
+  document.getElementById('plan-compact-from').textContent=from;
+  document.getElementById('plan-compact-to').textContent=to;
   document.getElementById('plan-float-expanded').style.display='none';
   document.getElementById('plan-float-compact').style.display='flex';
 }
@@ -328,12 +336,26 @@ setInterval(()=>{ document.getElementById('clock').textContent=new Date().toLoca
 
 document.querySelectorAll('.tab').forEach(tab=>{
   tab.onclick=()=>{
-    // Sync les deux navs
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
-    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
-    // Activer le bon tab dans les deux navs
-    document.querySelectorAll(`.tab[data-tab="${tab.dataset.tab}"]`).forEach(t=>t.classList.add('on'));
-    document.getElementById('tab-'+tab.dataset.tab).classList.add('on');
+    const isMap = tab.dataset.tab==='map';
+    document.querySelectorAll('.tab').forEach(t=>{ t.classList.remove('on'); t.style.color='#636366'; });
+    document.querySelectorAll('.panel').forEach(p=>{ p.classList.remove('on'); p.style.display='none'; });
+    document.querySelectorAll(`.tab[data-tab="${tab.dataset.tab}"]`).forEach(t=>{ t.classList.add('on'); t.style.color='#fff'; });
+    const activePanel=document.getElementById('tab-'+tab.dataset.tab);
+    if(activePanel){ activePanel.classList.add('on'); activePanel.style.display=isMap?'flex':'block'; }
+    // Header : absolu sur carte, sticky sur stats
+    const hdr=document.querySelector('header');
+    if(hdr){
+      if(isMap){
+        hdr.style.position='absolute'; hdr.style.top='10px';
+        hdr.style.left='10px'; hdr.style.right='10px';
+        hdr.style.borderRadius='14px'; hdr.style.borderBottom='0.5px solid rgba(255,255,255,.12)';
+      } else {
+        hdr.style.position='sticky'; hdr.style.top='0';
+        hdr.style.left=''; hdr.style.right='';
+        hdr.style.borderRadius='0'; hdr.style.borderBottom='0.5px solid rgba(255,255,255,.08)';
+      }
+    }
+    document.body.style.overflow = isMap ? 'hidden' : 'auto';
     setTimeout(()=>{ map?.invalidateSize(); planMap?.invalidateSize(); },150);
     if(tab.dataset.tab==='map') setTimeout(()=>{ if(!map)initMap(); map?.invalidateSize(); renderStations(); },150);
     if(tab.dataset.tab==='stats') quickLeaderboard();
@@ -1140,53 +1162,27 @@ async function computePlan(){
       const depDist=planFromFixed?'':` · ${Math.round(combo.dep.dist||0)}m`;
 
       const cardBody=isNowMode&&combo.dep.live?`
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-top:0.5px solid rgba(255,255,255,.08)">
-          <div style="padding:6px 10px;border-right:0.5px solid rgba(255,255,255,.08)">
-            <div style="font-size:9px;font-weight:600;letter-spacing:.04em;color:#1a7a3e;margin-bottom:2px">⚡ ÉLEC</div>
-            <div style="font-size:17px;font-weight:700;color:#1a7a3e;line-height:1">${liveElec}</div>
-            <div style="font-size:10px;color:var(--dim)">${combo.depProb??'-'}% · moy ${combo.depN??'-'}</div>
-          </div>
-          <div style="padding:6px 10px;border-right:0.5px solid rgba(255,255,255,.08)">
-            <div style="font-size:9px;font-weight:600;letter-spacing:.04em;color:#b52a2a;margin-bottom:2px">🔧 MÉCA</div>
-            <div style="font-size:17px;font-weight:700;color:#b52a2a;line-height:1">${liveMeca}</div>
-            <div style="font-size:10px;color:var(--dim)">${combo.depProb??'-'}%</div>
-          </div>
-          <div style="padding:6px 10px">
-            <div style="font-size:9px;font-weight:600;letter-spacing:.04em;color:var(--sub);margin-bottom:2px">🅿️ PLACES</div>
-            <div style="font-size:17px;font-weight:700;color:var(--ink);line-height:1">${livePlaces}</div>
-            <div style="font-size:10px;color:var(--dim)">${combo.arrProb??'-'}% · moy ${combo.arrN??'-'}</div>
-          </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+          <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#1a7a3e;line-height:1">${liveElecN}</div><div style="font-size:8px;color:rgba(255,255,255,.35)">⚡</div></div>
+          <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#b52a2a;line-height:1">${liveMecaN}</div><div style="font-size:8px;color:rgba(255,255,255,.35)">🔧</div></div>
+          <div style="text-align:center"><div style="font-size:15px;font-weight:700;line-height:1">${livePlacesN}</div><div style="font-size:8px;color:rgba(255,255,255,.35)">🅿️</div></div>
+          ${sc?`<div style="background:${scBg};border-radius:5px;padding:2px 5px"><span style="font-size:11px;font-weight:700;color:${scCol}">${sc}%</span></div>`:''}
         </div>`:`
-        <div style="display:grid;grid-template-columns:1fr 1fr;border-top:0.5px solid rgba(255,255,255,.08)">
-          <div style="padding:6px 10px;border-right:0.5px solid rgba(255,255,255,.08)">
-            <div style="font-size:9px;font-weight:600;letter-spacing:.04em;color:var(--sub);margin-bottom:4px">🚲 DÉPART</div>
-            <div style="display:flex;gap:10px">
-              <div><div style="font-size:17px;font-weight:700;color:${(combo.depProb??0)>=60?'#1a7a3e':(combo.depProb??0)>=35?'#f59e0b':'#b52a2a'}">${combo.depProb??'-'}%</div><div style="font-size:9px;color:#1a7a3e">⚡ Élec</div></div>
-            </div>
-          </div>
-          <div style="padding:6px 10px">
-            <div style="font-size:9px;font-weight:600;letter-spacing:.04em;color:var(--sub);margin-bottom:4px">🅿️ ARRIVÉE</div>
-            <div style="font-size:20px;font-weight:700;color:${(combo.arrProb??0)>=60?'#1a7a3e':(combo.arrProb??0)>=35?'#f59e0b':'#b52a2a'}">${combo.arrProb??'-'}%</div>
-            <div style="font-size:10px;color:var(--dim)">moy ${combo.arrN??'-'}</div>
-          </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:12px;font-weight:700;color:${depCol}">${combo.depProb??'?'}%</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.35)">dép.</div>
+          <div style="font-size:12px;font-weight:700;color:${arrCol}">${combo.arrProb??'?'}%</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.35)">arr.</div>
         </div>`;
-
-      return `<div class="combo-card${i===0?' selected':''}" onclick="toggleComboDetail(${i},this)" data-idx="${i}" style="overflow:hidden;border-radius:10px;margin-bottom:6px;background:rgba(255,255,255,.06);border:0.5px solid rgba(255,255,255,.1)">
-        <div style="padding:8px 10px 5px">
-          <div style="display:flex;align-items:flex-start;gap:8px">
-            <div style="font-size:14px;font-weight:700;color:rgba(255,255,255,.3);min-width:18px;padding-top:1px">${i+1}</div>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:12px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🟢 ${cleanName(combo.dep.name)}</div>
-              <div style="font-size:11px;color:var(--sub);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🔴 ${cleanName(combo.arr.name)}</div>
-              <div style="font-size:10px;color:var(--dim);margin-top:2px">${Math.round(combo.dist/1000*10)/10} km · ~${combo.rideMin} min${depDist}</div>
-            </div>
-            ${isNowMode?`<div style="background:${scBg};border-radius:6px;padding:3px 8px;flex-shrink:0"><span style="font-size:13px;font-weight:700;color:${scCol}">${sc}%</span></div>`:''}
-          </div>
+      return `<div class="combo-card${i===0?' selected':''}" onclick="toggleComboDetail(${i},this)" data-idx="${i}" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;margin-bottom:4px;background:rgba(255,255,255,.06);border:0.5px solid rgba(255,255,255,.09);cursor:pointer">
+        <div style="width:3px;height:34px;border-radius:2px;background:${rColor};flex-shrink:0"></div>
+        <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.28);min-width:14px;flex-shrink:0">${i+1}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cleanName(combo.dep.name)}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cleanName(combo.arr.name)}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:1px">${Math.round(combo.dist/1000*10)/10}km · ~${combo.rideMin}min</div>
         </div>
         ${cardBody}
-        <div id="combo-detail-${i}" style="display:none;border-top:0.5px solid rgba(255,255,255,.08)">
-          <div id="combo-detail-inner-${i}" style="padding:12px"></div>
-        </div>
       </div>`;
     }).join('');
     const more=top.length>limit
@@ -1197,10 +1193,10 @@ async function computePlan(){
   const topScore=top[0]?.score??0;
   const autoLimit=topScore<30?top.length:topScore<50?Math.min(5,top.length):3;
   results.innerHTML=renderComboList(autoLimit);
-  window._showMoreCombos=()=>{ results.innerHTML=renderComboList(top.length); showRoute(0); };
+  window._showMoreCombos=()=>{ results.innerHTML=renderComboList(top.length); drawTop3Routes(); };
   window._planCombos=top;
   _openComboIdx=null;
-  showRoute(0);
+  drawTop3Routes();
 }
 
 let planLayerGroup=null;
@@ -1230,10 +1226,55 @@ async function toggleComboDetail(idx, el){
   await showRoute(idx);
   compactPlanFloat();
   // Courbes dans la zone accordéon
-  const inner=document.getElementById('combo-detail-inner-'+idx);
-  inner.innerHTML='<div class="loader">Chargement…</div>';
-  await showComboCourbes(window._planCombos?.[idx], inner);
   detailDiv.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+
+async function drawTop3Routes(){
+  const top=window._planCombos; if(!top||!top.length) return;
+  const bikeType=document.getElementById('plan-type')?.value||'elec';
+  const colorsElec=['#1a6b36','#2a8a4a','#3eaa62'];
+  const colorsMeca=['#7a1a1a','#a82a2a','#d04444'];
+  const colors=bikeType==='meca'?colorsMeca:colorsElec;
+  const weights=[4,3,2.5];
+  const opacities=[0.95,0.75,0.55];
+  if(planLayerGroup) planLayerGroup.clearLayers();
+  planLayerGroup=L.layerGroup().addTo(planMap);
+  const radius=parseInt(document.getElementById('plan-radius').value)||500;
+  // Marqueurs départ/arrivée
+  if(planFromPos&&!planFromFixed) L.circle([planFromPos.lat,planFromPos.lng],{radius,color:'#1a9e3f',fillColor:'#1a9e3f',fillOpacity:.07,weight:1.5,dashArray:'5,4'}).addTo(planLayerGroup);
+  if(planToPos&&!planToFixed) L.circle([planToPos.lat,planToPos.lng],{radius,color:'#c0001a',fillColor:'#c0001a',fillOpacity:.07,weight:1.5,dashArray:'5,4'}).addTo(planLayerGroup);
+  // Tracer les 3 premiers en parallèle
+  const routePromises=top.slice(0,3).map(async(combo,i)=>{
+    let coords=null;
+    try{
+      const brUrl=`https://brouter.de/brouter?lonlats=${combo.dep.lng},${combo.dep.lat}|${combo.arr.lng},${combo.arr.lat}&profile=trekking&alternativeidx=0&format=geojson`;
+      const rb=await fetch(brUrl,{signal:AbortSignal.timeout(10000)});
+      if(rb.ok){ const db=await rb.json(); const geom=db.features?.[0]?.geometry; if(geom?.type==='LineString') coords=geom.coordinates.map(([lng,lat])=>[lat,lng]); }
+    }catch{}
+    if(!coords){
+      try{
+        const osrmUrl=`https://router.project-osrm.org/route/v1/bike/${combo.dep.lng},${combo.dep.lat};${combo.arr.lng},${combo.arr.lat}?overview=full&geometries=polyline6`;
+        const ro=await fetch(osrmUrl,{signal:AbortSignal.timeout(10000)});
+        if(ro.ok){ const dor=await ro.json(); const geom=dor.routes?.[0]?.geometry; if(geom) coords=decodePolyline(geom); }
+      }catch{}
+    }
+    return {coords,i,combo};
+  });
+  const routes=await Promise.all(routePromises);
+  // Tracer en ordre inverse (le 1er par-dessus)
+  [...routes].reverse().forEach(({coords,i,combo})=>{
+    if(coords){
+      L.polyline(coords,{color:colors[i],weight:weights[i],opacity:opacities[i]}).addTo(planLayerGroup);
+    }
+    // Marqueurs stations
+    L.circleMarker([combo.dep.lat,combo.dep.lng],{radius:i===0?8:5,fillColor:colors[i],color:'#fff',weight:i===0?2:1,fillOpacity:.9})
+      .bindTooltip(cleanName(combo.dep.name),{direction:'top',permanent:i===0}).addTo(planLayerGroup);
+    L.circleMarker([combo.arr.lat,combo.arr.lng],{radius:i===0?8:5,fillColor:colors[i],color:'#fff',weight:i===0?2:1,fillOpacity:.9})
+      .bindTooltip(cleanName(combo.arr.name),{direction:'top',permanent:i===0}).addTo(planLayerGroup);
+  });
+  // Zoom sur le premier
+  if(routes[0]?.coords) planMap.fitBounds(L.polyline(routes[0].coords).getBounds().pad(.25));
 }
 
 async function showRoute(idx){
