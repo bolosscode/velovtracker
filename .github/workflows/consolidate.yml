@@ -1,50 +1,50 @@
 name: Consolidation Vélo'v J-1
 
 on:
-  workflow_dispatch:
-    inputs:
-      date:
-        description: 'Date à consolider (YYYY-MM-DD, défaut: hier)'
-        required: false
-        default: ''
+ workflow_dispatch:
+   inputs:
+     date:
+       description: 'Date à consolider (YYYY-MM-DD, défaut: hier)'
+       required: false
+       default: ''
 
 permissions:
-  contents: write
+ contents: write
 
 jobs:
-  consolidate:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+ consolidate:
+   runs-on: ubuntu-latest
+   timeout-minutes: 30
 
-    steps:
-      - uses: actions/checkout@v4
+   steps:
+     - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+     - uses: actions/setup-python@v5
+       with:
+         python-version: "3.12"
 
-      - run: pip install requests
+     - run: pip install requests
 
-      - name: Setup git
-        run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+     - name: Setup git
+       run: |
+         git config user.name  "github-actions[bot]"
+         git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Consolidation J-1
-        env:
-          GL_USER:     ${{ secrets.GL_USER }}
-          GL_PASSWORD: ${{ secrets.GL_PASSWORD }}
-        run: |
-          ARGS=""
-          [ -n "$GL_USER" ]     && ARGS="$ARGS --user $GL_USER"
-          [ -n "$GL_PASSWORD" ] && ARGS="$ARGS --password $GL_PASSWORD"
-          [ -n "${{ github.event.inputs.date }}" ] && ARGS="$ARGS --date ${{ github.event.inputs.date }}"
-          python consolidate.py $ARGS
+     - name: Consolidation J-1
+       env:
+         GL_USER:     ${{ secrets.GL_USER }}
+         GL_PASSWORD: ${{ secrets.GL_PASSWORD }}
+       run: |
+         ARGS=""
+         [ -n "$GL_USER" ]     && ARGS="$ARGS --user $GL_USER"
+         [ -n "$GL_PASSWORD" ] && ARGS="$ARGS --password $GL_PASSWORD"
+         [ -n "${{ github.event.inputs.date }}" ] && ARGS="$ARGS --date ${{ github.event.inputs.date }}"
+         python consolidate.py $ARGS
 
-      - name: Commit & push
-        run: |
-          git add data/history/
-          git diff --staged --quiet && echo "Rien à commiter" && exit 0
-          git commit -m "consolidation: $(date -u '+%Y-%m-%d')"
-          git pull origin main --rebase
-          git push origin main
+     - name: Pré-calcul stats
+       run: python precompute_stats.py
+
+     - name: Commit & push
+       run: |
+         git add data/history/ data/stats/
+         git diff --staged --quiet && echo "
