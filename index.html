@@ -428,7 +428,7 @@ async function fetchDay(date){
     }
     // Essayer .json.gz d'abord, puis .json en fallback
     for(const ext of ['.json.gz','.json']){
-      const r=await fetch(`data/history/${date}${ext}`);
+      const r=await fetch(`data/history/${date}${ext}`,{signal:AbortSignal.timeout(5000)});
       if(!r.ok) continue;
       let data;
       if(ext==='.json.gz'){
@@ -1032,14 +1032,22 @@ async function computePlan(){
   const targetH=isNowMode?now2.getHours():planHourVal;
   const bikeSpeedKmh=bikeType==='meca'?16:21;
 
-  // Charger historique
+  // Charger historique par batch pour ne pas tout bloquer
   const today=new Date();
-  const dayPromises=[];
+  const targetDates=[];
   for(let i=0;i<365;i++){
     const d=new Date(today); d.setDate(d.getDate()-i);
-    if(d.getDay()===targetDow) dayPromises.push(fetchDay(d.toISOString().slice(0,10)));
+    if(d.getDay()===targetDow) targetDates.push(d.toISOString().slice(0,10));
   }
-  const allDays=(await Promise.all(dayPromises)).filter(Boolean);
+  // Batch de 8 pour éviter les timeouts en cascade
+  const allDays=[];
+  results.innerHTML='<div class="loader">Chargement données (0/${targetDates.length})…</div>';
+  for(let i=0;i<targetDates.length;i+=8){
+    const batch=targetDates.slice(i,i+8);
+    const res=await Promise.all(batch.map(dt=>fetchDay(dt).catch(()=>null)));
+    res.filter(Boolean).forEach(d=>allDays.push(d));
+    results.innerHTML=`<div class="loader">Chargement données (${Math.min(i+8,targetDates.length)}/${targetDates.length})…</div>`;
+  }
   const filteredDays=allDays;
 
   // Stations proches
