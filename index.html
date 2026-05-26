@@ -1005,12 +1005,7 @@ async function computePlan(){
   // Afficher loader + ouvrir volet
   // Expansion du flottant
   document.getElementById('plan-float')?.style.setProperty('max-height','80vh');
-  results.innerHTML='';
-  results.scrollTop=0;
   results.innerHTML='<div class="loader">Analyse de l\'historique…</div>';
-  // Expansion du flottant
-  const pfEl=document.getElementById('plan-float');
-  if(pfEl) pfEl.style.maxHeight='80vh';
 
   // Météo
   const meteo=await fetchCurrentMeteo();
