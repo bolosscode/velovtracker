@@ -203,9 +203,10 @@ main{max-width:1500px;margin:auto;padding:20px}
         </div>
         <div id="plan-meteo" style="font-size:10px;color:rgba(255,255,255,.35);margin-bottom:8px"></div>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-          <div style="display:flex;background:rgba(255,255,255,.08);border-radius:20px;padding:2px">
-            <button id="btn-now" onclick="setModeNow()" style="padding:4px 11px;border:none;background:rgba(255,255,255,.15);color:#fff;font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">🟢</button>
-            <button id="btn-plan" onclick="setModePlan()" style="padding:4px 11px;border:none;background:transparent;color:rgba(255,255,255,.38);font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">🕐</button>
+          <div style="display:flex;background:rgba(255,255,255,.08);border-radius:20px;padding:2px;position:relative">
+            <div id="toggle-slider" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:rgba(255,255,255,.15);border-radius:18px;transition:transform .15s;pointer-events:none"></div>
+            <button id="btn-now" onclick="setModeNow()" style="position:relative;z-index:1;padding:5px 12px;border:none;background:transparent;color:#fff;cursor:pointer;display:flex;align-items:center"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" opacity=".35"/></svg></button>
+            <button id="btn-plan" onclick="setModePlan()" style="position:relative;z-index:1;padding:5px 12px;border:none;background:transparent;color:rgba(255,255,255,.38);cursor:pointer;display:flex;align-items:center"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
           </div>
           <div id="plan-params" style="display:none;gap:6px;align-items:center;flex-wrap:wrap">
             <select id="plan-dow" style="padding:4px 8px;border-radius:8px;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#f5f5f7;font-size:11px"><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option><option value="6">Samedi</option><option value="0">Dimanche</option></select>
@@ -215,8 +216,8 @@ main{max-width:1500px;margin:auto;padding:20px}
           </div>
           <div style="display:flex;background:rgba(255,255,255,.08);border-radius:20px;padding:2px;position:relative">
             <div id="type-slider-now" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:rgba(255,255,255,.15);border-radius:18px;transition:transform .15s;pointer-events:none"></div>
-            <button onclick="setBikeType('elec')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:#fff">⚡</button>
-            <button onclick="setBikeType('meca')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:rgba(255,255,255,.38)">🔧</button>
+            <button onclick="setBikeType('elec')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:#fff"style="position:relative;z-index:1;padding:5px 12px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;color:#fff"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></button>
+            <button onclick="setBikeType('meca')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:rgba(255,255,255,.38)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></button>
           </div>
           <select id="plan-type" style="display:none"><option value="elec">elec</option><option value="meca">meca</option><option value="any" selected>any</option></select>
           <button class="btn" onclick="computePlan()" style="margin-left:auto;padding:5px 14px;font-size:11px;border-radius:20px;background:rgba(255,255,255,.9);color:#111;border:none;font-weight:700;cursor:pointer">Calculer</button>
@@ -1353,6 +1354,13 @@ async function computePlan(){
         ${cardBody}
       </div>`;
     }).join('');
+    // Desktop : liste verticale classique
+    if(window.innerWidth > 640){
+      const more=top.length>limit
+        ?`<div style="text-align:center;padding:10px"><button onclick="window._showMoreCombos()" style="padding:5px 16px;border-radius:20px;border:0.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);font-size:12px;cursor:pointer;color:var(--sub)">Voir les ${top.length-limit} autres combinaisons</button></div>`:'';
+      return html+more;
+    }
+    // Mobile : slider swipeable
     const dots=shown.map((_,i)=>`<div class="cdot${i===0?' on':''}" style="width:${i===0?'14':'5'}px" data-cidx="${i}"></div>`).join('');
     const sliderHtml=`
       <div class="combo-slider-outer">
