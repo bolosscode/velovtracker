@@ -414,11 +414,52 @@ async function loadLatest(){
     const r=await fetch(`data/latest.json?t=${Date.now()}`,{cache:'no-store'}); const d=await r.json(); return d.stations||[];
   }
 }
+
+/* ═══ INDEXEDDB CACHE ════════════════════════════════ */
+const _idbName='velov-cache', _idbStore='days', _idbVer=1;
+let _idb=null;
+function openIDB(){
+  if(_idb) return Promise.resolve(_idb);
+  return new Promise((res,rej)=>{
+    const req=indexedDB.open(_idbName,_idbVer);
+    req.onupgradeneeded=e=>e.target.result.createObjectStore(_idbStore);
+    req.onsuccess=e=>{ _idb=e.target.result; res(_idb); };
+    req.onerror=()=>rej(req.error);
+  });
+}
+async function idbGet(key){
+  try{
+    const db=await openIDB();
+    return new Promise((res,rej)=>{
+      const tx=db.transaction(_idbStore,'readonly');
+      const req=tx.objectStore(_idbStore).get(key);
+      req.onsuccess=()=>res(req.result??null);
+      req.onerror=()=>res(null);
+    });
+  }catch{ return null; }
+}
+async function idbSet(key,val){
+  try{
+    const db=await openIDB();
+    return new Promise((res,rej)=>{
+      const tx=db.transaction(_idbStore,'readwrite');
+      tx.objectStore(_idbStore).put(val,key);
+      tx.oncomplete=()=>res();
+      tx.onerror=()=>res();
+    });
+  }catch{}
+}
+
 const _fetchDayCache={};
 async function fetchDay(date){
   if(_fetchDayCache[date]) return _fetchDayCache[date];
+  const today=new Date().toISOString().slice(0,10);
+  // Vérifier IDB pour les dates passées
+  if(date!==today){
+    const cached=await idbGet(date);
+    if(cached){ _fetchDayCache[date]=cached; return cached; }
+  }
   try{
-    const today=new Date().toISOString().slice(0,10);
     if(date===today){
       const r=await fetch(`data/today.json?t=${Date.now()}`,{cache:'no-store'});
       if(!r.ok) return null;
@@ -427,7 +468,7 @@ async function fetchDay(date){
     }
     // Essayer .json.gz d'abord, puis .json en fallback
     for(const ext of ['.json.gz','.json']){
-      const r=await fetch(`data/history/${date}${ext}`,{signal:AbortSignal.timeout(5000)});
+      const r=await fetch(`data/history/${date}${ext}`,{signal:AbortSignal.timeout(3000)});
       if(!r.ok) continue;
       let data;
       if(ext==='.json.gz'){
@@ -440,7 +481,10 @@ async function fetchDay(date){
         data=await r.json();
       }
       const result=data.base&&data.deltas?expandDeltas(data):Array.isArray(data)?data:null;
-      if(result && date!==new Date().toISOString().slice(0,10)) _fetchDayCache[date]=result;
+      if(result && date!==today){
+        _fetchDayCache[date]=result;
+        idbSet(date,result); // persist IDB
+      }
       return result;
     }
     return null;
@@ -518,7 +562,7 @@ async function computeMovements(){
 /* ═══ MAP ═════════════════════════════════════════════ */
 function initMap(){
   if(map) return;
-  map=L.map('map').setView([45.757,4.832],13);
+  map=L.map('map',{zoomControl:false}).setView([45.757,4.832],13); L.control.zoom({position:'bottomright'}).addTo(map);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
     {attribution:'© OpenStreetMap © CARTO',maxZoom:20}).addTo(map);
   map.on('zoomend', renderStations);
@@ -1029,21 +1073,31 @@ async function computePlan(){
   const targetH=isNowMode?now2.getHours():planHourVal;
   const bikeSpeedKmh=bikeType==='meca'?16:21;
 
-  // Charger historique par batch pour ne pas tout bloquer
-  const today=new Date();
-  const targetDates=[];
-  for(let i=0;i<365;i++){
-    const d=new Date(today); d.setDate(d.getDate()-i);
-    if(d.getDay()===targetDow) targetDates.push(d.toISOString().slice(0,10));
-  }
-  // Batch de 8 pour éviter les timeouts en cascade
+  // Charger les stats pré-calculées (quasi-instantané)
+  results.innerHTML='<div class="loader">Chargement stats…</div>';
+  const dowPy = [6,0,1,2,3,4,5][targetDow]; // JS dow (0=dim) → Python dow (0=lun)
+  const statsUrl=`data/stats/dow${dowPy}_h${String(targetH).padStart(2,'0')}.json`;
+  let preStats=null;
+  try{
+    const r=await fetch(statsUrl,{signal:AbortSignal.timeout(5000)});
+    if(r.ok) preStats=await r.json();
+  }catch{}
+
+  // Fallback : charger l'historique si pas de stats pré-calculées
   const allDays=[];
-  results.innerHTML='<div class="loader">Chargement données (0/${targetDates.length})…</div>';
-  for(let i=0;i<targetDates.length;i+=8){
-    const batch=targetDates.slice(i,i+8);
-    const res=await Promise.all(batch.map(dt=>fetchDay(dt).catch(()=>null)));
-    res.filter(Boolean).forEach(d=>allDays.push(d));
-    results.innerHTML=`<div class="loader">Chargement données (${Math.min(i+8,targetDates.length)}/${targetDates.length})…</div>`;
+  if(!preStats){
+    results.innerHTML='<div class="loader">Calcul historique…</div>';
+    const today2=new Date();
+    const targetDates=[];
+    for(let i=0;i<182;i++){
+      const d=new Date(today2); d.setDate(d.getDate()-i);
+      if(d.getDay()===targetDow) targetDates.push(d.toISOString().slice(0,10));
+    }
+    for(let i=0;i<targetDates.length;i+=16){
+      const batch=targetDates.slice(i,i+16);
+      const res=await Promise.all(batch.map(dt=>fetchDay(dt).catch(()=>null)));
+      res.filter(Boolean).forEach(d=>allDays.push(d));
+    }
   }
   const filteredDays=allDays;
 
@@ -1075,10 +1129,24 @@ async function computePlan(){
     try{ const mo=new Date(snapMeteo._ts||0).getMonth()+1||new Date().getMonth()+1; const r=(RAIN_R[mo]||RAIN_R[1])[targetH]||-0.15; return Math.max(0.3,1.0-Math.abs(r)*2); }catch{ return 0.5; }
   }
 
-  // Calcul probas
+  // Calcul probas — depuis preStats ou historique
   const allIds=new Set([...depStations.map(s=>s.number),...arrStations.map(s=>s.number)]);
   const stationProba={};
   const _depNAcc={},_arrNAcc={};
+
+  if(preStats){
+    // Lecture directe des stats pré-calculées
+    allIds.forEach(num=>{
+      const p=preStats[String(num)];
+      if(!p) return;
+      stationProba[num]={
+        dep:p.ep??null, arr:p.sp??null,
+        depN:p.eN??null, arrN:p.sN??null,
+        depProb:p.eProb??null, arrProb:p.sProb??null,
+        samples:p.n??0
+      };
+    });
+  } else {
   allIds.forEach(num=>{
     let depSum=0,arrSum=0,wSum=0,depHit=0,arrHit=0,samples=0;
     filteredDays.forEach(snaps=>{
@@ -1106,6 +1174,7 @@ async function computePlan(){
       samples
     };
   });
+  } // fin else fallback
 
   // Debug : compter les résultats
   let totalSamples=0;
@@ -1249,29 +1318,20 @@ let planLayerGroup=null;
 let _openComboIdx = null;
 
 async function toggleComboDetail(idx, el){
-  const detailDiv = document.getElementById('combo-detail-'+idx);
-  if(!detailDiv) return;
-  // Si déjà ouvert, fermer
+  // Si déjà sélectionné → désélectionner
   if(_openComboIdx === idx){
-    detailDiv.style.display='none';
     document.querySelectorAll('.combo-card').forEach(c=>c.classList.remove('selected'));
     _openComboIdx=null;
     return;
   }
-  // Fermer l'ancien
-  if(_openComboIdx !== null){
-    const old=document.getElementById('combo-detail-'+_openComboIdx);
-    if(old) old.style.display='none';
-  }
-  // Ouvrir ce détail
-  document.querySelectorAll('.combo-card').forEach((c,i)=>c.classList.toggle('selected',i===idx));
-  detailDiv.style.display='';
+  selectComboIdx(idx);
+}
+
+async function selectComboIdx(idx){
   _openComboIdx=idx;
-  // Routing sur la carte
-  await showRoute(idx);
+  document.querySelectorAll('.combo-card').forEach((c,i)=>c.classList.toggle('selected',i===idx));
   compactPlanFloat();
-  // Courbes dans la zone accordéon
-  detailDiv.scrollIntoView({behavior:'smooth',block:'nearest'});
+  await showRoute(idx);
 }
 
 
@@ -1287,8 +1347,9 @@ async function drawTop3Routes(){
   planLayerGroup=L.layerGroup().addTo(planMap);
   const radius=parseInt(document.getElementById('plan-radius').value)||500;
   // Marqueurs départ/arrivée
-  if(planFromPos&&!planFromFixed) L.circle([planFromPos.lat,planFromPos.lng],{radius,color:'#1a9e3f',fillColor:'#1a9e3f',fillOpacity:.07,weight:1.5,dashArray:'5,4'}).addTo(planLayerGroup);
-  if(planToPos&&!planToFixed) L.circle([planToPos.lat,planToPos.lng],{radius,color:'#c0001a',fillColor:'#c0001a',fillOpacity:.07,weight:1.5,dashArray:'5,4'}).addTo(planLayerGroup);
+  // Points départ/arrivée (sans cercle de rayon)
+  if(planFromPos&&!planFromFixed) L.circleMarker([planFromPos.lat,planFromPos.lng],{radius:7,fillColor:'#fff',color:'#1a9e3f',weight:3,fillOpacity:.9}).bindTooltip('Départ',{direction:'top'}).addTo(planLayerGroup);
+  if(planToPos&&!planToFixed) L.circleMarker([planToPos.lat,planToPos.lng],{radius:7,fillColor:'#fff',color:'#c0001a',weight:3,fillOpacity:.9}).bindTooltip('Arrivée',{direction:'top'}).addTo(planLayerGroup);
   // Tracer les 3 premiers en parallèle
   const routePromises=top.slice(0,3).map(async(combo,i)=>{
     let coords=null;
@@ -1310,13 +1371,20 @@ async function drawTop3Routes(){
   // Tracer en ordre inverse (le 1er par-dessus)
   [...routes].reverse().forEach(({coords,i,combo})=>{
     if(coords){
-      L.polyline(coords,{color:colors[i],weight:weights[i],opacity:opacities[i]}).addTo(planLayerGroup);
+      const pl=L.polyline(coords,{color:colors[i],weight:weights[i],opacity:opacities[i]}).addTo(planLayerGroup);
+      const _i=i; pl.on('click',()=>selectComboIdx(_i));
+      // Zone de clic élargie invisible
+      L.polyline(coords,{color:'transparent',weight:20,opacity:0}).on('click',()=>selectComboIdx(_i)).addTo(planLayerGroup);
     }
     // Marqueurs stations
-    L.circleMarker([combo.dep.lat,combo.dep.lng],{radius:i===0?8:5,fillColor:colors[i],color:'#fff',weight:i===0?2:1,fillOpacity:.9})
-      .bindTooltip(cleanName(combo.dep.name),{direction:'top',permanent:i===0}).addTo(planLayerGroup);
-    L.circleMarker([combo.arr.lat,combo.arr.lng],{radius:i===0?8:5,fillColor:colors[i],color:'#fff',weight:i===0?2:1,fillOpacity:.9})
-      .bindTooltip(cleanName(combo.arr.name),{direction:'top',permanent:i===0}).addTo(planLayerGroup);
+    const depM=L.circleMarker([combo.dep.lat,combo.dep.lng],{radius:i===0?9:6,fillColor:colors[i],color:'#fff',weight:i===0?2:1,fillOpacity:.9});
+    depM.bindTooltip(cleanName(combo.dep.name),{direction:'top',permanent:false});
+    depM.on('click',()=>selectComboIdx(_i));
+    depM.addTo(planLayerGroup);
+    const arrM=L.circleMarker([combo.arr.lat,combo.arr.lng],{radius:i===0?9:6,fillColor:colors[i],color:'#fff',weight:i===0?2:1,fillOpacity:.9});
+    arrM.bindTooltip(cleanName(combo.arr.name),{direction:'top',permanent:false});
+    arrM.on('click',()=>selectComboIdx(_i));
+    arrM.addTo(planLayerGroup);
   });
   // Zoom sur le premier
   if(routes[0]?.coords) planMap.fitBounds(L.polyline(routes[0].coords).getBounds().pad(.25));
@@ -1335,40 +1403,17 @@ async function showRoute(idx){
   // Marqueurs départ/arrivée réels
   const radius=parseInt(document.getElementById('plan-radius').value);
 
-  if(planFromPos&&!planFromFixed){
-    // Point départ — blanc avec bordure verte épaisse
-    L.circleMarker([planFromPos.lat,planFromPos.lng],{radius:9,fillColor:'#fff',color:'#1a9e3f',weight:3,fillOpacity:1})
-      .bindTooltip('<b>Départ</b>',{permanent:true,direction:'top'}).addTo(planLayerGroup);
-    // Cercle rayon — vert foncé, tirets
-    L.circle([planFromPos.lat,planFromPos.lng],{radius,color:'#1a9e3f',fillColor:'#1a9e3f',fillOpacity:.07,weight:2,dashArray:'6,4'}).addTo(planLayerGroup);
-    // Stations dans le rayon — carré vert vif
-    allStations.filter(s=>s.lat&&s.lng&&haversine(planFromPos.lat,planFromPos.lng,s.lat,s.lng)<=radius)
-      .forEach(s=>{
-        const m=L.circleMarker([s.lat,s.lng],{radius:7,fillColor:'#1a9e3f',color:'#fff',weight:2,fillOpacity:.95});
-        m.bindTooltip('🟢 '+cleanName(s.name),{direction:'top'});
-        m.addTo(planLayerGroup);
-      });
-  }
-  if(planToPos&&!planToFixed){
-    // Point arrivée — blanc avec bordure rouge épaisse
-    L.circleMarker([planToPos.lat,planToPos.lng],{radius:9,fillColor:'#fff',color:'#c0001a',weight:3,fillOpacity:1})
-      .bindTooltip('<b>Arrivée</b>',{permanent:true,direction:'top'}).addTo(planLayerGroup);
-    // Cercle rayon — rouge foncé, tirets
-    L.circle([planToPos.lat,planToPos.lng],{radius,color:'#c0001a',fillColor:'#c0001a',fillOpacity:.07,weight:2,dashArray:'6,4'}).addTo(planLayerGroup);
-    // Stations dans le rayon — rouge vif
-    allStations.filter(s=>s.lat&&s.lng&&haversine(planToPos.lat,planToPos.lng,s.lat,s.lng)<=radius)
-      .forEach(s=>{
-        const m=L.circleMarker([s.lat,s.lng],{radius:7,fillColor:'#c0001a',color:'#fff',weight:2,fillOpacity:.95});
-        m.bindTooltip('🔴 '+cleanName(s.name),{direction:'top'});
-        m.addTo(planLayerGroup);
-      });
-  }
+  // Points départ/arrivée épurés
+  if(planFromPos&&!planFromFixed)
+    L.circleMarker([planFromPos.lat,planFromPos.lng],{radius:8,fillColor:'#fff',color:'#1a9e3f',weight:3,fillOpacity:.9}).bindTooltip('Départ',{direction:'top'}).addTo(planLayerGroup);
+  if(planToPos&&!planToFixed)
+    L.circleMarker([planToPos.lat,planToPos.lng],{radius:8,fillColor:'#fff',color:'#c0001a',weight:3,fillOpacity:.9}).bindTooltip('Arrivée',{direction:'top'}).addTo(planLayerGroup);
 
-  // Stations
+  // Stations départ/arrivée
   L.circleMarker([combo.dep.lat,combo.dep.lng],{radius:10,fillColor:'#1a7a3e',color:'#fff',weight:2,fillOpacity:.95})
-    .bindTooltip(cleanName(combo.dep.name),{permanent:true,direction:'top'}).addTo(planLayerGroup);
+    .bindTooltip(cleanName(combo.dep.name),{permanent:false,direction:'top'}).addTo(planLayerGroup);
   L.circleMarker([combo.arr.lat,combo.arr.lng],{radius:10,fillColor:'#ff3b30',color:'#fff',weight:2,fillOpacity:.95})
-    .bindTooltip(cleanName(combo.arr.name),{permanent:true,direction:'top'}).addTo(planLayerGroup);
+    .bindTooltip(cleanName(combo.arr.name),{permanent:false,direction:'top'}).addTo(planLayerGroup);
 
   // Routing Valhalla entre les deux stations
   const bikeType=document.getElementById('plan-type').value;
