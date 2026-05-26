@@ -942,12 +942,7 @@ function initPlanMap(){
      const windStr=meteo.wind!==undefined?` · ${meteo.wind}km/h${windArr}`:''
     const meteoEl=document.getElementById('plan-meteo');
     if(meteoEl){
-      document.getElementById('plan-meteo-icon').textContent=m.icon;
-      document.getElementById('plan-meteo-label').textContent=`${m.label}${meteo.precipitation>0?' — '+meteo.precipitation.toFixed(1)+' mm/h':''}${tempStr}${windStr}`;
-      document.getElementById('plan-meteo-sub').textContent=
-        meteo.rain?'Conditions pluvieuses':'Conditions favorables au vélo';
-      meteoEl.style.display='flex';
-      meteoEl.style.background=meteo.rain?'rgba(0,113,227,.06)':'rgba(40,205,65,.06)';
+      meteoEl.textContent=(m.icon||'')+' '+(meteo.temp!==undefined?meteo.temp+'°C':'')+' · '+(meteo.wind!==undefined?meteo.wind+' km/h':'').trim();
     }
   });
 }
@@ -1086,7 +1081,8 @@ async function computePlan(){
     let depSum=0,arrSum=0,wSum=0,depHit=0,arrHit=0,samples=0;
     filteredDays.forEach(snaps=>{
       snaps.forEach(snap=>{
-        const h=(new Date(getTs(snap)).getUTCHours()+2)%24;
+        const snapDate=new Date(getTs(snap));
+        const h=snapDate.getHours();
         if(h!==targetH) return;
         const sts=getSts(snap),st=sts.find(s=>s.number===num);
         if(!st||!st.bike_stands) return;
@@ -1108,6 +1104,45 @@ async function computePlan(){
       samples
     };
   });
+
+  // Debug : compter les résultats
+  let totalSamples=0;
+  allIds.forEach(num=>{ totalSamples+=stationProba[num]?.samples||0; });
+  console.log('allDays:',allDays.length,'filteredDays:',filteredDays.length,'allIds:',allIds.size,'totalSamples:',totalSamples,'targetH:',targetH,'targetDow:',targetDow);
+
+  // Si aucun sample — peut-être un problème d'heure
+  // Essayer avec +1 aussi (heure d'hiver)
+  if(totalSamples===0 && allDays.length>0){
+    const targetH2=(targetH+23)%24; // essayer H-1
+    console.log('Retry avec targetH2:',targetH2);
+    allIds.forEach(num=>{
+      let depSum=0,arrSum=0,wSum=0,depHit=0,arrHit=0,samples=0;
+      filteredDays.forEach(snaps=>{
+        snaps.forEach(snap=>{
+          const snapDate=getTs(snap);
+          const d=new Date(snapDate);
+          const h=d.getHours(); // heure locale directe
+          if(h!==targetH&&h!==targetH2) return;
+          const sts=getSts(snap),st=sts.find(s=>s.number===num);
+          if(!st||!st.bike_stands) return;
+          const depKey=bikeType==='elec'?'electrical_bikes':bikeType==='meca'?'mechanical_bikes':'available_bikes';
+          const w=0.8;
+          const depVal=st[depKey]||0, arrVal=st.available_bike_stands||0;
+          depSum+=depVal/st.bike_stands*100*w; arrSum+=arrVal/st.bike_stands*100*w; wSum+=w;
+          if(depVal>=1) depHit+=w; if(arrVal>=1) arrHit+=w; samples++;
+          _depNAcc[num]=(_depNAcc[num]||0)+depVal*w; _arrNAcc[num]=(_arrNAcc[num]||0)+arrVal*w;
+        });
+      });
+      if(wSum>0) stationProba[num]={
+        dep:Math.round(depSum/wSum), arr:Math.round(arrSum/wSum),
+        depN:Math.round((_depNAcc[num]||0)/wSum*10)/10,
+        arrN:Math.round((_arrNAcc[num]||0)/wSum*10)/10,
+        depProb:Math.round(depHit/wSum*100),
+        arrProb:Math.round(arrHit/wSum*100),
+        samples
+      };
+    });
+  }
 
   // Générer combinaisons
   const combos=[];
@@ -1157,6 +1192,11 @@ async function computePlan(){
     const shown=top.slice(0,limit);
     const html=shown.map((combo,i)=>{
       const sc=Math.round(combo.score??0);
+      const bt=document.getElementById('plan-type')?.value||'elec';
+      const rColors=bt==='meca'?['#7a1a1a','#a82a2a','#d04444']:['#1a6b36','#2a8a4a','#3eaa62'];
+      const rColor=i<3?rColors[i]:'transparent';
+      const depCol=(combo.depProb??0)>=60?'#1a7a3e':(combo.depProb??0)>=35?'#f59e0b':'#b52a2a';
+      const arrCol=(combo.arrProb??0)>=60?'#1a7a3e':(combo.arrProb??0)>=35?'#f59e0b':'#b52a2a';
       const scCol=sc>=60?'#1a7a3e':sc>=35?'#f59e0b':'#b52a2a';
       const scBg=sc>=60?'#0d2b1a':sc>=35?'#2b1a00':'#2b0a0a';
       const liveElec=combo.dep.live?.electrical_bikes??0;
@@ -1166,9 +1206,9 @@ async function computePlan(){
 
       const cardBody=isNowMode&&combo.dep.live?`
         <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
-          <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#1a7a3e;line-height:1">${liveElecN}</div><div style="font-size:8px;color:rgba(255,255,255,.35)">⚡</div></div>
-          <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#b52a2a;line-height:1">${liveMecaN}</div><div style="font-size:8px;color:rgba(255,255,255,.35)">🔧</div></div>
-          <div style="text-align:center"><div style="font-size:15px;font-weight:700;line-height:1">${livePlacesN}</div><div style="font-size:8px;color:rgba(255,255,255,.35)">🅿️</div></div>
+          <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#1a7a3e;line-height:1">${liveElec}</div><div style="font-size:8px;color:rgba(255,255,255,.35)">⚡</div></div>
+          <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#b52a2a;line-height:1">${liveMeca}</div><div style="font-size:8px;color:rgba(255,255,255,.35)">🔧</div></div>
+          <div style="text-align:center"><div style="font-size:15px;font-weight:700;line-height:1">${livePlaces}</div><div style="font-size:8px;color:rgba(255,255,255,.35)">🅿️</div></div>
           ${sc?`<div style="background:${scBg};border-radius:5px;padding:2px 5px"><span style="font-size:11px;font-weight:700;color:${scCol}">${sc}%</span></div>`:''}
         </div>`:`
         <div style="text-align:right;flex-shrink:0">
