@@ -946,6 +946,7 @@ function initPlanMap(){
         pf.style.overflowY='hidden';
       }
       expandPlanFloat();
+
     });
   }
   if(_planDropdownsInit) return;
@@ -1330,13 +1331,17 @@ async function toggleComboDetail(idx, el){
 async function selectComboIdx(idx){
   _openComboIdx=idx;
   document.querySelectorAll('.combo-card').forEach((c,i)=>c.classList.toggle('selected',i===idx));
-  compactPlanFloat();
+  // Compact seulement si pas déjà compact
+  const compact=document.getElementById('plan-float-compact');
+  if(compact && compact.style.display!=='flex') compactPlanFloat();
   await showRoute(idx);
 }
 
 
+
 async function drawTop3Routes(){
   const top=window._planCombos; if(!top||!top.length) return;
+
   const bikeType=document.getElementById('plan-type')?.value||'elec';
   const colorsElec=['#1a6b36','#2a8a4a','#3eaa62'];
   const colorsMeca=['#7a1a1a','#a82a2a','#d04444'];
@@ -1347,9 +1352,15 @@ async function drawTop3Routes(){
   planLayerGroup=L.layerGroup().addTo(planMap);
   const radius=parseInt(document.getElementById('plan-radius').value)||500;
   // Marqueurs départ/arrivée
-  // Points départ/arrivée (sans cercle de rayon)
-  if(planFromPos&&!planFromFixed) L.circleMarker([planFromPos.lat,planFromPos.lng],{radius:7,fillColor:'#fff',color:'#1a9e3f',weight:3,fillOpacity:.9}).bindTooltip('Départ',{direction:'top'}).addTo(planLayerGroup);
-  if(planToPos&&!planToFixed) L.circleMarker([planToPos.lat,planToPos.lng],{radius:7,fillColor:'#fff',color:'#c0001a',weight:3,fillOpacity:.9}).bindTooltip('Arrivée',{direction:'top'}).addTo(planLayerGroup);
+  // Points départ/arrivée + cercles de rayon
+  if(planFromPos&&!planFromFixed){
+    L.circleMarker([planFromPos.lat,planFromPos.lng],{radius:7,fillColor:'#fff',color:'#1a9e3f',weight:3,fillOpacity:.9}).bindTooltip('Départ',{direction:'top'}).addTo(planLayerGroup);
+    L.circle([planFromPos.lat,planFromPos.lng],{radius,color:'#1a9e3f',fillColor:'#1a9e3f',fillOpacity:.05,weight:1.5,dashArray:'6,4'}).addTo(planLayerGroup);
+  }
+  if(planToPos&&!planToFixed){
+    L.circleMarker([planToPos.lat,planToPos.lng],{radius:7,fillColor:'#fff',color:'#c0001a',weight:3,fillOpacity:.9}).bindTooltip('Arrivée',{direction:'top'}).addTo(planLayerGroup);
+    L.circle([planToPos.lat,planToPos.lng],{radius,color:'#c0001a',fillColor:'#c0001a',fillOpacity:.05,weight:1.5,dashArray:'6,4'}).addTo(planLayerGroup);
+  }
   // Tracer les 3 premiers en parallèle
   const routePromises=top.slice(0,3).map(async(combo,i)=>{
     let coords=null;
