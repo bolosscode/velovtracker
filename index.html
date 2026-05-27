@@ -35,7 +35,7 @@
   .combo-pct{font-size:18px}
 }
 @media(min-width:641px){
-  #plan-float{width:calc(100vw / 3 - 20px);right:auto;}
+  #plan-float{width:calc(100vw / 3 - 20px);right:auto !important;}
   #bottom-nav{display:none}
 }
 #bottom-nav{
@@ -187,7 +187,7 @@ main{max-width:1500px;margin:auto;padding:20px}
     <div id="map" style="height:100%;width:100%"></div>
 
     <!-- Flottant glass -->
-    <div id="plan-float" style="position:absolute;top:58px;left:10px;z-index:200;background:rgba(30,30,38,.78);border-radius:14px;border:0.5px solid rgba(255,255,255,.15);box-shadow:0 8px 32px rgba(0,0,0,.5);overflow:visible;transition:max-height .3s cubic-bezier(.4,0,.2,1),opacity .2s;max-height:250px"><div id="plan-close-btn" onclick="closePlanFloat()" style="position:absolute;top:-7px;right:-7px;width:16px;height:16px;border-radius:50%;background:#2c2c2e;border:0.5px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:201"><svg width="8" height="8" viewBox="0 0 8 8" fill="none"><line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="rgba(255,255,255,.45)" stroke-width="1.5" stroke-linecap="round"/><line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="rgba(255,255,255,.45)" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+    <div id="plan-float" style="position:absolute;top:58px;left:10px;right:10px;z-index:200;background:rgba(30,30,38,.78);border-radius:14px;border:0.5px solid rgba(255,255,255,.15);box-shadow:0 8px 32px rgba(0,0,0,.5);overflow:visible;transition:max-height .3s cubic-bezier(.4,0,.2,1),opacity .2s;max-height:250px"><div id="plan-close-btn" onclick="closePlanFloat()" style="position:absolute;top:-7px;right:-7px;width:16px;height:16px;border-radius:50%;background:#2c2c2e;border:0.5px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:201"><svg width="8" height="8" viewBox="0 0 8 8" fill="none"><line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="rgba(255,255,255,.45)" stroke-width="1.5" stroke-linecap="round"/><line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="rgba(255,255,255,.45)" stroke-width="1.5" stroke-linecap="round"/></svg></div>
       <div style="overflow:hidden;border-radius:14px">
       <div id="plan-float-expanded" style="padding:8px 10px">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
@@ -352,7 +352,10 @@ function expandPlanFloat(){
   document.getElementById('plan-float-expanded').style.display='block';
   document.getElementById('plan-float-compact').style.display='none';
   const pf=document.getElementById('plan-float');
-  if(pf) pf.style.maxHeight=window._planCombos?'80vh':'250px';
+  if(!pf) return;
+  const isMobile=window.innerWidth<=640;
+  if(window._planCombos) pf.style.maxHeight=isMobile?'58vh':'80vh';
+  else pf.style.maxHeight=isMobile?'220px':'250px';
 }
 
 
@@ -1350,9 +1353,9 @@ async function computePlan(){
       const cardBody=isNowMode&&combo.dep.live?`
         <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end;flex-shrink:0">
           <div style="display:flex;gap:5px;align-items:center">
-            <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#1a7a3e;line-height:1">${liveElec}</div><div style="font-size:8px;color:rgba(255,255,255,.3)">⚡ live</div></div>
-            <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#b52a2a;line-height:1">${liveMeca}</div><div style="font-size:8px;color:rgba(255,255,255,.3)">🔧 live</div></div>
-            <div style="text-align:center"><div style="font-size:15px;font-weight:700;line-height:1">${livePlaces}</div><div style="font-size:8px;color:rgba(255,255,255,.3)">🅿️ live</div></div>
+            <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#1a7a3e;line-height:1">${liveElec}</div><div style="font-size:8px;color:rgba(255,255,255,.3)">⚡</div></div>
+            <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#b52a2a;line-height:1">${liveMeca}</div><div style="font-size:8px;color:rgba(255,255,255,.3)">🔧</div></div>
+            <div style="text-align:center"><div style="font-size:15px;font-weight:700;line-height:1">${livePlaces}</div><div style="font-size:8px;color:rgba(255,255,255,.3)">🅿️</div></div>
           </div>
           <div style="display:flex;gap:5px;align-items:center">
             ${avgDepN!==null?`<div style="font-size:9px;color:rgba(255,255,255,.35)">moy. <span style="color:rgba(255,255,255,.6);font-weight:600">${avgDepN}</span> dép · <span style="color:rgba(255,255,255,.6);font-weight:600">${avgArrN??'?'}</span> arr.</div>`:''}
@@ -1400,6 +1403,7 @@ async function computePlan(){
   const topScore=top[0]?.score??0;
   const autoLimit=topScore<30?top.length:topScore<50?Math.min(5,top.length):3;
   results.innerHTML=renderComboList(autoLimit);
+  if(document.getElementById('plan-float')) document.getElementById('plan-float').style.maxHeight=window.innerWidth<=640?'58vh':'80vh';
   window._showMoreCombos=()=>{ results.innerHTML=renderComboList(top.length); initSliderSwipe(); drawTop3Routes(); };
   initSliderSwipe();
   window._planCombos=top;
