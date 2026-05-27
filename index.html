@@ -309,9 +309,17 @@ function compactPlanFloat(){
     const sc=Math.round(combo.score??0);
     const scCol=sc>=60?'#30d158':sc>=35?'#ff9f0a':'#ff453a';
     const scBg=sc>=60?'#0d2b1a':sc>=35?'#2b1a00':'#2b0a0a';
-    const livePlaces=combo.arr.live?.available_bike_stands??'?';
-    const liveElec=combo.dep.live?.electrical_bikes??0;
-    const liveMeca=combo.dep.live?.mechanical_bikes??0;
+    const isNow=(window._planMode||'now')==='now';
+    // Now : données live ; Plan : moyennes historiques
+    const livePlaces=isNow
+      ? (combo.arr.live?.available_bike_stands??'?')
+      : (combo.arrN!=null ? Math.round(combo.arrN) : '?');
+    const liveElec=isNow
+      ? (combo.dep.live?.electrical_bikes??0)
+      : (combo.depN!=null ? Math.round(combo.depN) : '?');
+    const liveMeca=isNow
+      ? (combo.dep.live?.mechanical_bikes??0)
+      : (combo.depMN!=null ? Math.round(combo.depMN) : '?');
     const top=window._planCombos||[];
     const dotsHtml=top.slice(0,Math.min(top.length,5)).map((_,i)=>
       `<div class="cdot${i===idx?' on':''}" style="width:${i===idx?'14':'5'}px"></div>`).join('');
@@ -1227,7 +1235,7 @@ async function computePlan(){
       if(!p) return;
       stationProba[num]={
         dep:p.ep??null, arr:p.sp??null,
-        depN:p.eN??null, arrN:p.sN??null,
+        depN:p.eN??null, depMN:p.mN??null, arrN:p.sN??null,
         depProb:p.eProb??null, arrProb:p.sProb??null,
         samples:p.n??0
       };
