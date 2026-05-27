@@ -310,16 +310,15 @@ function compactPlanFloat(){
     const scCol=sc>=60?'#30d158':sc>=35?'#ff9f0a':'#ff453a';
     const scBg=sc>=60?'#0d2b1a':sc>=35?'#2b1a00':'#2b0a0a';
     const isNow=(window._planMode||'now')==='now';
-    // Now : données live ; Plan : moyennes historiques
     const livePlaces=isNow
       ? (combo.arr.live?.available_bike_stands??'?')
-      : (combo.arrN!=null ? Math.round(combo.arrN) : '?');
+      : (combo.arrN!=null ? Math.round(combo.arrN) : (combo.arr.live?.available_bike_stands??'?'));
     const liveElec=isNow
       ? (combo.dep.live?.electrical_bikes??0)
-      : (combo.depN!=null ? Math.round(combo.depN) : '?');
+      : (combo.depN!=null ? Math.round(combo.depN) : (combo.dep.live?.electrical_bikes??0));
     const liveMeca=isNow
       ? (combo.dep.live?.mechanical_bikes??0)
-      : (combo.depMN!=null ? Math.round(combo.depMN) : '?');
+      : (combo.dep.live?.mechanical_bikes??0);
     const top=window._planCombos||[];
     const dotsHtml=top.slice(0,Math.min(top.length,5)).map((_,i)=>
       `<div class="cdot${i===idx?' on':''}" style="width:${i===idx?'14':'5'}px"></div>`).join('');
@@ -1162,31 +1161,19 @@ async function computePlan(){
   const targetH=isNowMode?now2.getHours():planHourVal;
   const bikeSpeedKmh=bikeType==='meca'?16:21;
 
-  // Charger les stats pré-calculées (quasi-instantané)
-  results.innerHTML='<div class="loader">Chargement stats…</div>';
-  const dowPy = [6,0,1,2,3,4,5][targetDow]; // JS dow (0=dim) → Python dow (0=lun)
-  const statsUrl=`data/stats/dow${dowPy}_h${String(targetH).padStart(2,'0')}.json`;
-  let preStats=null;
-  try{
-    const r=await fetch(statsUrl,{signal:AbortSignal.timeout(5000)});
-    if(r.ok) preStats=await r.json();
-  }catch{}
-
-  // Fallback : charger l'historique si pas de stats pré-calculées
+  // Charger l'historique
+  results.innerHTML='<div class="loader">Calcul historique…</div>';
   const allDays=[];
-  if(!preStats){
-    results.innerHTML='<div class="loader">Calcul historique…</div>';
-    const today2=new Date();
-    const targetDates=[];
-    for(let i=0;i<182;i++){
-      const d=new Date(today2); d.setDate(d.getDate()-i);
-      if(d.getDay()===targetDow) targetDates.push(d.toISOString().slice(0,10));
-    }
-    for(let i=0;i<targetDates.length;i+=16){
-      const batch=targetDates.slice(i,i+16);
-      const res=await Promise.all(batch.map(dt=>fetchDay(dt).catch(()=>null)));
-      res.filter(Boolean).forEach(d=>allDays.push(d));
-    }
+  const today2=new Date();
+  const targetDates=[];
+  for(let i=0;i<182;i++){
+    const d=new Date(today2); d.setDate(d.getDate()-i);
+    if(d.getDay()===targetDow) targetDates.push(d.toISOString().slice(0,10));
+  }
+  for(let i=0;i<targetDates.length;i+=16){
+    const batch=targetDates.slice(i,i+16);
+    const res=await Promise.all(batch.map(dt=>fetchDay(dt).catch(()=>null)));
+    res.filter(Boolean).forEach(d=>allDays.push(d));
   }
 
   // Stations proches
@@ -1217,30 +1204,11 @@ async function computePlan(){
     try{ const mo=new Date(snapMeteo._ts||0).getMonth()+1||new Date().getMonth()+1; const r=(RAIN_R[mo]||RAIN_R[1])[targetH]||-0.15; return Math.max(0.3,1.0-Math.abs(r)*2); }catch{ return 0.5; }
   }
 
-  // Calcul probas — depuis preStats ou historique
+  // Calcul probas depuis l'historique
   const allIds=new Set([...depStations.map(s=>s.number),...arrStations.map(s=>s.number)]);
   const stationProba={};
   const _depNAcc={},_arrNAcc={};
 
-  if(preStats){
-    // Lecture des stats pré-calculées — compatible ancien format {ep,sp,...} et nouveau {dry:{},wet:{}}
-    const condKey = isRainy ? 'wet' : 'dry';
-    allIds.forEach(num=>{
-      const entry=preStats[String(num)];
-      if(!entry) return;
-      // Nouveau format dry/wet
-      let p = entry[condKey] ?? entry['dry'] ?? entry['wet'];
-      // Ancien format direct (ep,sp,eN,sN...)
-      if(!p && entry.ep!==undefined) p = entry;
-      if(!p) return;
-      stationProba[num]={
-        dep:p.ep??null, arr:p.sp??null,
-        depN:p.eN??null, depMN:p.mN??null, arrN:p.sN??null,
-        depProb:p.eProb??null, arrProb:p.sProb??null,
-        samples:p.n??0
-      };
-    });
-  } else {
   allIds.forEach(num=>{
     let depSum=0,arrSum=0,wSum=0,depHit=0,arrHit=0,samples=0;
     allDays.forEach(snaps=>{
@@ -1268,7 +1236,6 @@ async function computePlan(){
       samples
     };
   });
-  } // fin else fallback
 
   // Debug : compter les résultats
   let totalSamples=0;
@@ -1729,21 +1696,25 @@ async function showStationDetail(number, targetEl=null){
 
   const detail=targetEl || document.getElementById('stats-detail');
   const view=document.getElementById('lb-view')?.value||'day';
-  const chartH=view==='day'?60:65;
+  const chartH=window.innerWidth<=640?55:65;
   const chartType=view==='day'?'line':'bar';
+  // Détruire les charts AVANT de recréer le DOM
+  _chartSD_elec?.destroy(); _chartSD_elec=null;
+  _chartSD_meca?.destroy(); _chartSD_meca=null;
+  const isMob=window.innerWidth<=640;
   detail.innerHTML=
-    '<div style="display:grid;grid-template-columns:110px 1fr;gap:10px;margin-bottom:10px;align-items:start">'+
-    '<div id="sd-map" style="height:90px;border-radius:8px;overflow:hidden"></div>'+
-    '<div><div style="font-size:12px;font-weight:600;margin-bottom:3px">'+cleanName(st.name)+'</div>'+
-    '<div style="font-size:11px;color:var(--sub)">⚡'+st.electrical_bikes+' · 🔧'+st.mechanical_bikes+' · 🅿️'+st.available_bike_stands+'</div></div></div>'+
-    '<div style="display:flex;gap:12px;font-size:10px;color:var(--sub);margin-bottom:5px">'+
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'+
+    (st.lat&&st.lng?'<div id="sd-map" style="width:48px;height:48px;border-radius:8px;overflow:hidden;flex-shrink:0"></div>':'')+
+    '<div style="min-width:0"><div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+cleanName(st.name)+'</div>'+
+    '<div style="font-size:11px;color:var(--sub);margin-top:2px">⚡'+st.electrical_bikes+' · 🔧'+st.mechanical_bikes+' · 🅿️'+st.available_bike_stands+'</div></div></div>'+
+    '<div style="display:flex;gap:10px;font-size:10px;color:var(--sub);margin-bottom:4px">'+
     '<span><span style="display:inline-block;width:10px;height:2px;background:#1a7a3e;vertical-align:middle;margin-right:3px"></span>⚡ Élec</span>'+
     '<span><span style="display:inline-block;width:10px;height:2px;background:#b52a2a;vertical-align:middle;margin-right:3px"></span>🔧 Méca</span></div>'+
     '<canvas id="sd-combined" height="'+chartH+'"></canvas>'+
-    '<div id="sd-stats-row" style="display:flex;gap:8px;margin-top:10px"></div>';
+    '<div id="sd-stats-row" style="display:flex;gap:8px;margin-top:8px"></div>';
 
 
-  if(st.lat && st.lng){
+  if(st.lat && st.lng && document.getElementById('sd-map')){
     const sdMap=L.map('sd-map',{zoomControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false,keyboard:false,touchZoom:false})
       .setView([st.lat,st.lng],16);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
@@ -1805,8 +1776,6 @@ async function showStationDetail(number, targetEl=null){
     }
   }
 
-  _chartSD_elec?.destroy();
-  _chartSD_meca?.destroy();
   // Moyenne réelle (pas somme cumulée)
   const validElec=dataElec.filter(v=>v!==null&&v>0);
   const validMeca=dataMeca.filter(v=>v!==null&&v>0);
@@ -1821,12 +1790,32 @@ async function showStationDetail(number, targetEl=null){
     '<div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px">'+
     '<div style="font-size:15px;font-weight:600;color:#b52a2a">'+avgMeca+'</div>'+
     '<div style="font-size:10px;color:var(--sub)">🔧 '+mvLabel+'</div></div>';
+  const isLine=chartType==='line';
   _chartSD_elec=new Chart(document.getElementById('sd-combined'),{type:chartType,
     data:{labels,datasets:[
-      {label:'Élec',data:dataElec,borderColor:'#1a7a3e',backgroundColor:chartType==='line'?'#1a7a3e18':'#1a7a3ebb',borderWidth:chartType==='line'?1.8:0,borderRadius:2,tension:0,pointRadius:0,spanGaps:true,fill:chartType==='line'},
-      {label:'Méca',data:dataMeca,borderColor:'#b52a2a',backgroundColor:chartType==='line'?'#b52a2a18':'#b52a2abb',borderWidth:chartType==='line'?1.8:0,borderRadius:2,tension:0,pointRadius:0,spanGaps:true,fill:chartType==='line'}
+      {label:'Élec',data:dataElec,
+        borderColor:'#34c759',backgroundColor:isLine?'#34c75918':'#34c75988',
+        borderWidth:isLine?1.8:0,borderRadius:2,tension:0,pointRadius:0,spanGaps:true,fill:isLine},
+      {label:'Méca',data:dataMeca,
+        borderColor:'#ff453a',backgroundColor:isLine?'#ff453a18':'#ff453a88',
+        borderWidth:isLine?1.8:0,borderRadius:2,tension:0,pointRadius:0,spanGaps:true,fill:isLine}
     ]},
-    options:chartOpts()});
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'rgba(28,28,30,.92)',titleColor:'#f5f5f7',bodyColor:'#8e8e93',
+          padding:8,cornerRadius:8,
+          callbacks:{title:v=>view==='day'?v[0].label+'h':'Jour '+v[0].label}
+        }
+      },
+      scales:{
+        x:{ticks:{color:'#636366',font:{size:9},maxTicksLimit:view==='day'?8:10},grid:{display:false},border:{display:false}},
+        y:{ticks:{color:'#636366',font:{size:9},maxTicksLimit:4},grid:{color:'rgba(255,255,255,.05)'},border:{display:false},min:0}
+      }
+    }
+  });
 } // fin showStationDetail
 
 function setModeNow(){
