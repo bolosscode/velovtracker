@@ -344,6 +344,12 @@ function compactPlanFloat(){
       </div>
       <div style="width:26px;height:26px;border-radius:50%;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#8e8e93;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;cursor:pointer" onclick="expandPlanFloat()">✎</div>`;
   }
+  if(window.innerWidth > 640){
+    // Desktop: stay expanded, no pill
+    document.getElementById('plan-float-expanded').style.display='block';
+    el.style.display='none';
+    return;
+  }
   document.getElementById('plan-float-expanded').style.display='none';
   el.style.display='flex';
   initPillSwipe();
@@ -1409,6 +1415,7 @@ async function computePlan(){
   window._planCombos=top;
   _openComboIdx=null;
   drawTop3Routes();
+  hideBackgroundStations();
 }
 
 let planLayerGroup=null;
@@ -1436,9 +1443,11 @@ async function selectComboIdx(idx){
   document.querySelectorAll('#combo-dots .cdot').forEach((d,i)=>{ d.classList.toggle('on',i===idx); d.style.width=i===idx?'14px':'5px'; });
   await showRoute(idx);
   // Compact vers pill résultat
-  const pf=document.getElementById('plan-float');
-  if(pf) pf.style.maxHeight='62px';
-  compactPlanFloat();
+  if(window.innerWidth <= 640){
+    const pf=document.getElementById('plan-float');
+    if(pf) pf.style.maxHeight='62px';
+    compactPlanFloat();
+  }
 }
 
 
@@ -1868,29 +1877,53 @@ function syncHourSelect(){
 }
 
 
+function hideBackgroundStations(){
+  if(markers) markers.getPane ? markers.setOpacity?.(0) : markers.eachLayer(l=>l.setOpacity?.(0));
+  // Leaflet LayerGroup: iterate and hide
+  if(markers) markers.eachLayer(l=>{
+    if(l.setOpacity) l.setOpacity(0);
+    else if(l._icon) l._icon.style.opacity='0';
+  });
+  window._stationsHidden=true;
+}
+
+function showBackgroundStations(){
+  if(markers) markers.eachLayer(l=>{
+    if(l.setOpacity) l.setOpacity(1);
+    else if(l._icon) l._icon.style.opacity='1';
+  });
+  window._stationsHidden=false;
+}
+
 function closePlanFloat(){
   const pf=document.getElementById('plan-float');
   const expanded=document.getElementById('plan-float-expanded');
   const compact=document.getElementById('plan-float-compact');
   const results=document.getElementById('plan-results');
   if(!pf) return;
-  // If results exist → pill
-  if(results && results.innerHTML.trim()){
+  const hasResults=results && results.innerHTML.trim();
+  if(hasResults){
+    // Collapse to pill
     pf.style.maxHeight='62px';
     compactPlanFloat();
   } else {
-    // No results yet → collapse to minimal
+    // No results — hide completely and restore stations
     pf.style.maxHeight='0px';
     pf.style.opacity='0';
     pf.style.pointerEvents='none';
+    if(planLayerGroup){ planLayerGroup.clearLayers(); }
+    showBackgroundStations();
     setTimeout(()=>{
       expanded.style.display='block';
       compact.style.display='none';
       pf.style.maxHeight='250px';
       pf.style.opacity='1';
       pf.style.pointerEvents='';
-    }, 5000); // auto-restore after 5s
+    }, 5000);
   }
+  // Always restore stations on close
+  showBackgroundStations();
+  if(!hasResults && planLayerGroup) planLayerGroup.clearLayers();
 }
 
 function initPillSwipe(){
