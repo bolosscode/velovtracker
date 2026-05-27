@@ -80,16 +80,15 @@ main{max-width:1500px;margin:auto;padding:20px}
 /* search */
 .loc-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
 @media(max-width:640px){
-  #stats-layout{grid-template-columns:1fr !important}
-  #stats-detail{display:block !important}.loc-row{grid-template-columns:1fr}}
+  .loc-row{grid-template-columns:1fr}}
 .loc-box{position:relative}
 .loc-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--sub);margin-bottom:5px;display:flex;align-items:center;gap:6px}
 .loc-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .search{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none;transition:border-color .15s;color:#fff;}
 .search:focus{border-color:var(--blue)}
-.dropdown{position:fixed;z-index:9999;background:#2c2c2e;border:1px solid rgba(255,255,255,.12);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.6);display:none;max-height:240px;overflow-y:auto;min-width:280px;background:#2c2c2e;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);display:none;z-index:100;max-height:220px;overflow-y:auto}
+.dropdown{position:fixed;z-index:9999;background:#2c2c2e;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.6);display:none;max-height:240px;overflow-y:auto;min-width:280px}
 .dropdown.open{display:block}
-.opt{padding:9px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0f0}
+.opt{padding:9px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)}
 .opt:last-child{border-bottom:none}
 .opt:hover{background:#3a3a3c}
 .opt-type{font-size:10px;color:var(--dim);float:right}
@@ -372,7 +371,7 @@ function expandPlanFloat(){
 let allStations=[], map=null, markers=null, heatLayer=null, heatOn=false;
 let selectedStation=null, chartElec=null, chartMeca=null, chartFlux=null;
 let todayMv={}, lbMvCache={}, courbesSliderDays=1;
-let planMap=null, planRoutes=[], planFromPos=null, planToPos=null;
+let planMap=null, planFromPos=null, planToPos=null;
 let planFromFixed=null, planToFixed=null; // station fixée si l'user en a choisi une
 
 const fmt = d => d.toISOString().slice(0,16);
@@ -510,6 +509,8 @@ async function idbSet(key,val){
 const _fetchDayCache={};
 async function fetchDay(date){
   if(_fetchDayCache[date]) return _fetchDayCache[date];
+  // Limit cache size
+  if(Object.keys(_fetchDayCache).length>200){ const oldest=Object.keys(_fetchDayCache)[0]; delete _fetchDayCache[oldest]; }
   const today=new Date().toISOString().slice(0,10);
   // Vérifier IDB pour les dates passées
   if(date!==today){
@@ -788,7 +789,7 @@ function buildDropdown(inputId, ddId, opts){
 
     render(); // afficher les stations tout de suite
 
-    // Géocodage Nominatim avec debounce 400ms
+    // Géocodage Nominatim avec debounce 200ms
     clearTimeout(_nominatimDebounce[inputId]);
     if(q.length>=3){
       _nominatimDebounce[inputId]=setTimeout(async()=>{
@@ -817,7 +818,7 @@ function buildStationSearch(){
       el.onclick=()=>{ input.value=cleanName(st.name); dd.classList.remove('open'); selectedStation=st; };
       dd.appendChild(el);
     });
-    positionDropdown(inputId, ddId);
+    positionDropdown('station-search', 'station-dd');
     dd.classList.add('open');
   });
   document.addEventListener('click',e=>{
@@ -990,7 +991,6 @@ async function showDayMeteo(date){
 }
 
 /* ═══ PLANIFIER ════════════════════════════════════════ */
-let planHeatMvCache={};
 
 
 let _planDropdownsInit=false;
@@ -1107,7 +1107,6 @@ async function fetchCurrentMeteo(){
 async function computePlan(){
   // Résultats dans le flottant
   const results=document.getElementById('plan-results');
-  const resultsCard=results; // alias pour compatibilité
   _openComboIdx=null;
   window._planCombos=null;
   if(planLayerGroup) planLayerGroup.clearLayers();
@@ -1140,7 +1139,6 @@ async function computePlan(){
     meteoEl.textContent=parts.join(' · ');
   }
   const isRainy=(meteo?.precipitation??0)>0.1;
-  const currentlyRainy=isRainy;
   const currentPrecip=meteo?.precipitation??0;
 
   const bikeType=document.getElementById('plan-type').value;
@@ -1180,7 +1178,6 @@ async function computePlan(){
       res.filter(Boolean).forEach(d=>allDays.push(d));
     }
   }
-  const filteredDays=allDays;
 
   // Stations proches
   const depCenter=planFromFixed?{lat:planFromFixed.lat,lng:planFromFixed.lng}:planFromPos;
@@ -1230,7 +1227,7 @@ async function computePlan(){
   } else {
   allIds.forEach(num=>{
     let depSum=0,arrSum=0,wSum=0,depHit=0,arrHit=0,samples=0;
-    filteredDays.forEach(snaps=>{
+    allDays.forEach(snaps=>{
       snaps.forEach(snap=>{
         const snapDate=new Date(getTs(snap));
         const h=snapDate.getHours();
@@ -1239,7 +1236,7 @@ async function computePlan(){
         if(!st||!st.bike_stands) return;
         const depKey=bikeType==='elec'?'electrical_bikes':bikeType==='meca'?'mechanical_bikes':'available_bikes';
         const snapM=snap.meteo; if(snapM) snapM._ts=new Date(getTs(snap)).getTime();
-        const w=meteoW(snapM,currentlyRainy);
+        const w=meteoW(snapM,isRainy);
         const depVal=st[depKey]||0, arrVal=st.available_bike_stands||0;
         depSum+=depVal/st.bike_stands*100*w; arrSum+=arrVal/st.bike_stands*100*w; wSum+=w;
         if(depVal>=1) depHit+=w; if(arrVal>=1) arrHit+=w; samples++;
@@ -1260,16 +1257,14 @@ async function computePlan(){
   // Debug : compter les résultats
   let totalSamples=0;
   allIds.forEach(num=>{ totalSamples+=stationProba[num]?.samples||0; });
-  console.log('allDays:',allDays.length,'filteredDays:',filteredDays.length,'allIds:',allIds.size,'totalSamples:',totalSamples,'targetH:',targetH,'targetDow:',targetDow);
 
   // Si aucun sample — peut-être un problème d'heure
   // Essayer avec +1 aussi (heure d'hiver)
   if(totalSamples===0 && allDays.length>0){
     const targetH2=(targetH+23)%24; // essayer H-1
-    console.log('Retry avec targetH2:',targetH2);
     allIds.forEach(num=>{
       let depSum=0,arrSum=0,wSum=0,depHit=0,arrHit=0,samples=0;
-      filteredDays.forEach(snaps=>{
+      allDays.forEach(snaps=>{
         snaps.forEach(snap=>{
           const snapDate=getTs(snap);
           const d=new Date(snapDate);
@@ -1427,16 +1422,6 @@ let planLayerGroup=null;
 
 let _openComboIdx = null;
 
-async function toggleComboDetail(idx, el){
-  // Si déjà sélectionné → désélectionner
-  if(_openComboIdx === idx){
-    document.querySelectorAll('.combo-card').forEach(c=>c.classList.remove('selected'));
-    _openComboIdx=null;
-    return;
-  }
-  selectComboIdx(idx);
-}
-
 async function selectComboIdx(idx){
   window._openComboIdx=idx;
   _openComboIdx=idx;
@@ -1566,20 +1551,19 @@ async function showRoute(idx){
         const geom = db.features?.[0]?.geometry;
         if(geom?.type==='LineString') coords = geom.coordinates.map(([lng,lat])=>[lat,lng]);
       }
-    } catch(e){ console.warn('Brouter:', e.message); }
+    } catch{}
 
     // 2. Fallback OSRM bike
     if(!coords){
       try {
-        console.log('Fallback OSRM…');
-        const osrmUrl = `https://router.project-osrm.org/route/v1/bike/${combo.dep.lng},${combo.dep.lat};${combo.arr.lng},${combo.arr.lat}?overview=full&geometries=polyline6`;
+          const osrmUrl = `https://router.project-osrm.org/route/v1/bike/${combo.dep.lng},${combo.dep.lat};${combo.arr.lng},${combo.arr.lat}?overview=full&geometries=polyline6`;
         const ro = await fetch(osrmUrl, {signal: AbortSignal.timeout(12000)});
         if(ro.ok){
           const dor = await ro.json();
           const geom = dor.routes?.[0]?.geometry;
           if(geom) coords = decodePolyline(geom);
         }
-      } catch(e){ console.warn('OSRM:', e.message); }
+      } catch{}
     }
 
     // 3. Fallback Valhalla si de retour
@@ -1782,7 +1766,6 @@ async function showStationDetail(number, targetEl=null){
   } else {
     if(!yr) return;
     const today=new Date().toISOString().slice(0,10);
-    const yr2=yr;
     for(let mo=1;mo<=12;mo++){
       labels.push(['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'][mo-1]);
       const daysInM=new Date(yr,mo,0).getDate();
@@ -1808,16 +1791,14 @@ async function showStationDetail(number, targetEl=null){
   const validMeca=dataMeca.filter(v=>v!==null&&v>0);
   const avgElec=validElec.length?Math.round(validElec.reduce((a,b)=>a+b,0)/validElec.length):0;
   const avgMeca=validMeca.length?Math.round(validMeca.reduce((a,b)=>a+b,0)/validMeca.length):0;
-  const totalElec=avgElec;
-  const totalMeca=avgMeca;
   const mvLabel=view==='day'?'vélos en moy.':'moy. vélos/j';
   const statsRow=document.getElementById('sd-stats-row');
   if(statsRow) statsRow.innerHTML=
     '<div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px">'+
-    '<div style="font-size:15px;font-weight:600;color:#1a7a3e">'+totalElec+'</div>'+
+    '<div style="font-size:15px;font-weight:600;color:#1a7a3e">'+avgElec+'</div>'+
     '<div style="font-size:10px;color:var(--sub)">⚡ '+mvLabel+'</div></div>'+
     '<div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px">'+
-    '<div style="font-size:15px;font-weight:600;color:#b52a2a">'+totalMeca+'</div>'+
+    '<div style="font-size:15px;font-weight:600;color:#b52a2a">'+avgMeca+'</div>'+
     '<div style="font-size:10px;color:var(--sub)">🔧 '+mvLabel+'</div></div>';
   _chartSD_elec=new Chart(document.getElementById('sd-combined'),{type:chartType,
     data:{labels,datasets:[
