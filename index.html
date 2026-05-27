@@ -350,8 +350,10 @@ function compactPlanFloat(){
     return;
   }
   document.getElementById('plan-float-expanded').style.display='none';
+  document.getElementById('plan-results').style.display='none';
+  document.getElementById('plan-results-divider').style.display='none';
+  document.getElementById('plan-results-inner-header').style.display='none';
   el.style.display='flex';
-  // Shrink float to pill height only
   const pf=document.getElementById('plan-float');
   if(pf) pf.style.maxHeight='100px';
   initPillSwipe();
@@ -359,6 +361,8 @@ function compactPlanFloat(){
 function expandPlanFloat(){
   document.getElementById('plan-float-expanded').style.display='block';
   document.getElementById('plan-float-compact').style.display='none';
+  document.getElementById('plan-results').style.display='';
+  if(window._planCombos){ document.getElementById('plan-results-divider').style.display=''; }
   const pf=document.getElementById('plan-float');
   if(!pf) return;
   const isMobile=window.innerWidth<=640;
