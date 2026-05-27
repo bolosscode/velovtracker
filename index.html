@@ -1215,13 +1215,15 @@ async function computePlan(){
   const _depNAcc={},_arrNAcc={};
 
   if(preStats){
-    // Lecture directe des stats pré-calculées — format dry/wet
+    // Lecture des stats pré-calculées — compatible ancien format {ep,sp,...} et nouveau {dry:{},wet:{}}
     const condKey = isRainy ? 'wet' : 'dry';
     allIds.forEach(num=>{
       const entry=preStats[String(num)];
       if(!entry) return;
-      // Prendre la condition météo correspondante, fallback sur l'autre
-      const p=entry[condKey] ?? entry['dry'] ?? entry['wet'];
+      // Nouveau format dry/wet
+      let p = entry[condKey] ?? entry['dry'] ?? entry['wet'];
+      // Ancien format direct (ep,sp,eN,sN...)
+      if(!p && entry.ep!==undefined) p = entry;
       if(!p) return;
       stationProba[num]={
         dep:p.ep??null, arr:p.sp??null,
