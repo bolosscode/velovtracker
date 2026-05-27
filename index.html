@@ -1916,6 +1916,13 @@ function closePlanFloat(){
   window._planCombos=null;
   window._openComboIdx=null;
   _openComboIdx=null;
+  // Vider les champs
+  const fromEl=document.getElementById('plan-from');
+  const toEl=document.getElementById('plan-to');
+  if(fromEl) fromEl.value='';
+  if(toEl) toEl.value='';
+  window._planFromPos=null;
+  window._planToPos=null;
 }
 
 function initPillSwipe(){
