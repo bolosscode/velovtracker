@@ -1116,12 +1116,10 @@ async function computePlan(){
 
   // Vérifier les champs AVANT tout chargement
   if(!planFromPos && !planFromFixed){
-    resultsCard.style.display='block';
     results.innerHTML='<div class="no-data">Sélectionnez un point de départ.</div>';
     return;
   }
   if(!planToPos && !planToFixed){
-    resultsCard.style.display='block';
     results.innerHTML='<div class="no-data">Destination manquante.</div>';
     return;
   }
