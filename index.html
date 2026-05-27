@@ -35,6 +35,7 @@
   .combo-pct{font-size:18px}
 }
 @media(min-width:641px){
+  #plan-float{width:calc(100vw / 3 - 20px);right:auto;}
   #bottom-nav{display:none}
 }
 #bottom-nav{
@@ -62,7 +63,6 @@ header{position:sticky;top:0;z-index:300;height:56px;background:#1c1c1e;backdrop
 .brand{font-weight:700;font-size:20px;color:#fff}.brand em{color:#fff;font-style:normal}
 .clock{font-size:12px;color:var(--dim)}
 
-nav{position:sticky;top:56px;z-index:250;background:#1c1c1e;border-bottom:0.5px solid #38383a;display:flex;padding:0 20px;overflow-x:auto}
 nav{position:sticky;top:56px;z-index:250;background:#1c1c1e;border-bottom:0.5px solid #38383a;display:flex;padding:0 20px;overflow-x:auto}
 .tab.on{color:#fff;border-bottom-color:rgba(255,255,255,.3);background:transparent}
 
@@ -108,13 +108,16 @@ main{max-width:1500px;margin:auto;padding:20px}
 .combo-card:hover{background:#2c2c2e}
 .combo-card.selected{background:#2c2c2e;border-left:3px solid var(--blue)}
 .combo-card:last-child{border-bottom:none}
+.combo-detail{overflow:hidden;max-height:0;transition:max-height .25s cubic-bezier(.4,0,.2,1)}
+.combo-detail.open{max-height:80px}
+.combo-detail-inner{padding:5px 10px 7px 28px;display:flex;flex-direction:column;gap:4px;border-top:0.5px solid rgba(255,255,255,.07)}
 .combo-rank{font-size:22px;font-weight:700;color:var(--blue);min-width:32px;text-align:center}
 .combo-info{flex:1}
 .combo-route{font-weight:600;font-size:13px;margin-bottom:3px}
 .combo-meta{font-size:11px;color:var(--sub);line-height:1.7}
 .combo-score{text-align:right;flex-shrink:0}
 .combo-pct{font-size:22px;font-weight:700}
-.combo-detail{font-size:11px;color:var(--dim)}
+.combo-detail-text{font-size:11px;color:var(--dim)}
 .score-high{color:#30d158}
 .score-med{color:#ff9f0a}
 .score-low{color:#ff453a}
@@ -187,7 +190,7 @@ main{max-width:1500px;margin:auto;padding:20px}
     <div id="map" style="height:100%;width:100%"></div>
 
     <!-- Flottant glass -->
-    <div id="plan-float" style="position:absolute;top:58px;left:10px;right:10px;z-index:200;background:rgba(30,30,38,.78);border-radius:14px;border:0.5px solid rgba(255,255,255,.15);box-shadow:0 8px 32px rgba(0,0,0,.5);overflow:hidden;transition:max-height .3s cubic-bezier(.4,0,.2,1);max-height:250px">
+    <div id="plan-float" style="position:absolute;top:58px;left:10px;z-index:200;background:rgba(30,30,38,.78);border-radius:14px;border:0.5px solid rgba(255,255,255,.15);box-shadow:0 8px 32px rgba(0,0,0,.5);overflow:hidden;transition:max-height .3s cubic-bezier(.4,0,.2,1);max-height:250px">
       <div id="plan-float-expanded" style="padding:8px 10px">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
           <div style="flex:1;background:rgba(255,255,255,.08);border-radius:10px;overflow:visible;border:0.5px solid rgba(255,255,255,.12)">
@@ -311,6 +314,8 @@ function compactPlanFloat(){
     const scCol=sc>=60?'#30d158':sc>=35?'#ff9f0a':'#ff453a';
     const scBg=sc>=60?'#0d2b1a':sc>=35?'#2b1a00':'#2b0a0a';
     const livePlaces=combo.arr.live?.available_bike_stands??'?';
+    const liveElec=combo.dep.live?.electrical_bikes??0;
+    const liveMeca=combo.dep.live?.mechanical_bikes??0;
     const top=window._planCombos||[];
     const dotsHtml=top.slice(0,Math.min(top.length,5)).map((_,i)=>
       `<div class="cdot${i===idx?' on':''}" style="width:${i===idx?'14':'5'}px"></div>`).join('');
@@ -351,7 +356,6 @@ function expandPlanFloat(){
   const pf=document.getElementById('plan-float');
   if(pf) pf.style.maxHeight=window._planCombos?'80vh':'250px';
 }
-function updateLiveStatus2(){}
 
 
 /* ═══ STATE ═══════════════════════════════════════════ */
@@ -1321,6 +1325,9 @@ async function computePlan(){
   document.getElementById('plan-results-title').textContent=
     `Top ${top.length} combinaisons · ${DOW_NAMES[targetDow]} ${String(targetH).padStart(2,'0')}h · ${bikeType==='elec'?'⚡ Élec':bikeType==='meca'?'🔧 Méca':'🚲 Tous'} · ${filteredDays.length} sem.${meteoNote}`;
 
+  const SVG_ELEC='<svg width="10" height="10" viewBox="0 0 24 24" fill="#34c759"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>';
+  const SVG_MECA='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ff453a" stroke-width="2.5" stroke-linecap="round"><path d=\"M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z\"/></svg>';
+  const SVG_PARK='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0a84ff" stroke-width="2" stroke-linecap="round"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M9 17V7h4a3 3 0 0 1 0 6H9\"/></svg>';
   const renderComboList=(limit)=>{
     const shown=top.slice(0,limit);
     const html=shown.map((combo,i)=>{
@@ -1350,7 +1357,23 @@ async function computePlan(){
           <div style="font-size:12px;font-weight:700;color:${arrCol}">${combo.arrProb??'?'}%</div>
           <div style="font-size:9px;color:rgba(255,255,255,.35)">arr.</div>
         </div>`;
-      return `<div class="combo-card-slide combo-card${i===0?' selected':''}" onclick="selectComboIdx(${i})" data-idx="${i}">
+      const depDistM=Math.round(combo.dep.dist||0);
+      const detailHtml=isNowMode&&combo.dep.live?`
+        <div class="combo-detail${i===0?' open':''}" id="cd-${i}"><div class="combo-detail-inner">
+          <div style="display:flex;align-items:center;gap:6px">
+            ${SVG_ELEC}<span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.85)">${liveElec}</span>
+            <span style="color:rgba(255,255,255,.2);font-size:10px">élec</span>
+            <span style="color:rgba(255,255,255,.12);margin:0 2px">/</span>
+            ${SVG_MECA}<span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.85)">${liveMeca}</span>
+            <span style="color:rgba(255,255,255,.2);font-size:10px">méca</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px">
+            ${SVG_PARK}<span style="font-size:11px;font-weight:700;color:#0a84ff">${livePlaces}</span>
+            <span style="color:rgba(255,255,255,.2);font-size:10px">places arrivée</span>
+            ${depDistM?`<span style="color:rgba(255,255,255,.12);margin:0 2px">·</span><span style="font-size:10px;color:rgba(255,255,255,.35)">${depDistM}m à pied</span>`:''}
+          </div>
+        </div></div>`:'';
+      return `<div class="combo-card-slide combo-card${i===0?' selected':''}" onclick="toggleComboDesktop(${i})" data-idx="${i}">
         <div style="width:3px;height:34px;border-radius:2px;background:${rColor};flex-shrink:0"></div>
         <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.28);min-width:14px;flex-shrink:0">${i+1}</div>
         <div style="flex:1;min-width:0">
@@ -1359,7 +1382,7 @@ async function computePlan(){
           <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:1px">${Math.round(combo.dist/1000*10)/10}km · ~${combo.rideMin}min</div>
         </div>
         ${cardBody}
-      </div>`;
+      </div>${detailHtml}`;
     }).join('');
     // Desktop : liste verticale classique
     if(window.innerWidth > 640){
@@ -1470,11 +1493,11 @@ async function drawTop3Routes(){
     // Marqueurs stations
     const depM=L.circleMarker([combo.dep.lat,combo.dep.lng],{radius:i===0?9:6,fillColor:colors[i],color:'#fff',weight:i===0?2:1,fillOpacity:.9});
     depM.bindTooltip(cleanName(combo.dep.name),{direction:'top',permanent:false});
-    depM.on('click',(e)=>{window._routeClickGuard=true;L.DomEvent.stopPropagation(e);selectComboIdx(_i);});
+    depM.on('click',(e)=>{window._routeClickGuard=true;L.DomEvent.stopPropagation(e);selectComboIdx(i);});
     depM.addTo(planLayerGroup);
     const arrM=L.circleMarker([combo.arr.lat,combo.arr.lng],{radius:i===0?9:6,fillColor:colors[i],color:'#fff',weight:i===0?2:1,fillOpacity:.9});
     arrM.bindTooltip(cleanName(combo.arr.name),{direction:'top',permanent:false});
-    arrM.on('click',(e)=>{window._routeClickGuard=true;L.DomEvent.stopPropagation(e);selectComboIdx(_i);});
+    arrM.on('click',(e)=>{window._routeClickGuard=true;L.DomEvent.stopPropagation(e);selectComboIdx(i);});
     arrM.addTo(planLayerGroup);
   });
   // Zoom sur le premier
@@ -1863,6 +1886,16 @@ function initPillSwipe(){
     else if(!dragged){expandPlanFloat();}
     sx=null;dragged=false;
   });
+}
+
+
+function toggleComboDesktop(idx){
+  // Select route on map without collapsing panel
+  window._openComboIdx=idx;
+  _openComboIdx=idx;
+  document.querySelectorAll('.combo-card,.combo-card-slide').forEach((c,i)=>c.classList.toggle('selected',i===idx));
+  document.querySelectorAll('.combo-detail').forEach((d,i)=>d.classList.toggle('open',i===idx));
+  showRoute(idx);
 }
 
 function initSliderSwipe(){
