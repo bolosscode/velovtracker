@@ -216,7 +216,7 @@ main{max-width:1500px;margin:auto;padding:20px}
           </div>
           <div style="display:flex;background:rgba(255,255,255,.08);border-radius:20px;padding:2px;position:relative">
             <div id="type-slider-now" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:rgba(255,255,255,.15);border-radius:18px;transition:transform .15s;pointer-events:none"></div>
-            <button onclick="setBikeType('elec')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:#fff"style="position:relative;z-index:1;padding:5px 12px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;color:#fff"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></button>
+            <button onclick="setBikeType('elec')" style="position:relative;z-index:1;padding:5px 12px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;color:#fff"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></button>
             <button onclick="setBikeType('meca')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:rgba(255,255,255,.38)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></button>
           </div>
           <select id="plan-type" style="display:none"><option value="elec">elec</option><option value="meca">meca</option><option value="any" selected>any</option></select>
@@ -229,7 +229,7 @@ main{max-width:1500px;margin:auto;padding:20px}
 
       <!-- Résultats (liste compacte) -->
       <div id="plan-results-divider" style="display:none;height:0.5px;background:rgba(255,255,255,.08)"></div>
-      <div id="plan-results-inner-header" style="display:none;padding:6px 12px 4px;display:none">
+      <div id="plan-results-inner-header" style="display:none;padding:6px 12px 4px">
         <div id="plan-results-title" style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.3)"></div>
       </div>
       <div id="plan-results" style="overflow-y:auto;max-height:calc(80vh - 220px);padding:0 10px 10px"></div>
@@ -350,8 +350,8 @@ function compactPlanFloat(){
   }
   document.getElementById('plan-float-expanded').style.display='none';
   document.getElementById('plan-results').style.display='none';
-  document.getElementById('plan-results-divider').style.display='none';
-  document.getElementById('plan-results-inner-header').style.display='none';
+  document.getElementById('plan-results-divider')?.style.setProperty('display','none');
+  document.getElementById('plan-results-inner-header')?.style.setProperty('display','none');
   el.style.display='flex';
   const pf=document.getElementById('plan-float');
   if(pf) pf.style.maxHeight='100px';
@@ -361,7 +361,7 @@ function expandPlanFloat(){
   document.getElementById('plan-float-expanded').style.display='block';
   document.getElementById('plan-float-compact').style.display='none';
   document.getElementById('plan-results').style.display='';
-  if(window._planCombos){ document.getElementById('plan-results-divider').style.display=''; }
+  if(window._planCombos){ document.getElementById('plan-results-divider')?.style.setProperty('display',''); }
   const pf=document.getElementById('plan-float');
   if(!pf) return;
   const isMobile=window.innerWidth<=640;
@@ -1108,8 +1108,8 @@ async function fetchCurrentMeteo(){
 }
 
 async function computePlan(){
-  // Résultats dans le flottant
   const results=document.getElementById('plan-results');
+  try {
   _openComboIdx=null;
   window._planCombos=null;
   if(planLayerGroup) planLayerGroup.clearLayers();
@@ -1423,6 +1423,10 @@ async function computePlan(){
   drawTop3Routes();
   hideBackgroundStations();
   if(window.innerWidth<=640) compactPlanFloat();
+  } catch(err) {
+    console.error('computePlan error:', err);
+    if(results) results.innerHTML='<div class="no-data">Erreur: ' + err.message + '</div>';
+  }
 }
 
 let planLayerGroup=null;
