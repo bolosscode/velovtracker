@@ -1896,34 +1896,26 @@ function showBackgroundStations(){
 }
 
 function closePlanFloat(){
+  // Reset tout
   const pf=document.getElementById('plan-float');
   const expanded=document.getElementById('plan-float-expanded');
   const compact=document.getElementById('plan-float-compact');
   const results=document.getElementById('plan-results');
-  if(!pf) return;
-  const hasResults=results && results.innerHTML.trim();
-  if(hasResults){
-    // Collapse to pill
-    pf.style.maxHeight='62px';
-    compactPlanFloat();
-  } else {
-    // No results — hide completely and restore stations
-    pf.style.maxHeight='0px';
-    pf.style.opacity='0';
-    pf.style.pointerEvents='none';
-    if(planLayerGroup){ planLayerGroup.clearLayers(); }
-    showBackgroundStations();
-    setTimeout(()=>{
-      expanded.style.display='block';
-      compact.style.display='none';
-      pf.style.maxHeight='250px';
-      pf.style.opacity='1';
-      pf.style.pointerEvents='';
-    }, 5000);
-  }
-  // Always restore stations on close
+  // Vider résultats
+  if(results) results.innerHTML='';
+  // Masquer compact, montrer expanded
+  if(compact) compact.style.display='none';
+  if(expanded) expanded.style.display='block';
+  // Remettre hauteur initiale
+  if(pf){ pf.style.maxHeight='250px'; pf.style.opacity='1'; pf.style.pointerEvents=''; }
+  // Effacer routes
+  if(planLayerGroup){ planLayerGroup.clearLayers(); }
+  // Restaurer stations
   showBackgroundStations();
-  if(!hasResults && planLayerGroup) planLayerGroup.clearLayers();
+  // Reset état interne
+  window._planCombos=null;
+  window._openComboIdx=null;
+  _openComboIdx=null;
 }
 
 function initPillSwipe(){
