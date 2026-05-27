@@ -156,7 +156,6 @@ main{max-width:1500px;margin:auto;padding:20px}
 .combo-dots{display:flex;justify-content:center;gap:5px;padding:6px 0 4px}
 .cdot{height:5px;border-radius:3px;background:#636366;transition:all .2s;display:inline-block}
 .cdot.on{width:14px!important;background:#34c759}
-@media(max-width:640px){input,select,textarea{font-size:16px!important;}}
 </style>
 </head>
 <body>
@@ -1129,7 +1128,8 @@ async function computePlan(){
 
   // Afficher loader + ouvrir volet
   // Expansion du flottant
-  document.getElementById('plan-float')?.style.setProperty('max-height','80vh');
+  document.getElementById('plan-float')?.style.setProperty('max-height',window.innerWidth<=640?'58vh':'80vh');
+  document.getElementById('plan-results').style.display='';
   results.innerHTML='<div class="loader">Analyse de l\'historique…</div>';
 
   // Météo
@@ -1217,9 +1217,13 @@ async function computePlan(){
   const _depNAcc={},_arrNAcc={};
 
   if(preStats){
-    // Lecture directe des stats pré-calculées
+    // Lecture directe des stats pré-calculées — format dry/wet
+    const condKey = isRainy ? 'wet' : 'dry';
     allIds.forEach(num=>{
-      const p=preStats[String(num)];
+      const entry=preStats[String(num)];
+      if(!entry) return;
+      // Prendre la condition météo correspondante, fallback sur l'autre
+      const p=entry[condKey] ?? entry['dry'] ?? entry['wet'];
       if(!p) return;
       stationProba[num]={
         dep:p.ep??null, arr:p.sp??null,
@@ -1412,6 +1416,7 @@ async function computePlan(){
   const topScore=top[0]?.score??0;
   const autoLimit=topScore<30?top.length:topScore<50?Math.min(5,top.length):3;
   results.innerHTML=renderComboList(autoLimit);
+  document.getElementById('plan-results').style.display='';
   if(document.getElementById('plan-float')) document.getElementById('plan-float').style.maxHeight=window.innerWidth<=640?'58vh':'80vh';
   window._showMoreCombos=()=>{ results.innerHTML=renderComboList(top.length); initSliderSwipe(); drawTop3Routes(); };
   initSliderSwipe();
