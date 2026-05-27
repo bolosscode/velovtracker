@@ -1341,7 +1341,7 @@ async function computePlan(){
 
   const meteoNote=isRainy?' 🌧️':'';
   document.getElementById('plan-results-title').textContent=
-    `Top ${top.length} combinaisons · ${DOW_NAMES[targetDow]} ${String(targetH).padStart(2,'0')}h · ${bikeType==='elec'?'⚡ Élec':bikeType==='meca'?'🔧 Méca':'🚲 Tous'} · ${filteredDays.length} sem.${meteoNote}`;
+    `Top ${top.length} combinaisons · ${DOW_NAMES[targetDow]} ${String(targetH).padStart(2,'0')}h · ${bikeType==='elec'?'⚡ Élec':bikeType==='meca'?'🔧 Méca':'🚲 Tous'} · ${allDays.length} sem.${meteoNote}`;
 
   const renderComboList=(limit)=>{
     const shown=top.slice(0,limit);
