@@ -623,7 +623,8 @@ function initMap(){
 }
 function renderStations(){
   if(markers) markers.clearLayers();
-  markers=L.layerGroup().addTo(map);
+  markers=L.layerGroup();
+  if(!window._stationsHidden) markers.addTo(map);
   const zoom=map?map.getZoom():13;
 
   // Clustering au zoom faible
@@ -1416,6 +1417,7 @@ async function computePlan(){
   _openComboIdx=null;
   drawTop3Routes();
   hideBackgroundStations();
+  if(window.innerWidth<=640) compactPlanFloat();
 }
 
 let planLayerGroup=null;
