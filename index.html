@@ -310,15 +310,16 @@ function compactPlanFloat(){
     const scCol=sc>=60?'#30d158':sc>=35?'#ff9f0a':'#ff453a';
     const scBg=sc>=60?'#0d2b1a':sc>=35?'#2b1a00':'#2b0a0a';
     const isNow=(window._planMode||'now')==='now';
-    const livePlaces=isNow
+    const livePlaces=isNow || combo.arrN==null
       ? (combo.arr.live?.available_bike_stands??'?')
-      : (combo.arrN!=null ? Math.round(combo.arrN) : (combo.arr.live?.available_bike_stands??'?'));
-    const liveElec=isNow
+      : Math.round(combo.arrN);
+    const liveElec=isNow || combo.depElecN==null
       ? (combo.dep.live?.electrical_bikes??0)
-      : (combo.depN!=null ? Math.round(combo.depN) : (combo.dep.live?.electrical_bikes??0));
-    const liveMeca=isNow
+      : '~'+Math.round(combo.depElecN);
+    const liveMeca=isNow || combo.depMecaN==null
       ? (combo.dep.live?.mechanical_bikes??0)
-      : (combo.dep.live?.mechanical_bikes??0);
+      : '~'+Math.round(combo.depMecaN);
+    const livePlacesDisp=(!isNow && combo.arrN!=null) ? '~'+Math.round(combo.arrN) : livePlaces;
     const top=window._planCombos||[];
     const dotsHtml=top.slice(0,Math.min(top.length,5)).map((_,i)=>
       `<div class="cdot${i===idx?' on':''}" style="width:${i===idx?'14':'5'}px"></div>`).join('');
@@ -1207,7 +1208,7 @@ async function computePlan(){
   // Calcul probas depuis l'historique
   const allIds=new Set([...depStations.map(s=>s.number),...arrStations.map(s=>s.number)]);
   const stationProba={};
-  const _depNAcc={},_arrNAcc={};
+  const _depNAcc={},_arrNAcc={},_depElecAcc={},_depMecaAcc={};
 
   allIds.forEach(num=>{
     let depSum=0,arrSum=0,wSum=0,depHit=0,arrHit=0,samples=0;
@@ -1222,14 +1223,18 @@ async function computePlan(){
         const snapM=snap.meteo; if(snapM) snapM._ts=new Date(getTs(snap)).getTime();
         const w=meteoW(snapM,isRainy);
         const depVal=st[depKey]||0, arrVal=st.available_bike_stands||0;
+        const elecVal=st.electrical_bikes||0, mecaVal=st.mechanical_bikes||0;
         depSum+=depVal/st.bike_stands*100*w; arrSum+=arrVal/st.bike_stands*100*w; wSum+=w;
         if(depVal>=1) depHit+=w; if(arrVal>=1) arrHit+=w; samples++;
         _depNAcc[num]=(_depNAcc[num]||0)+depVal*w; _arrNAcc[num]=(_arrNAcc[num]||0)+arrVal*w;
+        _depElecAcc[num]=(_depElecAcc[num]||0)+elecVal*w; _depMecaAcc[num]=(_depMecaAcc[num]||0)+mecaVal*w;
       });
     });
     stationProba[num]={
       dep:wSum>0?Math.round(depSum/wSum):null, arr:wSum>0?Math.round(arrSum/wSum):null,
       depN:wSum>0?Math.round((_depNAcc[num]||0)/wSum*10)/10:null,
+      depElecN:wSum>0?Math.round((_depElecAcc[num]||0)/wSum*10)/10:null,
+      depMecaN:wSum>0?Math.round((_depMecaAcc[num]||0)/wSum*10)/10:null,
       arrN:wSum>0?Math.round((_arrNAcc[num]||0)/wSum*10)/10:null,
       depProb:wSum>0?Math.round(depHit/wSum*100):null,
       arrProb:wSum>0?Math.round(arrHit/wSum*100):null,
@@ -1301,7 +1306,7 @@ async function computePlan(){
         dep:Object.assign({},dep,{live:liveDep2||null}),
         arr:Object.assign({},arr,{live:liveArr2||null}),
         depPct,arrPct,depProb,arrProb,
-        depN:pd?.depN??null,arrN:pa?.arrN??null,
+        depN:pd?.depN??null,depElecN:pd?.depElecN??null,depMecaN:pd?.depMecaN??null,arrN:pa?.arrN??null,
         score,dist,rideMin,samples:pd?.samples??0
       });
     }
@@ -1699,8 +1704,11 @@ async function showStationDetail(number, targetEl=null){
   const chartH=window.innerWidth<=640?55:65;
   const chartType=view==='day'?'line':'bar';
   // Détruire les charts AVANT de recréer le DOM
-  _chartSD_elec?.destroy(); _chartSD_elec=null;
-  _chartSD_meca?.destroy(); _chartSD_meca=null;
+  if(_chartSD_elec){ try{_chartSD_elec.destroy();}catch{} _chartSD_elec=null; }
+  if(_chartSD_meca){ try{_chartSD_meca.destroy();}catch{} _chartSD_meca=null; }
+  // Détruire aussi tout chart sur l'ancien canvas si présent
+  const oldCanvas=document.getElementById('sd-combined-'+number);
+  if(oldCanvas){ const existing=Chart.getChart(oldCanvas); if(existing) existing.destroy(); }
   const isMob=window.innerWidth<=640;
   detail.innerHTML=
     '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'+
@@ -1710,7 +1718,7 @@ async function showStationDetail(number, targetEl=null){
     '<div style="display:flex;gap:10px;font-size:10px;color:var(--sub);margin-bottom:4px">'+
     '<span><span style="display:inline-block;width:10px;height:2px;background:#1a7a3e;vertical-align:middle;margin-right:3px"></span>⚡ Élec</span>'+
     '<span><span style="display:inline-block;width:10px;height:2px;background:#b52a2a;vertical-align:middle;margin-right:3px"></span>🔧 Méca</span></div>'+
-    '<canvas id="sd-combined" height="'+chartH+'"></canvas>'+
+    '<canvas id="sd-combined-'+number+'" height="'+chartH+'" style="width:100%"></canvas>'+
     '<div id="sd-stats-row" style="display:flex;gap:8px;margin-top:8px"></div>';
 
 
@@ -1791,7 +1799,7 @@ async function showStationDetail(number, targetEl=null){
     '<div style="font-size:15px;font-weight:600;color:#b52a2a">'+avgMeca+'</div>'+
     '<div style="font-size:10px;color:var(--sub)">🔧 '+mvLabel+'</div></div>';
   const isLine=chartType==='line';
-  _chartSD_elec=new Chart(document.getElementById('sd-combined'),{type:chartType,
+  _chartSD_elec=new Chart(document.getElementById('sd-combined-'+number),{type:chartType,
     data:{labels,datasets:[
       {label:'Élec',data:dataElec,
         borderColor:'#34c759',backgroundColor:isLine?'#34c75918':'#34c75988',
