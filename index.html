@@ -187,7 +187,8 @@ main{max-width:1500px;margin:auto;padding:20px}
     <div id="map" style="height:100%;width:100%"></div>
 
     <!-- Flottant glass -->
-    <div id="plan-float" style="position:absolute;top:58px;left:10px;z-index:200;background:rgba(30,30,38,.78);border-radius:14px;border:0.5px solid rgba(255,255,255,.15);box-shadow:0 8px 32px rgba(0,0,0,.5);overflow:hidden;transition:max-height .3s cubic-bezier(.4,0,.2,1);max-height:250px">
+    <div id="plan-float" style="position:absolute;top:58px;left:10px;z-index:200;background:rgba(30,30,38,.78);border-radius:14px;border:0.5px solid rgba(255,255,255,.15);box-shadow:0 8px 32px rgba(0,0,0,.5);overflow:visible;transition:max-height .3s cubic-bezier(.4,0,.2,1),opacity .2s;max-height:250px"><div id="plan-close-btn" onclick="closePlanFloat()" style="position:absolute;top:-7px;right:-7px;width:16px;height:16px;border-radius:50%;background:#2c2c2e;border:0.5px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:201"><svg width="8" height="8" viewBox="0 0 8 8" fill="none"><line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="rgba(255,255,255,.45)" stroke-width="1.5" stroke-linecap="round"/><line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="rgba(255,255,255,.45)" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+      <div style="overflow:hidden;border-radius:14px">
       <div id="plan-float-expanded" style="padding:8px 10px">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
           <div style="flex:1;background:rgba(255,255,255,.08);border-radius:10px;overflow:visible;border:0.5px solid rgba(255,255,255,.12)">
@@ -235,6 +236,7 @@ main{max-width:1500px;margin:auto;padding:20px}
       </div>
       <div id="plan-results" style="overflow-y:auto;max-height:calc(80vh - 220px);padding:0 10px 10px"></div>
 
+      </div>
     </div>
 
 
@@ -1341,18 +1343,31 @@ async function computePlan(){
       const livePlaces=combo.arr.live?.available_bike_stands??'?';
       const depDist=planFromFixed?'':` · ${Math.round(combo.dep.dist||0)}m`;
 
+      const avgDepN=combo.depN!==null?Math.round(combo.depN):null;
+      const avgArrN=combo.arrN!==null?Math.round(combo.arrN):null;
+      const scBadge=sc?`<div style="background:${scBg};border-radius:5px;padding:2px 5px;flex-shrink:0"><span style="font-size:11px;font-weight:700;color:${scCol}">${sc}%</span></div>`:'';
+
       const cardBody=isNowMode&&combo.dep.live?`
-        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
-          <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#1a7a3e;line-height:1">${liveElec}</div><div style="font-size:8px;color:rgba(255,255,255,.35)">⚡</div></div>
-          <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#b52a2a;line-height:1">${liveMeca}</div><div style="font-size:8px;color:rgba(255,255,255,.35)">🔧</div></div>
-          <div style="text-align:center"><div style="font-size:15px;font-weight:700;line-height:1">${livePlaces}</div><div style="font-size:8px;color:rgba(255,255,255,.35)">🅿️</div></div>
-          ${sc?`<div style="background:${scBg};border-radius:5px;padding:2px 5px"><span style="font-size:11px;font-weight:700;color:${scCol}">${sc}%</span></div>`:''}
+        <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end;flex-shrink:0">
+          <div style="display:flex;gap:5px;align-items:center">
+            <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#1a7a3e;line-height:1">${liveElec}</div><div style="font-size:8px;color:rgba(255,255,255,.3)">⚡ live</div></div>
+            <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#b52a2a;line-height:1">${liveMeca}</div><div style="font-size:8px;color:rgba(255,255,255,.3)">🔧 live</div></div>
+            <div style="text-align:center"><div style="font-size:15px;font-weight:700;line-height:1">${livePlaces}</div><div style="font-size:8px;color:rgba(255,255,255,.3)">🅿️ live</div></div>
+          </div>
+          <div style="display:flex;gap:5px;align-items:center">
+            ${avgDepN!==null?`<div style="font-size:9px;color:rgba(255,255,255,.35)">moy. <span style="color:rgba(255,255,255,.6);font-weight:600">${avgDepN}</span> dép · <span style="color:rgba(255,255,255,.6);font-weight:600">${avgArrN??'?'}</span> arr.</div>`:''}
+            ${scBadge}
+          </div>
         </div>`:`
-        <div style="text-align:right;flex-shrink:0">
-          <div style="font-size:12px;font-weight:700;color:${depCol}">${combo.depProb??'?'}%</div>
-          <div style="font-size:9px;color:rgba(255,255,255,.35)">dép.</div>
-          <div style="font-size:12px;font-weight:700;color:${arrCol}">${combo.arrProb??'?'}%</div>
-          <div style="font-size:9px;color:rgba(255,255,255,.35)">arr.</div>
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0">
+          <div style="display:flex;gap:5px;align-items:center">
+            <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#1a7a3e;line-height:1">${avgDepN??'?'}</div><div style="font-size:8px;color:rgba(255,255,255,.3)">⚡ moy.</div></div>
+            <div style="text-align:center"><div style="font-size:15px;font-weight:700;line-height:1">${avgArrN??'?'}</div><div style="font-size:8px;color:rgba(255,255,255,.3)">🅿️ moy.</div></div>
+          </div>
+          <div style="display:flex;gap:5px;align-items:center">
+            <div style="font-size:9px;color:rgba(255,255,255,.35)"><span style="color:${depCol};font-weight:600">${combo.depProb??'?'}%</span> dép · <span style="color:${arrCol};font-weight:600">${combo.arrProb??'?'}%</span> arr.</div>
+            ${scBadge}
+          </div>
         </div>`;
 
       return `<div class="combo-card-slide combo-card${i===0?' selected':''}" onclick="selectComboIdx(${i})" data-idx="${i}">
@@ -1848,6 +1863,31 @@ function syncHourSelect(){
   if(sel) sel.value=String(h);
 }
 
+
+function closePlanFloat(){
+  const pf=document.getElementById('plan-float');
+  const expanded=document.getElementById('plan-float-expanded');
+  const compact=document.getElementById('plan-float-compact');
+  const results=document.getElementById('plan-results');
+  if(!pf) return;
+  // If results exist → pill
+  if(results && results.innerHTML.trim()){
+    pf.style.maxHeight='62px';
+    compactPlanFloat();
+  } else {
+    // No results yet → collapse to minimal
+    pf.style.maxHeight='0px';
+    pf.style.opacity='0';
+    pf.style.pointerEvents='none';
+    setTimeout(()=>{
+      expanded.style.display='block';
+      compact.style.display='none';
+      pf.style.maxHeight='250px';
+      pf.style.opacity='1';
+      pf.style.pointerEvents='';
+    }, 5000); // auto-restore after 5s
+  }
+}
 
 function initPillSwipe(){
   const pill=document.getElementById('plan-float-compact');
