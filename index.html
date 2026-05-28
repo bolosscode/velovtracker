@@ -1162,19 +1162,22 @@ async function computePlan(){
   const targetH=isNowMode?now2.getHours():planHourVal;
   const bikeSpeedKmh=bikeType==='meca'?16:21;
 
-  // Charger l'historique
+  // Charger TOUT l'historique disponible (même jour de semaine)
   results.innerHTML='<div class="loader">Calcul historique…</div>';
   const allDays=[];
   const today2=new Date();
   const targetDates=[];
-  for(let i=0;i<182;i++){
+  for(let i=1;i<=500;i++){
     const d=new Date(today2); d.setDate(d.getDate()-i);
-    if(d.getDay()===targetDow) targetDates.push(d.toISOString().slice(0,10));
+    if(d.getDay()===targetDow) targetDates.push({date:d.toISOString().slice(0,10),daysAgo:i});
   }
+  // Map daysAgo par date pour pondération récence
+  const _daysAgoMap={};
+  targetDates.forEach(({date,daysAgo})=>{ _daysAgoMap[date]=daysAgo; });
   for(let i=0;i<targetDates.length;i+=16){
     const batch=targetDates.slice(i,i+16);
-    const res=await Promise.all(batch.map(dt=>fetchDay(dt).catch(()=>null)));
-    res.filter(Boolean).forEach(d=>allDays.push(d));
+    const res=await Promise.all(batch.map(({date})=>fetchDay(date).catch(()=>null)));
+    res.forEach((snaps,j)=>{ if(snaps) allDays.push({snaps,daysAgo:batch[j].daysAgo}); });
   }
 
   // Stations proches
@@ -1197,12 +1200,28 @@ async function computePlan(){
     return;
   }
 
-  // Matrice météo
-  const RAIN_R={1:[-0.019,-0.132,-0.133,-0.018,-0.132,-0.016,0.104,0.071,0.071,0.066,-0.021,-0.508,-0.224,-0.286,-0.224,-0.511,-0.443,-0.268,-0.129,-0.218,-0.278,-0.274,-0.25,-0.264],2:[0.001,0.026,0.006,0.067,-0.103,0.057,0.057,0.037,0.077,0.154,0.055,-0.294,-0.246,-0.149,-0.34,-0.379,-0.394,-0.34,-0.248,-0.26,-0.187,-0.309,-0.237,-0.084],3:[-0.003,-0.061,0.095,-0.027,0.045,-0.137,-0.22,-0.188,-0.223,-0.113,0.056,0.077,-0.064,-0.082,-0.23,-0.063,-0.21,-0.114,-0.175,-0.412,-0.359,-0.417,-0.135,-0.276],4:[-0.024,-0.207,-0.155,-0.137,-0.147,-0.229,-0.263,-0.111,-0.118,-0.176,-0.368,-0.434,-0.332,-0.514,-0.494,-0.495,-0.543,-0.284,-0.31,-0.46,-0.349,-0.215,-0.483,-0.209],5:[-0.046,-0.26,-0.268,-0.179,-0.282,-0.173,-0.087,-0.04,-0.042,-0.194,-0.363,-0.396,-0.327,-0.363,-0.184,-0.13,-0.196,-0.325,-0.45,-0.523,-0.26,-0.281,-0.352,-0.431],6:[0.026,-0.056,0.026,-0.189,-0.121,0,0,-0.189,-0.208,0.013,-0.162,-0.49,-0.595,-0.563,-0.422,0.032,-0.228,0.096,-0.108,-0.188,-0.104,-0.327,-0.466,-0.11],7:[-0.023,-0.04,-0.26,0.069,0.116,-0.048,-0.043,0.019,0.09,-0.013,0.161,-0.361,-0.51,-0.299,-0.096,-0.045,-0.039,-0.287,-0.316,-0.438,-0.47,-0.022,-0.533,-0.406],8:[-0.018,-0.046,-0.092,-0.205,-0.197,-0.225,-0.047,0.07,0.186,0.181,-0.214,0.017,0.043,0.233,0.125,0.031,-0.125,0.148,0.128,-0.214,-0.248,0.175,-0.084,-0.183],9:[-0.025,-0.337,-0.28,-0.203,-0.274,-0.084,-0.084,-0.014,-0.088,-0.089,-0.143,-0.633,-0.187,-0.681,-0.659,-0.802,-0.842,-0.379,-0.114,-0.024,-0.482,-0.417,-0.062,-0.16],10:[-0.029,-0.147,-0.104,-0.116,-0.161,-0.136,-0.098,-0.118,-0.077,-0.154,-0.562,-0.526,-0.627,-0.579,-0.356,-0.289,-0.432,-0.646,-0.543,-0.459,-0.515,-0.314,-0.158,0.031],11:[-0.006,0.027,0.043,-0.009,0.048,0.116,-0.265,0.032,-0.105,-0.441,-0.623,-0.601,-0.484,-0.424,-0.356,-0.27,-0.424,-0.425,-0.336,-0.525,-0.268,-0.245,-0.358,-0.505],12:[0.007,-0.137,-0.209,0.042,-0.168,-0.087,-0.019,-0.071,0.063,-0.04,-0.09,-0.11,-0.127,-0.055,0.015,0.112,0.123,-0.032,0.135,-0.029,-0.109,-0.132,-0.35,-0.087]};
-  function meteoW(snapMeteo,rainy){
-    if(!snapMeteo) return 0.8;
-    if(snapMeteo.rain===rainy) return 1.0;
-    try{ const mo=new Date(snapMeteo._ts||0).getMonth()+1||new Date().getMonth()+1; const r=(RAIN_R[mo]||RAIN_R[1])[targetH]||-0.15; return Math.max(0.3,1.0-Math.abs(r)*2); }catch{ return 0.5; }
+  // ── Fonctions de pondération ──
+  const currentTemp=meteo?.temperature??null;
+  const currentRainy=isRainy;
+  const nowMinutes=targetH*60; // minutes depuis minuit pour la cible
+
+  function wRecence(daysAgo){
+    // Demi-vie 45 jours — récent pèse beaucoup plus
+    return Math.exp(-daysAgo/45);
+  }
+  function wTemperature(snapTemp){
+    if(snapTemp==null||currentTemp==null) return 0.7;
+    const diff=snapTemp-currentTemp;
+    return Math.exp(-(diff*diff)/128); // sigma=8°C
+  }
+  function wPluie(snapMeteo){
+    if(!snapMeteo) return 0.7;
+    const snapRainy=(snapMeteo.precipitation??0)>0.1||snapMeteo.rain===true;
+    return snapRainy===currentRainy ? 1.0 : 0.35;
+  }
+  function wHeure(snapMinutes){
+    const diff=snapMinutes-nowMinutes;
+    return Math.exp(-(diff*diff)/450); // sigma≈21min, ±30min→0.65
   }
 
   // Calcul probas depuis l'historique
@@ -1212,16 +1231,20 @@ async function computePlan(){
 
   allIds.forEach(num=>{
     let depSum=0,arrSum=0,wSum=0,depHit=0,arrHit=0,samples=0;
-    allDays.forEach(snaps=>{
+    allDays.forEach(({snaps,daysAgo})=>{
+      const wRec=wRecence(daysAgo);
       snaps.forEach(snap=>{
         const snapDate=new Date(getTs(snap));
-        const h=snapDate.getHours();
-        if(h!==targetH) return;
+        const snapMinutes=snapDate.getHours()*60+snapDate.getMinutes();
+        // Filtre souple : ±90min autour de l'heure cible
+        if(Math.abs(snapMinutes-nowMinutes)>90) return;
         const sts=getSts(snap),st=sts.find(s=>s.number===num);
         if(!st||!st.bike_stands) return;
         const depKey=bikeType==='elec'?'electrical_bikes':bikeType==='meca'?'mechanical_bikes':'available_bikes';
-        const snapM=snap.meteo; if(snapM) snapM._ts=new Date(getTs(snap)).getTime();
-        const w=meteoW(snapM,isRainy);
+        const snapM=snap.meteo;
+        const snapTemp=snapM?.temperature??null;
+        const w=wRec * wTemperature(snapTemp) * wPluie(snapM) * wHeure(snapMinutes);
+        if(w<0.01) return; // ignorer poids négligeables
         const depVal=st[depKey]||0, arrVal=st.available_bike_stands||0;
         const elecVal=st.electrical_bikes||0, mecaVal=st.mechanical_bikes||0;
         depSum+=depVal/st.bike_stands*100*w; arrSum+=arrVal/st.bike_stands*100*w; wSum+=w;
@@ -1242,42 +1265,7 @@ async function computePlan(){
     };
   });
 
-  // Debug : compter les résultats
-  let totalSamples=0;
-  allIds.forEach(num=>{ totalSamples+=stationProba[num]?.samples||0; });
 
-  // Si aucun sample — peut-être un problème d'heure
-  // Essayer avec +1 aussi (heure d'hiver)
-  if(totalSamples===0 && allDays.length>0){
-    const targetH2=(targetH+23)%24; // essayer H-1
-    allIds.forEach(num=>{
-      let depSum=0,arrSum=0,wSum=0,depHit=0,arrHit=0,samples=0;
-      allDays.forEach(snaps=>{
-        snaps.forEach(snap=>{
-          const snapDate=getTs(snap);
-          const d=new Date(snapDate);
-          const h=d.getHours(); // heure locale directe
-          if(h!==targetH&&h!==targetH2) return;
-          const sts=getSts(snap),st=sts.find(s=>s.number===num);
-          if(!st||!st.bike_stands) return;
-          const depKey=bikeType==='elec'?'electrical_bikes':bikeType==='meca'?'mechanical_bikes':'available_bikes';
-          const w=0.8;
-          const depVal=st[depKey]||0, arrVal=st.available_bike_stands||0;
-          depSum+=depVal/st.bike_stands*100*w; arrSum+=arrVal/st.bike_stands*100*w; wSum+=w;
-          if(depVal>=1) depHit+=w; if(arrVal>=1) arrHit+=w; samples++;
-          _depNAcc[num]=(_depNAcc[num]||0)+depVal*w; _arrNAcc[num]=(_arrNAcc[num]||0)+arrVal*w;
-        });
-      });
-      if(wSum>0) stationProba[num]={
-        dep:Math.round(depSum/wSum), arr:Math.round(arrSum/wSum),
-        depN:Math.round((_depNAcc[num]||0)/wSum*10)/10,
-        arrN:Math.round((_arrNAcc[num]||0)/wSum*10)/10,
-        depProb:Math.round(depHit/wSum*100),
-        arrProb:Math.round(arrHit/wSum*100),
-        samples
-      };
-    });
-  }
 
   // Générer combinaisons
   const combos=[];
