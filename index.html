@@ -1345,8 +1345,9 @@ async function computePlan(){
         </div>`:`
         <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0">
           <div style="display:flex;gap:5px;align-items:center">
-            <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#1a7a3e;line-height:1">${avgDepN??'?'}</div><div style="font-size:8px;color:rgba(255,255,255,.3)">⚡ moy.</div></div>
-            <div style="text-align:center"><div style="font-size:15px;font-weight:700;line-height:1">${avgArrN??'?'}</div><div style="font-size:8px;color:rgba(255,255,255,.3)">🅿️ moy.</div></div>
+            <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#1a7a3e;line-height:1">${combo.depElecN!=null?'~'+Math.round(combo.depElecN):'?'}</div><div style="font-size:8px;color:rgba(255,255,255,.3)">⚡</div></div>
+            <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#b52a2a;line-height:1">${combo.depMecaN!=null?'~'+Math.round(combo.depMecaN):'?'}</div><div style="font-size:8px;color:rgba(255,255,255,.3)">🔧</div></div>
+            <div style="text-align:center"><div style="font-size:15px;font-weight:700;line-height:1">${avgArrN!=null?'~'+avgArrN:'?'}</div><div style="font-size:8px;color:rgba(255,255,255,.3)">🅿️</div></div>
           </div>
           <div style="display:flex;gap:5px;align-items:center">
             <div style="font-size:9px;color:rgba(255,255,255,.35)"><span style="color:${depCol};font-weight:600">${combo.depProb??'?'}%</span> dép · <span style="color:${arrCol};font-weight:600">${combo.arrProb??'?'}%</span> arr.</div>
