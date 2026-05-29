@@ -22,7 +22,8 @@
   #top-nav{display:none !important}
   #top-nav{display:none !important}
 
-  .card{padding:12px;border:0.5px solid rgba(255,255,255,.08)}
+  .card{padding:14px;border:0.5px solid var(--border)}
+  .loc-row{grid-template-columns:1fr}
   #map{height:100%}
 
   .params-row{gap:8px}
@@ -67,10 +68,10 @@ nav{position:sticky;top:56px;z-index:250;background:#1c1c1e;border-bottom:0.5px 
 
 main{max-width:1500px;margin:auto;padding:20px}
 .panel{display:none;overflow:hidden}.panel.on{display:block}
-.card{background:rgba(24,24,28,.7);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:var(--radius);border:0.5px solid rgba(255,255,255,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.06);padding:20px;margin-bottom:16px}
+.card{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
 .card-title{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--sub);margin-bottom:14px}
 
-#map{height:100%;border-radius:var(--radius);overflow:hidden;position:relative;z-index:1}
+#map{height:calc(100vh - 140px);border-radius:var(--radius);overflow:hidden;position:relative;z-index:1}
 .map-ctrl{position:absolute;top:10px;right:10px;z-index:500;display:flex;gap:6px}
 .map-btn{padding:6px 14px;border-radius:20px;border:none;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);box-shadow:var(--shadow);font-size:12px;font-weight:600;cursor:pointer;color:var(--sub);transition:all .15s}
 .map-btn.on{background:var(--blue);color:#fff}
@@ -155,8 +156,6 @@ main{max-width:1500px;margin:auto;padding:20px}
 .combo-dots{display:flex;justify-content:center;gap:5px;padding:6px 0 4px}
 .cdot{height:5px;border-radius:3px;background:#636366;transition:all .2s;display:inline-block}
 .cdot.on{width:14px!important;background:rgba(255,255,255,.55)}
-.station-popup .leaflet-popup-content-wrapper,.station-popup .leaflet-popup-tip{background:transparent;box-shadow:none;padding:0}
-.station-popup .leaflet-popup-content{margin:0}
 </style>
 </head>
 <body>
@@ -202,6 +201,7 @@ main{max-width:1500px;margin:auto;padding:20px}
           </div>
           <button onclick="swapPlanFromTo()" style="width:30px;height:30px;border-radius:8px;border:0.5px solid rgba(255,255,255,.08);background:rgba(255,255,255,.06);cursor:pointer;font-size:15px;color:#8e8e93;display:flex;align-items:center;justify-content:center;flex-shrink:0">⇅</button>
         </div>
+        <div id="plan-meteo" style="font-size:10px;color:rgba(255,255,255,.35);margin-bottom:8px"></div>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
           <div style="display:flex;background:rgba(255,255,255,.08);border-radius:20px;padding:2px;position:relative">
             <div id="toggle-slider" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:rgba(255,255,255,.15);border-radius:18px;transition:transform .15s;pointer-events:none"></div>
@@ -263,6 +263,7 @@ main{max-width:1500px;margin:auto;padding:20px}
       </select>
       <input id="lb-station-search" type="text" placeholder="🔍 Station…" oninput="filterLbTable(this.value)" style="padding:7px 10px;border-radius:10px;border:1px solid var(--border);background:var(--paper);color:var(--ink);font-size:13px;outline:none;min-width:0;flex:1"/>
       <button class="btn" onclick="computeLeaderboard()">Calculer</button>
+      <span id="lb-meteo" style="font-size:12px;color:var(--sub)"></span>
     </div>
   </div>
 
@@ -332,7 +333,7 @@ function compactPlanFloat(){
           <div style="background:${scBg};border-radius:6px;padding:2px 6px;flex-shrink:0"><span style="font-size:11px;font-weight:700;color:${scCol}">${sc}%</span></div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
-          <div style="font-size:10px;color:rgba(255,255,255,.4)">${combo._walkDepMin?`<span style='color:#0a84ff'>🚶${combo._walkDepMin}min · </span>`:''} ${Math.round(combo.dist/1000*10)/10}km · ~${combo.rideMin}min${combo._walkArrMin?` · <span style='color:#0a84ff'>🚶${combo._walkArrMin}min</span>`:''}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.4)">${Math.round(combo.dist/1000*10)/10}km · ~${combo.rideMin}min</div>
           <div style="display:flex;align-items:center;gap:4px;margin-left:auto">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="#f5f5f7"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span style="font-size:11px;font-weight:700;color:#f5f5f7">${liveElec}</span>
             <span style="color:#38383a;font-size:10px">/</span>
@@ -632,7 +633,7 @@ async function computeMovements(){
 function initMap(){
   if(map) return;
   map=L.map('map',{zoomControl:false}).setView([45.757,4.832],13); L.control.zoom({position:'bottomright'}).addTo(map);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
     {attribution:'© OpenStreetMap © CARTO',maxZoom:20}).addTo(map);
   map.on('zoomend', renderStations);
 }
@@ -669,7 +670,10 @@ function renderStations(){
     if(!st.lat||!st.lng) return;
     const mv=todayMv[st.number]||0;
     const m=L.circleMarker([st.lat,st.lng],{radius:8,fillColor:stationColor(st),color:'#fff',weight:1.5,fillOpacity:.9});
-    m.on('click',()=> showStationPopup(st, st.lat, st.lng));
+    m.bindPopup(`<div style="min-width:190px;font-family:-apple-system,sans-serif">
+      <b style="font-size:14px">${cleanName(st.name)}</b><br><br>
+      ⚡ ${st.electrical_bikes} · 🔧 ${st.mechanical_bikes} · 🚲 ${st.available_bikes}<br>
+      🅿️ ${st.available_bike_stands} places · ↕ ${mv} mvts/j</div>`);
     markers.addLayer(m);
   });
   buildHeatLayer();
@@ -1056,7 +1060,15 @@ function initPlanMap(){
     if(!meteo) return;
     const m=meteoFromCode(meteo.weathercode, meteo.rain);
     // Afficher dans le flottant
-    // Afficher près des touches de zoom
+    const meteoEl=document.getElementById('plan-meteo');
+    if(meteoEl){
+      const parts=[];
+      if(m.icon) parts.push(m.icon);
+      if(meteo.temp!==undefined) parts.push(meteo.temp+'°C');
+      if(meteo.wind!==undefined) parts.push(meteo.wind+' km/h');
+      meteoEl.textContent=parts.join(' · ');
+    }
+    // Afficher aussi près des touches de zoom
     if(!document.getElementById('meteo-ctrl')){
       const ctrl=L.control({position:'bottomright'});
       ctrl.onAdd=()=>{
@@ -1351,7 +1363,7 @@ async function computePlan(){
         <div style="flex:1;min-width:0">
           <div style="font-size:11px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cleanName(combo.dep.name)}</div>
           <div style="font-size:10px;color:rgba(255,255,255,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cleanName(combo.arr.name)}</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:1px">${combo._walkDepMin?`<span style="color:#0a84ff">🚶${combo._walkDepMin}min</span> · `:''} ${Math.round(combo.dist/1000*10)/10}km · ~${combo.rideMin}min${combo._walkArrMin?` · <span style="color:#0a84ff">🚶${combo._walkArrMin}min</span>`:''}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:1px">${Math.round(combo.dist/1000*10)/10}km · ~${combo.rideMin}min</div>
         </div>
         ${cardBody}
       </div>`;
@@ -1457,9 +1469,7 @@ async function drawTop3Routes(){
   // Tracer en ordre inverse (le 1er par-dessus)
   [...routes].reverse().forEach(({coords,i,combo})=>{
     if(coords){
-      // Liseré blanc pour lisibilité
-      L.polyline(coords,{color:'#fff',weight:weights[i]+3,opacity:.7,lineCap:'round',lineJoin:'round'}).addTo(planLayerGroup);
-      const pl=L.polyline(coords,{color:colors[i],weight:weights[i],opacity:opacities[i],lineCap:'round',lineJoin:'round'}).addTo(planLayerGroup);
+      const pl=L.polyline(coords,{color:colors[i],weight:weights[i],opacity:opacities[i]}).addTo(planLayerGroup);
       const _i=i; pl.on('click',(e)=>{window._routeClickGuard=true;L.DomEvent.stopPropagation(e);selectComboIdx(_i);});
       // Zone de clic élargie invisible
       L.polyline(coords,{color:'transparent',weight:20,opacity:0}).on('click',(e)=>{window._routeClickGuard=true;L.DomEvent.stopPropagation(e);selectComboIdx(_i);}).addTo(planLayerGroup);
@@ -1553,8 +1563,7 @@ async function showRoute(idx){
     }
 
     if(coords){
-      L.polyline(coords,{color:'#fff',weight:8,opacity:.65,lineCap:'round',lineJoin:'round'}).addTo(planLayerGroup);
-      L.polyline(coords,{color:routeColor,weight:5,opacity:.9,lineCap:'round',lineJoin:'round'}).addTo(planLayerGroup);
+      L.polyline(coords,{color:routeColor,weight:5,opacity:.9}).addTo(planLayerGroup);
       setTimeout(()=>{
         planMap.invalidateSize();
         planMap.fitBounds(L.polyline(coords).getBounds().pad(.2));
@@ -1564,17 +1573,9 @@ async function showRoute(idx){
 
   // Lignes en pointillés piéton
   if(planFromPos&&!planFromFixed)
-    const walkDepDist=Math.round(Math.sqrt(Math.pow((planFromPos.lat-combo.dep.lat)*111000,2)+Math.pow((planFromPos.lng-combo.dep.lng)*111000*Math.cos(planFromPos.lat*Math.PI/180),2)));
-    const walkDepMin=Math.max(1,Math.round(walkDepDist/80)); // ~80m/min marche
-    combo._walkDepMin=walkDepMin;
-    L.polyline([[planFromPos.lat,planFromPos.lng],[combo.dep.lat,combo.dep.lng]],{color:'#fff',weight:4,dashArray:'6,5',opacity:.5,lineCap:'round'}).addTo(planLayerGroup);
-    L.polyline([[planFromPos.lat,planFromPos.lng],[combo.dep.lat,combo.dep.lng]],{color:'#0a84ff',weight:2.5,dashArray:'6,5',opacity:.85,lineCap:'round'}).addTo(planLayerGroup);
+    L.polyline([[planFromPos.lat,planFromPos.lng],[combo.dep.lat,combo.dep.lng]],{color:'#6e6e73',weight:2,dashArray:'5,5',opacity:.7}).addTo(planLayerGroup);
   if(planToPos&&!planToFixed)
-    const walkArrDist=Math.round(Math.sqrt(Math.pow((combo.arr.lat-planToPos.lat)*111000,2)+Math.pow((combo.arr.lng-planToPos.lng)*111000*Math.cos(combo.arr.lat*Math.PI/180),2)));
-    const walkArrMin=Math.max(1,Math.round(walkArrDist/80));
-    combo._walkArrMin=walkArrMin;
-    L.polyline([[combo.arr.lat,combo.arr.lng],[planToPos.lat,planToPos.lng]],{color:'#fff',weight:4,dashArray:'6,5',opacity:.5,lineCap:'round'}).addTo(planLayerGroup);
-    L.polyline([[combo.arr.lat,combo.arr.lng],[planToPos.lat,planToPos.lng]],{color:'#0a84ff',weight:2.5,dashArray:'6,5',opacity:.85,lineCap:'round'}).addTo(planLayerGroup);
+    L.polyline([[combo.arr.lat,combo.arr.lng],[planToPos.lat,planToPos.lng]],{color:'#6e6e73',weight:2,dashArray:'5,5',opacity:.7}).addTo(planLayerGroup);
 
 }
 
@@ -1936,73 +1937,6 @@ function renderSDSlide(slideIdx, number){
       }
     }
   });
-}
-
-let _stationPopup=null;
-function showStationPopup(s, lat, lon){
-  if(_stationPopup) _stationPopup.remove();
-  const hasDep=!!window._planFromPos;
-  // Store pending station data globally to avoid onclick escaping issues
-  window._popupStation={name:cleanName(s.name),lat,lon};
-  const dBtn=!hasDep?`<button id="stn-dep-btn" style="width:100%;padding:7px 10px;border-radius:8px;border:none;background:rgba(52,199,89,.15);color:#34c759;font-size:12px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Partir d'ici</button>`:'';
-  const aBtn=hasDep?`<button id="stn-arr-btn" style="width:100%;padding:7px 10px;border-radius:8px;border:none;background:rgba(255,69,58,.12);color:#ff453a;font-size:12px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Arriver ici</button>`:'';
-  _stationPopup=L.popup({closeButton:false,className:'station-popup',offset:[0,-8]})
-    .setLatLng([lat,lon])
-    .setContent(`<div style="background:rgba(12,12,16,.92);backdrop-filter:blur(20px);border-radius:12px;padding:8px;min-width:140px;border:0.5px solid rgba(255,255,255,.1)">
-      <div style="font-size:11px;font-weight:700;color:#f5f5f7;margin-bottom:6px">${cleanName(s.name)}</div>
-      <div style="font-size:10px;color:#8e8e93;margin-bottom:7px">⚡${s.electrical_bikes} · 🔧${s.mechanical_bikes} · 🅿️${s.available_bike_stands}</div>
-      <div style="display:flex;flex-direction:column;gap:4px">${dBtn}${aBtn}</div>
-    </div>`)
-    .addTo(map);
-  // Attach events after DOM insertion
-  setTimeout(()=>{
-    document.getElementById('stn-dep-btn')?.addEventListener('click',()=>{ const p=window._popupStation; setStationDep(p.name,p.lat,p.lon); });
-    document.getElementById('stn-arr-btn')?.addEventListener('click',()=>{ const p=window._popupStation; setStationArr(p.name,p.lat,p.lon); });
-  },50);
-}
-
-function setStationDep(name,lat,lon){
-  if(_stationPopup){ _stationPopup.remove(); _stationPopup=null; }
-  window._planFromPos={lat,lng:lon};
-  planFromPos={lat,lng:lon};
-  document.getElementById('plan-from').value=name;
-  // Open plan float
-  expandPlanFloat();
-  document.getElementById('plan-float').style.maxHeight='250px';
-}
-
-function setStationArr(name,lat,lon){
-  if(_stationPopup){ _stationPopup.remove(); _stationPopup=null; }
-  window._planToPos={lat,lng:lon};
-  planToPos={lat,lng:lon};
-  document.getElementById('plan-to').value=name;
-  expandPlanFloat();
-  setTimeout(()=>computePlan(),200);
-}
-
-function showStationToast(s,type){}
-
-function geolocateFrom(){
-  if(!navigator.geolocation){ alert('Géolocalisation non disponible'); return; }
-  const btn=document.querySelector('[onclick="geolocateFrom()"]');
-  if(btn) btn.style.opacity='.5';
-  navigator.geolocation.getCurrentPosition(
-    pos=>{
-      const {latitude:lat,longitude:lng}=pos.coords;
-      window._planFromPos={lat,lng};
-      planFromPos={lat,lng};
-      document.getElementById('plan-from').value='Ma position';
-      if(btn) btn.style.opacity='1';
-      // Show blue dot on map
-      if(window._geoMarker) window._geoMarker.remove();
-      window._geoMarker=L.circleMarker([lat,lng],{
-        radius:8,fillColor:'#0a84ff',color:'#fff',weight:2,fillOpacity:.95,
-        className:'geo-pulse'
-      }).addTo(planLayerGroup||map);
-    },
-    err=>{ if(btn) btn.style.opacity='1'; console.warn('Géoloc:', err.message); },
-    {enableHighAccuracy:true,timeout:8000}
-  );
 }
 
 function filterLbTable(q){
