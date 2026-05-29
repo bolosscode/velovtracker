@@ -1699,16 +1699,26 @@ async function showStationDetail(number, targetEl=null){
   const oldCanvas=document.getElementById('sd-combined-'+number);
   if(oldCanvas){ const existing=Chart.getChart(oldCanvas); if(existing) existing.destroy(); }
   const isMob=window.innerWidth<=640;
+  const isMob2=window.innerWidth<=640;
   detail.innerHTML=
     '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'+
-    (st.lat&&st.lng?'<div id="sd-map" style="width:48px;height:48px;border-radius:8px;overflow:hidden;flex-shrink:0"></div>':'')+
-    '<div style="min-width:0"><div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+cleanName(st.name)+'</div>'+
+    (st.lat&&st.lng?'<div id="sd-map" style="width:44px;height:44px;border-radius:10px;overflow:hidden;flex-shrink:0"></div>':'')+
+    '<div style="min-width:0"><div style="font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+cleanName(st.name)+'</div>'+
     '<div style="font-size:11px;color:var(--sub);margin-top:2px">⚡'+st.electrical_bikes+' · 🔧'+st.mechanical_bikes+' · 🅿️'+st.available_bike_stands+'</div></div></div>'+
-    '<div style="display:flex;gap:10px;font-size:10px;color:var(--sub);margin-bottom:4px">'+
-    '<span><span style="display:inline-block;width:10px;height:2px;background:#1a7a3e;vertical-align:middle;margin-right:3px"></span>⚡ Élec</span>'+
-    '<span><span style="display:inline-block;width:10px;height:2px;background:#b52a2a;vertical-align:middle;margin-right:3px"></span>🔧 Méca</span></div>'+
-    '<canvas id="sd-combined-'+number+'" height="'+chartH+'" style="width:100%"></canvas>'+
-    '<div id="sd-stats-row" style="display:flex;gap:8px;margin-top:8px"></div>';
+    // Slide tabs
+    '<div style="display:flex;gap:0;background:rgba(255,255,255,.06);border-radius:10px;padding:2px;margin-bottom:8px">'+
+    '<div class="sd-tab on" onclick="renderSDSlide(0,'+number+')" style="flex:1;text-align:center;padding:5px 4px;font-size:10px;font-weight:600;color:var(--ink);background:rgba(255,255,255,.14);border-radius:8px;cursor:pointer">🚲 Vélos</div>'+
+    '<div class="sd-tab" onclick="renderSDSlide(1,'+number+')" style="flex:1;text-align:center;padding:5px 4px;font-size:10px;font-weight:600;color:var(--sub);border-radius:8px;cursor:pointer">↕ Mvts</div>'+
+    '<div class="sd-tab" onclick="renderSDSlide(2,'+number+')" style="flex:1;text-align:center;padding:5px 4px;font-size:10px;font-weight:600;color:var(--sub);border-radius:8px;cursor:pointer">⚖️ Solde</div>'+
+    '</div>'+
+    '<div id="sd-legend-'+number+'" style="display:flex;gap:10px;font-size:10px;color:var(--sub);margin-bottom:4px"></div>'+
+    '<div style="position:relative;height:'+(isMob2?120:150)+'px"><canvas id="sd-combined-'+number+'" style="position:absolute;inset:0;width:100%!important;height:100%!important"></canvas></div>'+
+    '<div style="display:flex;justify-content:center;gap:4px;padding:6px 0 2px">'+
+    '<div class="sd-dot on" style="height:3px;width:14px;border-radius:2px;background:#34c759;transition:all .2s;display:inline-block"></div>'+
+    '<div class="sd-dot" style="height:3px;width:5px;border-radius:2px;background:#38383a;transition:all .2s;display:inline-block"></div>'+
+    '<div class="sd-dot" style="height:3px;width:5px;border-radius:2px;background:#38383a;transition:all .2s;display:inline-block"></div>'+
+    '</div>'+
+    '<div id="sd-stats-row" style="display:flex;gap:8px;margin-top:6px"></div>';
 
 
   if(st.lat && st.lng && document.getElementById('sd-map')){
@@ -1718,102 +1728,180 @@ async function showStationDetail(number, targetEl=null){
       {attribution:''}).addTo(sdMap);
     L.circleMarker([st.lat,st.lng],{radius:10,fillColor:stationColor(st),color:'#fff',weight:2,fillOpacity:.95}).addTo(sdMap);
   }
-  // Période selon la vue
+  // ── Chargement des données selon la vue ──
   const d=document.getElementById('lb-date').value;
   const mth=document.getElementById('lb-month')?.value;
   const yr=document.getElementById('lb-year')?.value;
 
-  let labels=[], dataElec=[], dataMeca=[];
+  // Fonction utilitaire : charge et agrège les snapshots d'une liste de dates
+  async function loadSnapsByDate(dates){
+    const BATCH=16;
+    const result=[];
+    for(let i=0;i<dates.length;i+=BATCH){
+      const batch=dates.slice(i,i+BATCH);
+      const res=await Promise.all(batch.map(dt=>fetchDay(dt).catch(()=>null)));
+      res.forEach((snaps,j)=>{ if(snaps) result.push({date:batch[j],snaps}); });
+    }
+    return result;
+  }
+
+  let labels=[], dataElec=[], dataMeca=[], dataMvts=[], dataSolde=[];
 
   if(view==='day'){
     if(!d) return;
     const snaps=await fetchDay(d)||[];
+    let prevMvts=null;
     snaps.forEach(snap=>{
       const sts=getSts(snap), st2=sts.find(x=>x.number===number);
       if(!st2) return;
       const t=new Date(getTs(snap));
-      labels.push(t.getHours()+'h');
+      labels.push(t.getHours()+'h'+String(t.getMinutes()).padStart(2,'0'));
       dataElec.push(st2.electrical_bikes||0);
       dataMeca.push(st2.mechanical_bikes||0);
+      // Mouvements = delta sur available_bikes (proxy)
+      const total=(st2.electrical_bikes||0)+(st2.mechanical_bikes||0);
+      if(prevMvts!==null){ dataMvts.push(Math.abs(total-prevMvts)); dataSolde.push(total-prevMvts); }
+      else { dataMvts.push(0); dataSolde.push(0); }
+      prevMvts=total;
     });
   } else if(view==='month'){
     if(!mth) return;
     const [y,mo]=mth.split('-').map(Number);
     const daysInMonth=new Date(y,mo,0).getDate();
+    const today=new Date().toISOString().slice(0,10);
+    const dates=[];
     for(let day=1;day<=daysInMonth;day++){
-      const dateStr=y+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+      const ds=y+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+      if(ds<=today) dates.push(ds);
+    }
+    const loaded=await loadSnapsByDate(dates);
+    for(let day=1;day<=daysInMonth;day++){
+      const ds=y+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
       labels.push(day+'');
-      const snaps=await fetchDay(dateStr)||[];
-      let e=0,m=0;
-      snaps.forEach(snap=>{
+      const entry=loaded.find(x=>x.date===ds);
+      if(!entry||!entry.snaps.length){ dataElec.push(null);dataMeca.push(null);dataMvts.push(null);dataSolde.push(null);continue; }
+      let eSum=0,mSum=0,cnt=0,mvtsSum=0;
+      let firstTotal=null,lastTotal=null;
+      entry.snaps.forEach(snap=>{
         const st2=getSts(snap).find(x=>x.number===number);
-        if(st2){e+=st2.electrical_bikes||0;m+=st2.mechanical_bikes||0;}
+        if(!st2) return;
+        eSum+=st2.electrical_bikes||0; mSum+=st2.mechanical_bikes||0; cnt++;
+        const tot=(st2.electrical_bikes||0)+(st2.mechanical_bikes||0);
+        if(firstTotal===null) firstTotal=tot;
+        lastTotal=tot;
       });
-      dataElec.push(Math.round(e/Math.max(1,snaps.length)));
-      dataMeca.push(Math.round(m/Math.max(1,snaps.length)));
+      // Mouvements jour = somme des variations absolues entre snapshots
+      let prevT=null;
+      entry.snaps.forEach(snap=>{
+        const st2=getSts(snap).find(x=>x.number===number);
+        if(!st2) return;
+        const tot=(st2.electrical_bikes||0)+(st2.mechanical_bikes||0);
+        if(prevT!==null) mvtsSum+=Math.abs(tot-prevT);
+        prevT=tot;
+      });
+      dataElec.push(cnt?Math.round(eSum/cnt):null);
+      dataMeca.push(cnt?Math.round(mSum/cnt):null);
+      dataMvts.push(Math.round(mvtsSum));
+      dataSolde.push(firstTotal!==null&&lastTotal!==null?lastTotal-firstTotal:null);
     }
   } else {
     if(!yr) return;
     const today=new Date().toISOString().slice(0,10);
+    const MONTHS=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
     for(let mo=1;mo<=12;mo++){
-      labels.push(['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'][mo-1]);
+      labels.push(MONTHS[mo-1]);
       const daysInM=new Date(yr,mo,0).getDate();
-      let e=0,m=0,cnt=0;
+      const dates=[];
       for(let day=1;day<=daysInM;day++){
-        const dateStr=yr+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
-        if(dateStr>today) continue;
-        const snaps=await fetchDay(dateStr)||[];
+        const ds=yr+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+        if(ds<=today) dates.push(ds);
+      }
+      if(!dates.length){ dataElec.push(null);dataMeca.push(null);dataMvts.push(null);dataSolde.push(null);continue; }
+      const loaded=await loadSnapsByDate(dates);
+      let eSum=0,mSum=0,cnt=0,mvtsTotal=0,soldeTotal=0;
+      loaded.forEach(({snaps})=>{
+        let prevT=null,firstT=null,lastT=null;
         snaps.forEach(snap=>{
           const st2=getSts(snap).find(x=>x.number===number);
-          if(st2){e+=st2.electrical_bikes||0;m+=st2.mechanical_bikes||0;cnt++;}
+          if(!st2) return;
+          eSum+=st2.electrical_bikes||0; mSum+=st2.mechanical_bikes||0; cnt++;
+          const tot=(st2.electrical_bikes||0)+(st2.mechanical_bikes||0);
+          if(firstT===null) firstT=tot; lastT=tot;
+          if(prevT!==null) mvtsTotal+=Math.abs(tot-prevT);
+          prevT=tot;
         });
-      }
-      dataElec.push(Math.round(e/Math.max(1,cnt)));
-      dataMeca.push(Math.round(m/Math.max(1,cnt)));
+        if(firstT!==null&&lastT!==null) soldeTotal+=lastT-firstT;
+      });
+      dataElec.push(cnt?Math.round(eSum/cnt):null);
+      dataMeca.push(cnt?Math.round(mSum/cnt):null);
+      dataMvts.push(Math.round(mvtsTotal/Math.max(1,loaded.length)));
+      dataSolde.push(Math.round(soldeTotal/Math.max(1,loaded.length)));
     }
   }
 
-  // Moyenne réelle (pas somme cumulée)
-  const validElec=dataElec.filter(v=>v!==null&&v>0);
-  const validMeca=dataMeca.filter(v=>v!==null&&v>0);
-  const avgElec=validElec.length?Math.round(validElec.reduce((a,b)=>a+b,0)/validElec.length):0;
-  const avgMeca=validMeca.length?Math.round(validMeca.reduce((a,b)=>a+b,0)/validMeca.length):0;
-  const mvLabel=view==='day'?'vélos en moy.':'moy. vélos/j';
-  const statsRow=document.getElementById('sd-stats-row');
-  if(statsRow) statsRow.innerHTML=
-    '<div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px">'+
-    '<div style="font-size:15px;font-weight:600;color:#1a7a3e">'+avgElec+'</div>'+
-    '<div style="font-size:10px;color:var(--sub)">⚡ '+mvLabel+'</div></div>'+
-    '<div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px">'+
-    '<div style="font-size:15px;font-weight:600;color:#b52a2a">'+avgMeca+'</div>'+
-    '<div style="font-size:10px;color:var(--sub)">🔧 '+mvLabel+'</div></div>';
-  const isLine=chartType==='line';
-  _chartSD_elec=new Chart(document.getElementById('sd-combined-'+number),{type:chartType,
-    data:{labels,datasets:[
-      {label:'Élec',data:dataElec,
-        borderColor:'#34c759',backgroundColor:isLine?'#34c75918':'#34c75988',
-        borderWidth:isLine?1.8:0,borderRadius:2,tension:0,pointRadius:0,spanGaps:true,fill:isLine},
-      {label:'Méca',data:dataMeca,
-        borderColor:'#ff453a',backgroundColor:isLine?'#ff453a18':'#ff453a88',
-        borderWidth:isLine?1.8:0,borderRadius:2,tension:0,pointRadius:0,spanGaps:true,fill:isLine}
-    ]},
-    options:{
-      responsive:true,
-      plugins:{
-        legend:{display:false},
-        tooltip:{
-          backgroundColor:'rgba(28,28,30,.92)',titleColor:'#f5f5f7',bodyColor:'#8e8e93',
-          padding:8,cornerRadius:8,
-          callbacks:{title:v=>view==='day'?v[0].label+'h':'Jour '+v[0].label}
-        }
-      },
+  // ── Slide tabs ──
+  window._sdData={labels,dataElec,dataMeca,dataMvts,dataSolde,number,view};
+  renderSDSlide(window._sdSlide||0, number);
+} // fin showStationDetail
+
+function renderSDSlide(slideIdx, number){
+  window._sdSlide=slideIdx;
+  const {labels,dataElec,dataMeca,dataMvts,dataSolde,view}=window._sdData||{};
+  if(!labels) return;
+  const isLine=view==='day';
+  const chartType=isLine?'line':'bar';
+  const chartH=window.innerWidth<=640?120:150;
+
+  // Détruire l'ancien chart
+  if(_chartSD_elec){ try{_chartSD_elec.destroy();}catch{} _chartSD_elec=null; }
+  const cvs=document.getElementById('sd-combined-'+number);
+  if(cvs){ const ex=Chart.getChart(cvs); if(ex) ex.destroy(); }
+
+  // Update slide tabs UI
+  document.querySelectorAll('.sd-tab').forEach((t,i)=>t.classList.toggle('on',i===slideIdx));
+  document.querySelectorAll('.sd-dot').forEach((d,i)=>{ d.classList.toggle('on',i===slideIdx); d.style.width=i===slideIdx?'14px':'5px'; });
+
+  let datasets=[], legendHtml='', statsHtml='';
+
+  if(slideIdx===0){
+    datasets=[
+      {label:'Élec',data:dataElec,borderColor:'#34c759',backgroundColor:isLine?'#34c75918':'#34c75988',borderWidth:isLine?1.8:0,borderRadius:2,tension:0,pointRadius:0,spanGaps:true,fill:isLine},
+      {label:'Méca',data:dataMeca,borderColor:'#ff453a',backgroundColor:isLine?'#ff453a18':'#ff453a88',borderWidth:isLine?1.8:0,borderRadius:2,tension:0,pointRadius:0,spanGaps:true,fill:isLine}
+    ];
+    legendHtml='<span><span style="display:inline-block;width:10px;height:2px;background:#34c759;vertical-align:middle;margin-right:3px;border-radius:1px"></span>⚡ Élec</span><span style="margin-left:10px"><span style="display:inline-block;width:10px;height:2px;background:#ff453a;vertical-align:middle;margin-right:3px;border-radius:1px"></span>🔧 Méca</span>';
+    const avgE=Math.round((dataElec.filter(Boolean).reduce((a,b)=>a+b,0)||0)/Math.max(1,dataElec.filter(Boolean).length));
+    const avgM=Math.round((dataMeca.filter(Boolean).reduce((a,b)=>a+b,0)||0)/Math.max(1,dataMeca.filter(Boolean).length));
+    statsHtml=`<div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#34c759">${avgE}</div><div style="font-size:10px;color:var(--sub)">⚡ moy.</div></div><div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#ff453a">${avgM}</div><div style="font-size:10px;color:var(--sub)">🔧 moy.</div></div>`;
+  } else if(slideIdx===1){
+    datasets=[{label:'Mvts',data:dataMvts,backgroundColor:'#0a84ff99',borderColor:'#0a84ff',borderWidth:0,borderRadius:3,spanGaps:true}];
+    legendHtml='<span><span style="display:inline-block;width:10px;height:2px;background:#0a84ff;vertical-align:middle;margin-right:3px;border-radius:1px"></span>↕ Mouvements</span>';
+    const total=(dataMvts.filter(Boolean).reduce((a,b)=>a+b,0)||0);
+    const maxMvt=Math.max(...(dataMvts.filter(Boolean)||[0]));
+    statsHtml=`<div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#0a84ff">${Math.round(total)}</div><div style="font-size:10px;color:var(--sub)">↕ total</div></div><div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:var(--ink)">${maxMvt}</div><div style="font-size:10px;color:var(--sub)">↕ max</div></div>`;
+  } else {
+    datasets=[{label:'Solde',data:dataSolde,backgroundColor:dataSolde.map(v=>(v||0)>=0?'#34c75999':'#ff453a99'),borderColor:dataSolde.map(v=>(v||0)>=0?'#34c759':'#ff453a'),borderWidth:0,borderRadius:3,spanGaps:true}];
+    legendHtml='<span><span style="display:inline-block;width:10px;height:2px;background:#34c759;vertical-align:middle;margin-right:3px;border-radius:1px"></span>Entrées</span><span style="margin-left:10px"><span style="display:inline-block;width:10px;height:2px;background:#ff453a;vertical-align:middle;margin-right:3px;border-radius:1px"></span>Sorties</span>';
+    const bilan=(dataSolde.filter(Boolean).reduce((a,b)=>a+b,0)||0);
+    statsHtml=`<div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:${bilan>=0?'#34c759':'#ff453a'}">${bilan>=0?'+':''}${Math.round(bilan)}</div><div style="font-size:10px;color:var(--sub)">⚖️ bilan</div></div>`;
+  }
+
+  const legendEl=document.getElementById('sd-legend-'+number);
+  const statsEl=document.getElementById('sd-stats-row');
+  if(legendEl) legendEl.innerHTML=legendHtml;
+  if(statsEl) statsEl.innerHTML=statsHtml;
+
+  if(!cvs) return;
+  _chartSD_elec=new Chart(cvs,{type:slideIdx===0?chartType:'bar',
+    data:{labels,datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(28,28,30,.92)',titleColor:'#f5f5f7',bodyColor:'#8e8e93',padding:8,cornerRadius:8}},
       scales:{
-        x:{ticks:{color:'#636366',font:{size:9},maxTicksLimit:view==='day'?8:10},grid:{display:false},border:{display:false}},
-        y:{ticks:{color:'#636366',font:{size:9},maxTicksLimit:4},grid:{color:'rgba(255,255,255,.05)'},border:{display:false},min:0,suggestedMax:Math.max(...dataElec,...dataMeca)*1.3||10}
+        x:{ticks:{color:'#636366',font:{size:9},maxTicksLimit:view==='day'?8:12},grid:{display:false},border:{display:false}},
+        y:{ticks:{color:'#636366',font:{size:9},maxTicksLimit:4},grid:{color:'rgba(255,255,255,.05)'},border:{display:false}}
       }
     }
   });
-} // fin showStationDetail
+}
 
 function setModeNow(){
   const sl=document.getElementById('toggle-slider');
