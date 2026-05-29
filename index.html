@@ -1121,19 +1121,46 @@ async function computePlan(){
   const filteredDays=allDays;
 
   // Stations proches
-  const depCenter=planFromFixed?{lat:planFromFixed.lat,lng:planFromFixed.lng}:planFromPos;
-  let depStations=allStations.filter(s=>s.lat&&s.lng)
-    .map(s=>({...s,dist:haversine(depCenter.lat,depCenter.lng,s.lat,s.lng)}))
-    .filter(s=>s.dist<=radius).sort((a,b)=>a.dist-b.dist).slice(0,6);
-  if(planFromFixed&&depStations[0]?.number!==planFromFixed.number)
-    depStations=[planFromFixed,...depStations.filter(s=>s.number!==planFromFixed.number)].slice(0,6);
-
-  const arrCenter=planToFixed?{lat:planToFixed.lat,lng:planToFixed.lng}:planToPos;
-  let arrStations=allStations.filter(s=>s.lat&&s.lng)
-    .map(s=>({...s,dist:haversine(arrCenter.lat,arrCenter.lng,s.lat,s.lng)}))
-    .filter(s=>s.dist<=radius).sort((a,b)=>a.dist-b.dist).slice(0,6);
-  if(planToFixed&&arrStations[0]?.number!==planToFixed.number)
-    arrStations=[planToFixed,...arrStations.filter(s=>s.number!==planToFixed.number)].slice(0,6);
+  // Si station fixée → station prioritaire + voisines si vide/pleine
+  const depKey=bikeType==='elec'?'electrical_bikes':bikeType==='meca'?'mechanical_bikes':'available_bikes';
+  let depStations, arrStations;
+  if(planFromFixed){
+    const depLive=allStations.find(s=>s.number===planFromFixed.number);
+    const depEmpty=depLive&&(depLive[depKey]||0)===0;
+    if(depEmpty){
+      // Station vide → proposer aussi les voisines
+      depStations=allStations.filter(s=>s.lat&&s.lng)
+        .map(s=>({...s,dist:haversine(planFromFixed.lat,planFromFixed.lng,s.lat,s.lng)}))
+        .filter(s=>s.dist<=radius).sort((a,b)=>a.dist-b.dist).slice(0,6);
+      // Garder la station fixée en premier quand même
+      if(!depStations.find(s=>s.number===planFromFixed.number))
+        depStations=[{...planFromFixed,dist:0},...depStations].slice(0,6);
+    } else {
+      depStations=[{...planFromFixed, dist:0}];
+    }
+  } else {
+    depStations=allStations.filter(s=>s.lat&&s.lng)
+      .map(s=>({...s,dist:haversine(planFromPos.lat,planFromPos.lng,s.lat,s.lng)}))
+      .filter(s=>s.dist<=radius).sort((a,b)=>a.dist-b.dist).slice(0,6);
+  }
+  if(planToFixed){
+    const arrLive=allStations.find(s=>s.number===planToFixed.number);
+    const arrFull=arrLive&&(arrLive.available_bike_stands||0)===0;
+    if(arrFull){
+      // Station pleine → proposer aussi les voisines
+      arrStations=allStations.filter(s=>s.lat&&s.lng)
+        .map(s=>({...s,dist:haversine(planToFixed.lat,planToFixed.lng,s.lat,s.lng)}))
+        .filter(s=>s.dist<=radius).sort((a,b)=>a.dist-b.dist).slice(0,6);
+      if(!arrStations.find(s=>s.number===planToFixed.number))
+        arrStations=[{...planToFixed,dist:0},...arrStations].slice(0,6);
+    } else {
+      arrStations=[{...planToFixed, dist:0}];
+    }
+  } else {
+    arrStations=allStations.filter(s=>s.lat&&s.lng)
+      .map(s=>({...s,dist:haversine(planToPos.lat,planToPos.lng,s.lat,s.lng)}))
+      .filter(s=>s.dist<=radius).sort((a,b)=>a.dist-b.dist).slice(0,6);
+  }
 
   if(!depStations.length||!arrStations.length){
     results.innerHTML='<div class="no-data">Aucune station dans ce rayon. Augmentez le rayon.</div>';
@@ -1286,6 +1313,12 @@ async function computePlan(){
   document.getElementById('plan-results-title').textContent=
     `Top ${top.length} combinaisons · ${DOW_NAMES[targetDow]} ${String(targetH).padStart(2,'0')}h · ${bikeType==='elec'?'⚡ Élec':bikeType==='meca'?'🔧 Méca':'🚲 Tous'} · ${filteredDays.length} sem.${meteoNote}`;
 
+  // Warning si station fixée vide/pleine
+  const depLiveWarn=planFromFixed&&allStations.find(s=>s.number===planFromFixed.number);
+  const depEmptyWarn=depLiveWarn&&(depLiveWarn[depKey]||0)===0;
+  const arrLiveWarn=planToFixed&&allStations.find(s=>s.number===planToFixed.number);
+  const arrFullWarn=arrLiveWarn&&(arrLiveWarn.available_bike_stands||0)===0;
+
   const renderComboList=(limit)=>{
     const shown=top.slice(0,limit);
     const html=shown.map((combo,i)=>{
@@ -1333,7 +1366,15 @@ async function computePlan(){
 
   const topScore=top[0]?.score??0;
   const autoLimit=topScore<30?top.length:topScore<50?Math.min(5,top.length):3;
-  results.innerHTML=renderComboList(autoLimit);
+  let _warnHtml='';
+  if(depEmptyWarn) _warnHtml+=`<div style="display:flex;align-items:center;gap:6px;padding:6px 10px 4px;font-size:10px;color:#ff9f0a;background:rgba(255,159,10,.08);border-radius:8px;margin-bottom:4px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Station vide · stations voisines proposées</div>`;
+  if(arrFullWarn) _warnHtml+=`<div style="display:flex;align-items:center;gap:6px;padding:6px 10px 4px;font-size:10px;color:#ff9f0a;background:rgba(255,159,10,.08);border-radius:8px;margin-bottom:4px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Station pleine · stations voisines proposées</div>`;
+  // Input feedback
+  const _fromInput=document.getElementById('plan-from');
+  const _toInput=document.getElementById('plan-to');
+  if(_fromInput) _fromInput.style.color=depEmptyWarn?'#ff9f0a':'';
+  if(_toInput) _toInput.style.color=arrFullWarn?'#ff9f0a':'';
+  results.innerHTML=_warnHtml+renderComboList(autoLimit);
   window._showMoreCombos=()=>{ results.innerHTML=renderComboList(top.length); drawTop3Routes(); };
   window._planCombos=top;
   _openComboIdx=null;
