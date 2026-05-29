@@ -1797,7 +1797,16 @@ async function showStationDetail(number, targetEl=null){
       dataElec.push(cnt?Math.round(eSum/cnt):null);
       dataMeca.push(cnt?Math.round(mSum/cnt):null);
       dataMvts.push(Math.round(mvtsSum));
-      dataSolde.push(firstTotal!==null&&lastTotal!==null?lastTotal-firstTotal:null);
+      // Solde = vélos nets arrivés dans la journée (entrées - sorties)
+      let entrees=0,sorties=0,prevSolde=null;
+      entry.snaps.forEach(snap=>{
+        const st2b=getSts(snap).find(x=>x.number===number);
+        if(!st2b) return;
+        const tot=(st2b.electrical_bikes||0)+(st2b.mechanical_bikes||0);
+        if(prevSolde!==null){ const d=tot-prevSolde; if(d>0)entrees+=d; else sorties+=d; }
+        prevSolde=tot;
+      });
+      dataSolde.push(entrees+sorties);
     }
   } else {
     if(!yr) return;
@@ -1837,7 +1846,16 @@ async function showStationDetail(number, targetEl=null){
           if(prevT!==null) mvtsTotal+=Math.abs(tot-prevT);
           prevT=tot;
         });
-        if(firstT!==null&&lastT!==null) soldeTotal+=lastT-firstT;
+        // Solde journée = entrées nettes
+        let ent=0,sor=0,prevSol=null;
+        snaps.forEach(snap=>{
+          const st2b=getSts(snap).find(x=>x.number===number);
+          if(!st2b) return;
+          const tot=(st2b.electrical_bikes||0)+(st2b.mechanical_bikes||0);
+          if(prevSol!==null){ const d=tot-prevSol; if(d>0)ent+=d; else sor+=d; }
+          prevSol=tot;
+        });
+        soldeTotal+=(ent+sor);
       });
       dataElec.push(cnt?Math.round(eSum/cnt):null);
       dataMeca.push(cnt?Math.round(mSum/cnt):null);
@@ -1881,13 +1899,23 @@ function renderSDSlide(slideIdx, number){
     const avgM=Math.round((dataMeca.filter(Boolean).reduce((a,b)=>a+b,0)||0)/Math.max(1,dataMeca.filter(Boolean).length));
     statsHtml=`<div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#34c759">${avgE}</div><div style="font-size:10px;color:var(--sub)">⚡ moy.</div></div><div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#ff453a">${avgM}</div><div style="font-size:10px;color:var(--sub)">🔧 moy.</div></div>`;
   } else if(slideIdx===1){
-    datasets=[{label:'Mvts',data:dataMvts,backgroundColor:'#0a84ff99',borderColor:'#0a84ff',borderWidth:0,borderRadius:3,spanGaps:true}];
+    datasets=[{label:'Mvts',data:dataMvts,
+      borderColor:'#0a84ff',backgroundColor:isLine?'#0a84ff18':'#0a84ff99',
+      borderWidth:isLine?1.8:0,borderRadius:isLine?0:3,
+      tension:0,pointRadius:0,spanGaps:true,fill:isLine}];
     legendHtml='<span><span style="display:inline-block;width:10px;height:2px;background:#0a84ff;vertical-align:middle;margin-right:3px;border-radius:1px"></span>↕ Mouvements</span>';
     const total=(dataMvts.filter(Boolean).reduce((a,b)=>a+b,0)||0);
     const maxMvt=Math.max(...(dataMvts.filter(Boolean)||[0]));
     statsHtml=`<div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#0a84ff">${Math.round(total)}</div><div style="font-size:10px;color:var(--sub)">↕ total</div></div><div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:var(--ink)">${maxMvt}</div><div style="font-size:10px;color:var(--sub)">↕ max</div></div>`;
   } else {
-    datasets=[{label:'Solde',data:dataSolde,backgroundColor:dataSolde.map(v=>(v||0)>=0?'#34c75999':'#ff453a99'),borderColor:dataSolde.map(v=>(v||0)>=0?'#34c759':'#ff453a'),borderWidth:0,borderRadius:3,spanGaps:true}];
+    const soldeColors=dataSolde.map(v=>(v||0)>=0?'#34c75999':'#ff453a99');
+    const soldeBorders=dataSolde.map(v=>(v||0)>=0?'#34c759':'#ff453a');
+    datasets=[{label:'Solde',data:dataSolde,
+      backgroundColor:isLine?'transparent':soldeColors,
+      borderColor:isLine?soldeBorders:'transparent',
+      segment:{borderColor:ctx=>dataSolde[ctx.p0DataIndex]>=0?'#34c759':'#ff453a'},
+      borderWidth:isLine?1.8:0,borderRadius:isLine?0:3,
+      tension:0,pointRadius:0,spanGaps:true,fill:false}];
     legendHtml='<span><span style="display:inline-block;width:10px;height:2px;background:#34c759;vertical-align:middle;margin-right:3px;border-radius:1px"></span>Entrées</span><span style="margin-left:10px"><span style="display:inline-block;width:10px;height:2px;background:#ff453a;vertical-align:middle;margin-right:3px;border-radius:1px"></span>Sorties</span>';
     const bilan=(dataSolde.filter(Boolean).reduce((a,b)=>a+b,0)||0);
     statsHtml=`<div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:${bilan>=0?'#34c759':'#ff453a'}">${bilan>=0?'+':''}${Math.round(bilan)}</div><div style="font-size:10px;color:var(--sub)">⚖️ bilan</div></div>`;
@@ -1899,7 +1927,7 @@ function renderSDSlide(slideIdx, number){
   if(statsEl) statsEl.innerHTML=statsHtml;
 
   if(!cvs) return;
-  _chartSD_elec=new Chart(cvs,{type:slideIdx===0?chartType:'bar',
+  _chartSD_elec=new Chart(cvs,{type:isLine?'line':'bar',
     data:{labels,datasets},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(28,28,30,.92)',titleColor:'#f5f5f7',bodyColor:'#8e8e93',padding:8,cornerRadius:8}},
