@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="Vélo'v"/>
@@ -35,7 +35,6 @@
   .combo-pct{font-size:18px}
 }
 @media(min-width:641px){
-  #plan-float{width:calc(100vw / 3 - 20px);right:auto !important;}
   #bottom-nav{display:none}
 }
 #bottom-nav{
@@ -64,6 +63,7 @@ header{position:sticky;top:0;z-index:300;height:56px;background:#1c1c1e;backdrop
 .clock{font-size:12px;color:var(--dim)}
 
 nav{position:sticky;top:56px;z-index:250;background:#1c1c1e;border-bottom:0.5px solid #38383a;display:flex;padding:0 20px;overflow-x:auto}
+nav{position:sticky;top:56px;z-index:250;background:#1c1c1e;border-bottom:0.5px solid #38383a;display:flex;padding:0 20px;overflow-x:auto}
 .tab.on{color:#fff;border-bottom-color:rgba(255,255,255,.3);background:transparent}
 
 main{max-width:1500px;margin:auto;padding:20px}
@@ -80,15 +80,16 @@ main{max-width:1500px;margin:auto;padding:20px}
 /* search */
 .loc-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
 @media(max-width:640px){
-  .loc-row{grid-template-columns:1fr}}
+  #stats-layout{grid-template-columns:1fr !important}
+  #stats-detail{display:block !important}.loc-row{grid-template-columns:1fr}}
 .loc-box{position:relative}
 .loc-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--sub);margin-bottom:5px;display:flex;align-items:center;gap:6px}
 .loc-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .search{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none;transition:border-color .15s;color:#fff;}
 .search:focus{border-color:var(--blue)}
-.dropdown{position:fixed;z-index:9999;background:#2c2c2e;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.6);display:none;max-height:240px;overflow-y:auto;min-width:280px}
+.dropdown{position:fixed;z-index:9999;background:#2c2c2e;border:1px solid rgba(255,255,255,.12);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.6);display:none;max-height:240px;overflow-y:auto;min-width:280px;background:#2c2c2e;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);display:none;z-index:100;max-height:220px;overflow-y:auto}
 .dropdown.open{display:block}
-.opt{padding:9px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)}
+.opt{padding:9px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0f0}
 .opt:last-child{border-bottom:none}
 .opt:hover{background:#3a3a3c}
 .opt-type{font-size:10px;color:var(--dim);float:right}
@@ -113,7 +114,7 @@ main{max-width:1500px;margin:auto;padding:20px}
 .combo-meta{font-size:11px;color:var(--sub);line-height:1.7}
 .combo-score{text-align:right;flex-shrink:0}
 .combo-pct{font-size:22px;font-weight:700}
-.combo-detail-text{font-size:11px;color:var(--dim)}
+.combo-detail{font-size:11px;color:var(--dim)}
 .score-high{color:#30d158}
 .score-med{color:#ff9f0a}
 .score-low{color:#ff453a}
@@ -147,20 +148,11 @@ main{max-width:1500px;margin:auto;padding:20px}
   .map-rel{height:100% !important}
   main{padding:0 !important;margin:0 !important;max-width:100vw !important}
 }
-
-/* ── Slider combos ── */
-.combo-slider-outer{overflow:hidden;margin:0}
-.combo-slider-track{display:flex;gap:8px;padding:4px 0 0;transition:transform .3s cubic-bezier(.4,0,.2,1);will-change:transform}
-.combo-card-slide{min-width:100%;flex-shrink:0;display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:rgba(255,255,255,.06);border:0.5px solid rgba(255,255,255,.09);cursor:pointer;box-sizing:border-box}
-.combo-card-slide.selected{border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.05)}
-.combo-dots{display:flex;justify-content:center;gap:5px;padding:6px 0 4px}
-.cdot{height:5px;border-radius:3px;background:#636366;transition:all .2s;display:inline-block}
-.cdot.on{width:14px!important;background:rgba(255,255,255,.55)}
 </style>
 </head>
 <body>
 
-<header style="display:flex;align-items:center;justify-content:space-between;padding:0 14px;height:38px;background:rgba(16,16,20,.55);backdrop-filter:blur(48px) saturate(200%) brightness(1.05);-webkit-backdrop-filter:blur(48px) saturate(200%) brightness(1.05);border:0.5px solid rgba(255,255,255,.08);border-radius:14px;position:absolute;top:10px;left:10px;right:10px;z-index:300;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 4px 24px rgba(0,0,0,.4)">
+<header style="display:flex;align-items:center;justify-content:space-between;padding:0 14px;height:38px;background:rgba(30,30,38,.78);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:0.5px solid rgba(255,255,255,.12);border-radius:14px;position:absolute;top:10px;left:10px;right:10px;z-index:300;box-shadow:0 4px 24px rgba(0,0,0,.4)">
   <div style="font-size:15px;font-weight:700;color:#fff">Vélo'v</div>
   <div style="display:flex;gap:2px">
     <div class="tab on" data-tab="map" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:#fff;font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg> Carte</div>
@@ -185,8 +177,7 @@ main{max-width:1500px;margin:auto;padding:20px}
     <div id="map" style="height:100%;width:100%"></div>
 
     <!-- Flottant glass -->
-    <div id="plan-float" style="position:absolute;top:58px;left:10px;right:10px;z-index:200;background:rgba(12,12,16,.52);backdrop-filter:blur(56px) saturate(220%) brightness(1.08);-webkit-backdrop-filter:blur(56px) saturate(220%) brightness(1.08);border-radius:16px;border:0.5px solid rgba(255,255,255,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 1px 0 0 rgba(255,255,255,.08),0 8px 32px rgba(0,0,0,.35),0 2px 8px rgba(0,0,0,.2);overflow:visible;transition:max-height .3s cubic-bezier(.4,0,.2,1),opacity .2s;max-height:250px"><div id="plan-close-btn" onclick="closePlanFloat()" style="position:absolute;top:-7px;right:-7px;width:16px;height:16px;border-radius:50%;background:#2c2c2e;border:0.5px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:201"><svg width="8" height="8" viewBox="0 0 8 8" fill="none"><line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="rgba(255,255,255,.45)" stroke-width="1.5" stroke-linecap="round"/><line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="rgba(255,255,255,.45)" stroke-width="1.5" stroke-linecap="round"/></svg></div>
-      <div style="overflow:hidden;border-radius:14px">
+    <div id="plan-float" style="position:absolute;top:58px;left:10px;width:min(360px,calc(100% - 20px));z-index:200;background:rgba(30,30,38,.78);border-radius:14px;border:0.5px solid rgba(255,255,255,.15);box-shadow:0 8px 32px rgba(0,0,0,.5);overflow:hidden;transition:max-height .3s cubic-bezier(.4,0,.2,1);max-height:250px">
       <div id="plan-float-expanded" style="padding:8px 10px">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
           <div style="flex:1;background:rgba(255,255,255,.08);border-radius:10px;overflow:visible;border:0.5px solid rgba(255,255,255,.12)">
@@ -199,42 +190,47 @@ main{max-width:1500px;margin:auto;padding:20px}
               <div class="dropdown" id="plan-to-dd"></div>
             </div>
           </div>
-          <button onclick="swapPlanFromTo()" style="width:30px;height:30px;border-radius:8px;border:0.5px solid rgba(255,255,255,.08);background:rgba(255,255,255,.06);cursor:pointer;font-size:15px;color:#8e8e93;display:flex;align-items:center;justify-content:center;flex-shrink:0">⇅</button>
+          <button onclick="swapPlanFromTo()" style="width:30px;height:30px;border-radius:8px;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);cursor:pointer;font-size:15px;color:#8e8e93;display:flex;align-items:center;justify-content:center;flex-shrink:0">⇅</button>
         </div>
         <div id="plan-meteo" style="font-size:10px;color:rgba(255,255,255,.35);margin-bottom:8px"></div>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-          <div style="display:flex;background:rgba(255,255,255,.08);border-radius:20px;padding:2px;position:relative">
-            <div id="toggle-slider" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:rgba(255,255,255,.15);border-radius:18px;transition:transform .15s;pointer-events:none"></div>
-            <button id="btn-now" onclick="setModeNow()" style="position:relative;z-index:1;padding:5px 12px;border:none;background:transparent;color:#fff;cursor:pointer;display:flex;align-items:center"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" opacity=".35"/></svg></button>
-            <button id="btn-plan" onclick="setModePlan()" style="position:relative;z-index:1;padding:5px 12px;border:none;background:transparent;color:rgba(255,255,255,.38);cursor:pointer;display:flex;align-items:center"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
+          <div style="display:flex;background:rgba(255,255,255,.08);border-radius:20px;padding:2px">
+            <button id="btn-now" onclick="setModeNow()" style="padding:4px 11px;border:none;background:rgba(255,255,255,.15);color:#fff;font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">Maintenant</button>
+            <button id="btn-plan" onclick="setModePlan()" style="padding:4px 11px;border:none;background:transparent;color:rgba(255,255,255,.38);font-size:11px;font-weight:600;border-radius:18px;cursor:pointer">Planifier</button>
           </div>
           <div id="plan-params" style="display:none;gap:6px;align-items:center;flex-wrap:wrap">
-            <select id="plan-dow" style="padding:4px 8px;border-radius:8px;border:0.5px solid rgba(255,255,255,.08);background:rgba(255,255,255,.06);color:#f5f5f7;font-size:11px"><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option><option value="6">Samedi</option><option value="0">Dimanche</option></select>
-            <input type="time" id="plan-hour-time" style="padding:4px 8px;border-radius:8px;border:0.5px solid rgba(255,255,255,.08);background:rgba(255,255,255,.06);color:#f5f5f7;font-size:11px;outline:none" oninput="syncHourSelect()"/>
+            <select id="plan-dow" style="padding:4px 8px;border-radius:8px;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#f5f5f7;font-size:11px"><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option><option value="6">Samedi</option><option value="0">Dimanche</option></select>
+            <input type="time" id="plan-hour-time" style="padding:4px 8px;border-radius:8px;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#f5f5f7;font-size:11px;outline:none" oninput="syncHourSelect()"/>
             <select id="plan-hour" style="display:none"></select>
-            <select id="plan-radius" style="padding:4px 8px;border-radius:8px;border:0.5px solid rgba(255,255,255,.08);background:rgba(255,255,255,.06);color:#f5f5f7;font-size:11px"><option value="300">300m</option><option value="500" selected>500m</option><option value="800">800m</option><option value="1200">1.2km</option></select>
+            <select id="plan-radius" style="padding:4px 8px;border-radius:8px;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#f5f5f7;font-size:11px"><option value="300">300m</option><option value="500" selected>500m</option><option value="800">800m</option><option value="1200">1.2km</option></select>
           </div>
           <div style="display:flex;background:rgba(255,255,255,.08);border-radius:20px;padding:2px;position:relative">
             <div id="type-slider-now" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:rgba(255,255,255,.15);border-radius:18px;transition:transform .15s;pointer-events:none"></div>
-            <button onclick="setBikeType('elec')" style="position:relative;z-index:1;padding:5px 12px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;color:#fff"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></button>
-            <button onclick="setBikeType('meca')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:rgba(255,255,255,.38)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></button>
+            <button onclick="setBikeType('elec')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:#fff">⚡ Élec</button>
+            <button onclick="setBikeType('meca')" style="position:relative;z-index:1;padding:4px 11px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:rgba(255,255,255,.38)">🔧 Méca</button>
           </div>
           <select id="plan-type" style="display:none"><option value="elec">elec</option><option value="meca">meca</option><option value="any" selected>any</option></select>
-          <button class="btn" onclick="computePlan()" style="margin-left:auto;padding:5px 14px;font-size:11px;border-radius:20px;background:rgba(255,255,255,.9);color:#111;border:none;font-weight:700;cursor:pointer;flex-shrink:0">🔍</button>
+          <button class="btn" onclick="computePlan()" style="margin-left:auto;padding:5px 14px;font-size:11px;border-radius:20px;background:rgba(255,255,255,.9);color:#111;border:none;font-weight:700;cursor:pointer">Calculer</button>
         </div>
       </div>
 
       <!-- État compact -->
-      <div id="plan-float-compact" style="display:none;align-items:center;gap:10px;padding:9px 12px"></div>
+      <div id="plan-float-compact" style="display:none;align-items:center;gap:10px;padding:9px 12px;cursor:pointer" onclick="expandPlanFloat()">
+        <div style="font-size:15px">🔍</div>
+        <div style="flex:1;min-width:0">
+          <div id="plan-compact-from" style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+          <div id="plan-compact-to" style="font-size:11px;color:#8e8e93;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+        </div>
+        <div style="width:26px;height:26px;border-radius:50%;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#8e8e93;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px">✎</div>
+      </div>
 
       <!-- Résultats (liste compacte) -->
-      <div id="plan-results-divider" style="display:none;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.1) 15%,rgba(255,255,255,.1) 85%,transparent)"></div>
-      <div id="plan-results-inner-header" style="display:none;padding:6px 12px 4px">
+      <div id="plan-results-divider" style="display:none;height:0.5px;background:rgba(255,255,255,.08)"></div>
+      <div id="plan-results-inner-header" style="display:none;padding:6px 12px 4px;display:none">
         <div id="plan-results-title" style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.3)"></div>
       </div>
       <div id="plan-results" style="overflow-y:auto;max-height:calc(80vh - 220px);padding:0 10px 10px"></div>
 
-      </div>
     </div>
 
 
@@ -242,6 +238,7 @@ main{max-width:1500px;margin:auto;padding:20px}
 </div>
 
 <div class="panel" id="tab-stats" style="padding:10px;overflow-y:auto;max-height:100vh">
+  <!-- Contrôles globaux -->
   <!-- Contrôles globaux -->
   <div class="card" style="padding:12px;margin-bottom:8px">
     <div class="card-title" style="margin-bottom:8px;font-size:10px">Période &amp; tri</div>
@@ -261,14 +258,13 @@ main{max-width:1500px;margin:auto;padding:20px}
         <option value="stands">Places libres</option>
         <option value="fill">% remplissage</option>
       </select>
-      <input id="lb-station-search" type="text" placeholder="🔍 Station…" oninput="filterLbTable(this.value)" style="padding:7px 10px;border-radius:10px;border:1px solid var(--border);background:var(--paper);color:var(--ink);font-size:13px;outline:none;min-width:0;flex:1"/>
       <button class="btn" onclick="computeLeaderboard()">Calculer</button>
       <span id="lb-meteo" style="font-size:12px;color:var(--sub)"></span>
     </div>
   </div>
 
   <!-- Layout responsive : 2 col desktop, 1 col mobile -->
-  <div id="stats-layout" style="display:grid">
+  <div id="stats-layout">
 
     <!-- Table -->
     <div class="card" style="padding:0;overflow:hidden">
@@ -301,89 +297,25 @@ function positionDropdown(inputId,ddId){
 }
 
 function compactPlanFloat(){
-  const idx=window._openComboIdx??0;
-  const combo=window._planCombos?.[idx];
   const from=document.getElementById('plan-from')?.value||'';
   const to=document.getElementById('plan-to')?.value||'';
-  const el=document.getElementById('plan-float-compact');
-  if(combo){
-    const sc=Math.round(combo.score??0);
-    const scCol=sc>=60?'#34c759':sc>=35?'#ff9f0a':'#ff453a';
-    const scBg=sc>=60?'#0d2b1a':sc>=35?'#2b1a00':'#2b0a0a';
-    const isNow=(window._planMode||'now')==='now';
-    const livePlaces=isNow || combo.arrN==null
-      ? (combo.arr.live?.available_bike_stands??'?')
-      : Math.round(combo.arrN);
-    const liveElec=isNow || combo.depElecN==null
-      ? (combo.dep.live?.electrical_bikes??0)
-      : '~'+Math.round(combo.depElecN);
-    const liveMeca=isNow || combo.depMecaN==null
-      ? (combo.dep.live?.mechanical_bikes??0)
-      : '~'+Math.round(combo.depMecaN);
-    const livePlacesDisp=(!isNow && combo.arrN!=null) ? '~'+Math.round(combo.arrN) : livePlaces;
-    const top=window._planCombos||[];
-    const dotsHtml=top.slice(0,Math.min(top.length,5)).map((_,i)=>
-      `<div class="cdot${i===idx?' on':''}" style="width:${i===idx?'14':'5'}px"></div>`).join('');
-    el.innerHTML=`
-      <div style="flex:1;min-width:0;cursor:pointer" onclick="expandPlanFloat()">
-        <div style="display:flex;align-items:center;gap:7px;overflow:hidden">
-          <div style="width:18px;height:18px;border-radius:5px;flex-shrink:0;background:rgba(255,255,255,.08);color:#f5f5f7;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center">${idx+1}</div>
-          <div style="font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">${cleanName(combo.dep.name)} → ${cleanName(combo.arr.name)}</div>
-          <div style="display:flex;align-items:center;gap:3px;flex-shrink:0"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0a84ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg><span style="font-size:16px;font-weight:800;color:#f5f5f7">${livePlacesDisp}</span></div>
-          <div style="background:${scBg};border-radius:6px;padding:2px 6px;flex-shrink:0"><span style="font-size:11px;font-weight:700;color:${scCol}">${sc}%</span></div>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
-          <div style="font-size:10px;color:rgba(255,255,255,.4)">${Math.round(combo.dist/1000*10)/10}km · ~${combo.rideMin}min</div>
-          <div style="display:flex;align-items:center;gap:4px;margin-left:auto">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="#f5f5f7"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span style="font-size:11px;font-weight:700;color:#f5f5f7">${liveElec}</span>
-            <span style="color:#38383a;font-size:10px">/</span>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#f5f5f7" stroke-width="2" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg><span style="font-size:11px;font-weight:700;color:#f5f5f7">${liveMeca}</span>
-          </div>
-          <div style="display:flex;gap:3px">${dotsHtml}</div>
-        </div>
-      </div>`;
-  } else {
-    el.innerHTML=`
-      <div style="font-size:15px;cursor:pointer" onclick="expandPlanFloat()">🔍</div>
-      <div style="flex:1;min-width:0;cursor:pointer" onclick="expandPlanFloat()">
-        <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${from}</div>
-        <div style="font-size:11px;color:#8e8e93;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${to}</div>
-      </div>
-      <div style="width:26px;height:26px;border-radius:50%;border:0.5px solid rgba(255,255,255,.08);background:rgba(255,255,255,.06);color:#8e8e93;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;cursor:pointer" onclick="expandPlanFloat()">✎</div>`;
-  }
-  if(window.innerWidth > 640){
-    // Desktop: stay expanded, no pill
-    document.getElementById('plan-float-expanded').style.display='block';
-    el.style.display='none';
-    return;
-  }
+  document.getElementById('plan-compact-from').textContent=from;
+  document.getElementById('plan-compact-to').textContent=to;
   document.getElementById('plan-float-expanded').style.display='none';
-  document.getElementById('plan-results').style.display='none';
-  document.getElementById('plan-results-divider')?.style.setProperty('display','none');
-  document.getElementById('plan-results-inner-header')?.style.setProperty('display','none');
-  el.style.display='flex';
-  const pf=document.getElementById('plan-float');
-  if(pf) pf.style.maxHeight='100px';
-  initPillSwipe();
+  document.getElementById('plan-float-compact').style.display='flex';
 }
 function expandPlanFloat(){
   document.getElementById('plan-float-expanded').style.display='block';
   document.getElementById('plan-float-compact').style.display='none';
-  document.getElementById('plan-results').style.display='';
-  if(window._planCombos){ document.getElementById('plan-results-divider')?.style.setProperty('display',''); }
-  const pf=document.getElementById('plan-float');
-  if(!pf) return;
-  const isMobile=window.innerWidth<=640;
-  if(window._planCombos) pf.style.maxHeight=isMobile?'58vh':'80vh';
-  else pf.style.maxHeight=isMobile?'220px':'250px';
 }
+function updateLiveStatus2(){}
 
 
 /* ═══ STATE ═══════════════════════════════════════════ */
 let allStations=[], map=null, markers=null, heatLayer=null, heatOn=false;
 let selectedStation=null, chartElec=null, chartMeca=null, chartFlux=null;
 let todayMv={}, lbMvCache={}, courbesSliderDays=1;
-let planMap=null, planFromPos=null, planToPos=null;
+let planMap=null, planRoutes=[], planFromPos=null, planToPos=null;
 let planFromFixed=null, planToFixed=null; // station fixée si l'user en a choisi une
 
 const fmt = d => d.toISOString().slice(0,16);
@@ -521,8 +453,6 @@ async function idbSet(key,val){
 const _fetchDayCache={};
 async function fetchDay(date){
   if(_fetchDayCache[date]) return _fetchDayCache[date];
-  // Limit cache size
-  if(Object.keys(_fetchDayCache).length>200){ const oldest=Object.keys(_fetchDayCache)[0]; delete _fetchDayCache[oldest]; }
   const today=new Date().toISOString().slice(0,10);
   // Vérifier IDB pour les dates passées
   if(date!==today){
@@ -639,8 +569,7 @@ function initMap(){
 }
 function renderStations(){
   if(markers) markers.clearLayers();
-  markers=L.layerGroup();
-  if(!window._stationsHidden) markers.addTo(map);
+  markers=L.layerGroup().addTo(map);
   const zoom=map?map.getZoom():13;
 
   // Clustering au zoom faible
@@ -801,7 +730,7 @@ function buildDropdown(inputId, ddId, opts){
 
     render(); // afficher les stations tout de suite
 
-    // Géocodage Nominatim avec debounce 200ms
+    // Géocodage Nominatim avec debounce 400ms
     clearTimeout(_nominatimDebounce[inputId]);
     if(q.length>=3){
       _nominatimDebounce[inputId]=setTimeout(async()=>{
@@ -830,7 +759,7 @@ function buildStationSearch(){
       el.onclick=()=>{ input.value=cleanName(st.name); dd.classList.remove('open'); selectedStation=st; };
       dd.appendChild(el);
     });
-    positionDropdown('station-search', 'station-dd');
+    positionDropdown(inputId, ddId);
     dd.classList.add('open');
   });
   document.addEventListener('click',e=>{
@@ -911,6 +840,7 @@ async function computeLeaderboard(){
     const d=document.getElementById('lb-date').value;
     if(!d){ content.innerHTML='<div class="no-data">Sélectionnez une date.</div>'; return; }
     const snaps=await fetchDay(d)||[];
+    showDayMeteo(d);
     if(!snaps.length){ content.innerHTML='<div class="no-data">Aucune donnée.</div>'; return; }
     lbMvCache=calcMvFromSnaps(snaps);
   } else {
@@ -933,27 +863,24 @@ async function computeLeaderboard(){
     content.innerHTML=`<div class="loader">Calcul sur ${dates.length} jours…</div>`;
     // Agréger les mouvements
     const cumul={};
-    const BATCH=12;
-    for(let b=0;b<dates.length;b+=BATCH){
-      const batch=dates.slice(b,b+BATCH);
-      const results=await Promise.all(batch.map(d=>fetchDay(d).then(s=>s||[])));
-      results.forEach(snaps=>{
-        const mv=calcMvFromSnaps(snaps);
-        for(const [num,v] of Object.entries(mv)) cumul[num]=(cumul[num]||0)+v;
-      });
-      content.innerHTML=`<div class="loader">${Math.min(b+BATCH,dates.length)}/${dates.length} jours…</div>`;
+    let loaded=0;
+    for(const d of dates){
+      const snaps=await fetchDay(d)||[];
+      const mv=calcMvFromSnaps(snaps);
+      for(const [num,v] of Object.entries(mv)) cumul[num]=(cumul[num]||0)+v;
+      loaded++;
+      if(loaded%10===0) content.innerHTML=`<div class="loader">${loaded}/${dates.length} jours…</div>`;
     }
     lbMvCache=cumul;
   }
   content.innerHTML='<div style="overflow-x:auto"><table id="lb-table"><thead id="lb-head"></thead><tbody id="lb-body"></tbody></table></div>';
   renderLbTable(lbMvCache);
   if(view==='day') showDayMeteo(document.getElementById('lb-date').value);
-  const srch=document.getElementById('lb-station-search'); if(srch) srch.value='';
 }
 function renderLbTable(mvData){
   const head=document.getElementById('lb-head'), body=document.getElementById('lb-body');
   if(!head||!body) return;
-  head.innerHTML='<tr><th>#</th><th>Station</th><th><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></th><th><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></th><th><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2"/><path d="M12 17.5 10 7l-4.7 4.5 6.7 2"/><path d="m10 7 5 2.5"/></svg></th><th><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg></th><th><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 16V4m0 0L3 8m4-4 4 4"/><path d="M17 8v12m0 0 4-4m-4 4-4-4"/></svg></th><th>%</th></tr>';
+  head.innerHTML='<tr><th>#</th><th>Station</th><th>⚡</th><th>🔧</th><th>🚲</th><th>🅿️</th><th>↕</th><th>%</th></tr>';
   const sortKey=document.getElementById('lb-sort').value;
   const maxMv=Math.max(1,...Object.values(mvData));
   const rows=allStations.map(st=>{
@@ -969,20 +896,20 @@ function renderLbTable(mvData){
         return `<tr onclick="toggleStationDetail(${st.number},this)" style="cursor:pointer" id="lb-row-${st.number}">
       <td class="rank-cell">${i+1}</td>
       <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cleanName(st.name)}</td>
-      <td style="color:#f5f5f7">${st.electrical_bikes}</td>
-      <td style="color:#f5f5f7">${st.mechanical_bikes}</td>
+      <td style="color:#1a7a3e;font-weight:600">${st.electrical_bikes}</td>
+      <td style="color:#b52a2a;font-weight:600">${st.mechanical_bikes}</td>
       <td><b>${st.available_bikes}</b></td>
       <td style="color:var(--sub)">${st.available_bike_stands}</td>
       <td>${st.mv}</td>
       <td><span class="fill-pill ${cls}">${pct}%</span></td></tr>
       <tr class="detail-row" id="lb-detail-${st.number}" style="display:none">
-        <td colspan="8" style="padding:0">
+        <td colspan="7" style="padding:0">
           <div id="stats-detail-${st.number}" style="padding:14px;background:var(--bg);border-bottom:1px solid var(--border)"></div>
         </td>
       </tr>`;
   }).join('');
 }
-document.getElementById('lb-sort')?.addEventListener('change',()=>renderLbTable(Object.keys(lbMvCache).length?lbMvCache:todayMv));
+document.getElementById('lb-sort').addEventListener('change',()=>renderLbTable(Object.keys(lbMvCache).length?lbMvCache:todayMv));
 
 async function showDayMeteo(date){
   const snaps=await fetchDay(date);
@@ -1004,24 +931,22 @@ async function showDayMeteo(date){
 }
 
 /* ═══ PLANIFIER ════════════════════════════════════════ */
+let planHeatMvCache={};
 
 
 let _planDropdownsInit=false;
 function initPlanMap(){
   if(!planMap && map){
     planMap=map;
-    map.on('click',(e)=>{
-      if(window._routeClickGuard){ window._routeClickGuard=false; return; }
+    map.on('click',()=>{
       const pf=document.getElementById('plan-float');
       const pr=document.getElementById('plan-results');
       if(pf && pr && pr.innerHTML.trim()){
-        if(window.innerWidth <= 640){
-          // Mobile : collapse vers pill
-          pf.style.maxHeight='62px';
-          compactPlanFloat();
-        }
-        // Desktop : on ne fait rien, le panel reste ouvert
+        pf.style.maxHeight='38px';
+        pf.style.overflowY='hidden';
       }
+      expandPlanFloat();
+
     });
   }
   if(_planDropdownsInit) return;
@@ -1074,7 +999,7 @@ function initPlanMap(){
       ctrl.onAdd=()=>{
         const div=L.DomUtil.create('div');
         div.id='meteo-ctrl';
-        div.style.cssText='background:rgba(16,16,20,.55);backdrop-filter:blur(48px) saturate(200%) brightness(1.05);-webkit-backdrop-filter:blur(48px) saturate(200%) brightness(1.05);border:0.5px solid rgba(255,255,255,.08);border-radius:8px;padding:4px 8px;font-size:11px;color:#f5f5f7;margin-bottom:4px;pointer-events:none';
+        div.style.cssText='background:rgba(30,30,38,.78);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:0.5px solid rgba(255,255,255,.15);border-radius:8px;padding:4px 8px;font-size:11px;color:#f5f5f7;margin-bottom:4px;pointer-events:none';
         const parts=[];
         if(m.icon) parts.push(m.icon);
         if(meteo.temp!==undefined) parts.push(meteo.temp+'°C');
@@ -1118,26 +1043,28 @@ async function fetchCurrentMeteo(){
 }
 
 async function computePlan(){
+  // Résultats dans le flottant
   const results=document.getElementById('plan-results');
-  try {
+  const resultsCard=results; // alias pour compatibilité
   _openComboIdx=null;
   window._planCombos=null;
   if(planLayerGroup) planLayerGroup.clearLayers();
 
   // Vérifier les champs AVANT tout chargement
   if(!planFromPos && !planFromFixed){
+    resultsCard.style.display='block';
     results.innerHTML='<div class="no-data">Sélectionnez un point de départ.</div>';
     return;
   }
   if(!planToPos && !planToFixed){
+    resultsCard.style.display='block';
     results.innerHTML='<div class="no-data">Destination manquante.</div>';
     return;
   }
 
   // Afficher loader + ouvrir volet
   // Expansion du flottant
-  document.getElementById('plan-float')?.style.setProperty('max-height',window.innerWidth<=640?'58vh':'80vh');
-  document.getElementById('plan-results').style.display='';
+  document.getElementById('plan-float')?.style.setProperty('max-height','80vh');
   results.innerHTML='<div class="loader">Analyse de l\'historique…</div>';
 
   // Météo
@@ -1151,9 +1078,10 @@ async function computePlan(){
     meteoEl.textContent=parts.join(' · ');
   }
   const isRainy=(meteo?.precipitation??0)>0.1;
+  const currentlyRainy=isRainy;
   const currentPrecip=meteo?.precipitation??0;
 
-  const bikeType=document.getElementById('plan-type').value; window._planBikeType=bikeType;
+  const bikeType=document.getElementById('plan-type').value;
   const radius=parseInt(document.getElementById('plan-radius').value);
   const topN=10;
   const isNowMode=(window._planMode||'now')==='now';
@@ -1164,23 +1092,33 @@ async function computePlan(){
   const targetH=isNowMode?now2.getHours():planHourVal;
   const bikeSpeedKmh=bikeType==='meca'?16:21;
 
-  // Charger TOUT l'historique disponible (même jour de semaine)
-  results.innerHTML='<div class="loader">Calcul historique…</div>';
+  // Charger les stats pré-calculées (quasi-instantané)
+  results.innerHTML='<div class="loader">Chargement stats…</div>';
+  const dowPy = [6,0,1,2,3,4,5][targetDow]; // JS dow (0=dim) → Python dow (0=lun)
+  const statsUrl=`data/stats/dow${dowPy}_h${String(targetH).padStart(2,'0')}.json`;
+  let preStats=null;
+  try{
+    const r=await fetch(statsUrl,{signal:AbortSignal.timeout(5000)});
+    if(r.ok) preStats=await r.json();
+  }catch{}
+
+  // Fallback : charger l'historique si pas de stats pré-calculées
   const allDays=[];
-  const today2=new Date();
-  const targetDates=[];
-  for(let i=1;i<=500;i++){
-    const d=new Date(today2); d.setDate(d.getDate()-i);
-    if(d.getDay()===targetDow) targetDates.push({date:d.toISOString().slice(0,10),daysAgo:i});
+  if(!preStats){
+    results.innerHTML='<div class="loader">Calcul historique…</div>';
+    const today2=new Date();
+    const targetDates=[];
+    for(let i=0;i<182;i++){
+      const d=new Date(today2); d.setDate(d.getDate()-i);
+      if(d.getDay()===targetDow) targetDates.push(d.toISOString().slice(0,10));
+    }
+    for(let i=0;i<targetDates.length;i+=16){
+      const batch=targetDates.slice(i,i+16);
+      const res=await Promise.all(batch.map(dt=>fetchDay(dt).catch(()=>null)));
+      res.filter(Boolean).forEach(d=>allDays.push(d));
+    }
   }
-  // Map daysAgo par date pour pondération récence
-  const _daysAgoMap={};
-  targetDates.forEach(({date,daysAgo})=>{ _daysAgoMap[date]=daysAgo; });
-  for(let i=0;i<targetDates.length;i+=16){
-    const batch=targetDates.slice(i,i+16);
-    const res=await Promise.all(batch.map(({date})=>fetchDay(date).catch(()=>null)));
-    res.forEach((snaps,j)=>{ if(snaps) allDays.push({snaps,daysAgo:batch[j].daysAgo}); });
-  }
+  const filteredDays=allDays;
 
   // Stations proches
   const depCenter=planFromFixed?{lat:planFromFixed.lat,lng:planFromFixed.lng}:planFromPos;
@@ -1202,72 +1140,99 @@ async function computePlan(){
     return;
   }
 
-  // ── Fonctions de pondération ──
-  const currentTemp=meteo?.temperature??null;
-  const currentRainy=isRainy;
-  const nowMinutes=targetH*60; // minutes depuis minuit pour la cible
-
-  function wRecence(daysAgo){
-    // Demi-vie 45 jours — récent pèse beaucoup plus
-    return Math.exp(-daysAgo/45);
-  }
-  function wTemperature(snapTemp){
-    if(snapTemp==null||currentTemp==null) return 0.7;
-    const diff=snapTemp-currentTemp;
-    return Math.exp(-(diff*diff)/128); // sigma=8°C
-  }
-  function wPluie(snapMeteo){
-    if(!snapMeteo) return 0.7;
-    const snapRainy=(snapMeteo.precipitation??0)>0.1||snapMeteo.rain===true;
-    return snapRainy===currentRainy ? 1.0 : 0.35;
-  }
-  function wHeure(snapMinutes){
-    const diff=snapMinutes-nowMinutes;
-    return Math.exp(-(diff*diff)/450); // sigma≈21min, ±30min→0.65
+  // Matrice météo
+  const RAIN_R={1:[-0.019,-0.132,-0.133,-0.018,-0.132,-0.016,0.104,0.071,0.071,0.066,-0.021,-0.508,-0.224,-0.286,-0.224,-0.511,-0.443,-0.268,-0.129,-0.218,-0.278,-0.274,-0.25,-0.264],2:[0.001,0.026,0.006,0.067,-0.103,0.057,0.057,0.037,0.077,0.154,0.055,-0.294,-0.246,-0.149,-0.34,-0.379,-0.394,-0.34,-0.248,-0.26,-0.187,-0.309,-0.237,-0.084],3:[-0.003,-0.061,0.095,-0.027,0.045,-0.137,-0.22,-0.188,-0.223,-0.113,0.056,0.077,-0.064,-0.082,-0.23,-0.063,-0.21,-0.114,-0.175,-0.412,-0.359,-0.417,-0.135,-0.276],4:[-0.024,-0.207,-0.155,-0.137,-0.147,-0.229,-0.263,-0.111,-0.118,-0.176,-0.368,-0.434,-0.332,-0.514,-0.494,-0.495,-0.543,-0.284,-0.31,-0.46,-0.349,-0.215,-0.483,-0.209],5:[-0.046,-0.26,-0.268,-0.179,-0.282,-0.173,-0.087,-0.04,-0.042,-0.194,-0.363,-0.396,-0.327,-0.363,-0.184,-0.13,-0.196,-0.325,-0.45,-0.523,-0.26,-0.281,-0.352,-0.431],6:[0.026,-0.056,0.026,-0.189,-0.121,0,0,-0.189,-0.208,0.013,-0.162,-0.49,-0.595,-0.563,-0.422,0.032,-0.228,0.096,-0.108,-0.188,-0.104,-0.327,-0.466,-0.11],7:[-0.023,-0.04,-0.26,0.069,0.116,-0.048,-0.043,0.019,0.09,-0.013,0.161,-0.361,-0.51,-0.299,-0.096,-0.045,-0.039,-0.287,-0.316,-0.438,-0.47,-0.022,-0.533,-0.406],8:[-0.018,-0.046,-0.092,-0.205,-0.197,-0.225,-0.047,0.07,0.186,0.181,-0.214,0.017,0.043,0.233,0.125,0.031,-0.125,0.148,0.128,-0.214,-0.248,0.175,-0.084,-0.183],9:[-0.025,-0.337,-0.28,-0.203,-0.274,-0.084,-0.084,-0.014,-0.088,-0.089,-0.143,-0.633,-0.187,-0.681,-0.659,-0.802,-0.842,-0.379,-0.114,-0.024,-0.482,-0.417,-0.062,-0.16],10:[-0.029,-0.147,-0.104,-0.116,-0.161,-0.136,-0.098,-0.118,-0.077,-0.154,-0.562,-0.526,-0.627,-0.579,-0.356,-0.289,-0.432,-0.646,-0.543,-0.459,-0.515,-0.314,-0.158,0.031],11:[-0.006,0.027,0.043,-0.009,0.048,0.116,-0.265,0.032,-0.105,-0.441,-0.623,-0.601,-0.484,-0.424,-0.356,-0.27,-0.424,-0.425,-0.336,-0.525,-0.268,-0.245,-0.358,-0.505],12:[0.007,-0.137,-0.209,0.042,-0.168,-0.087,-0.019,-0.071,0.063,-0.04,-0.09,-0.11,-0.127,-0.055,0.015,0.112,0.123,-0.032,0.135,-0.029,-0.109,-0.132,-0.35,-0.087]};
+  function meteoW(snapMeteo,rainy){
+    if(!snapMeteo) return 0.8;
+    if(snapMeteo.rain===rainy) return 1.0;
+    try{ const mo=new Date(snapMeteo._ts||0).getMonth()+1||new Date().getMonth()+1; const r=(RAIN_R[mo]||RAIN_R[1])[targetH]||-0.15; return Math.max(0.3,1.0-Math.abs(r)*2); }catch{ return 0.5; }
   }
 
-  // Calcul probas depuis l'historique
+  // Calcul probas — depuis preStats ou historique
   const allIds=new Set([...depStations.map(s=>s.number),...arrStations.map(s=>s.number)]);
   const stationProba={};
-  const _depNAcc={},_arrNAcc={},_depElecAcc={},_depMecaAcc={};
+  const _depNAcc={},_arrNAcc={};
 
+  if(preStats){
+    // Lecture directe des stats pré-calculées
+    allIds.forEach(num=>{
+      const p=preStats[String(num)];
+      if(!p) return;
+      stationProba[num]={
+        dep:p.ep??null, arr:p.sp??null,
+        depN:p.eN??null, arrN:p.sN??null,
+        depProb:p.eProb??null, arrProb:p.sProb??null,
+        samples:p.n??0
+      };
+    });
+  } else {
   allIds.forEach(num=>{
     let depSum=0,arrSum=0,wSum=0,depHit=0,arrHit=0,samples=0;
-    allDays.forEach(({snaps,daysAgo})=>{
-      const wRec=wRecence(daysAgo);
+    filteredDays.forEach(snaps=>{
       snaps.forEach(snap=>{
         const snapDate=new Date(getTs(snap));
-        const snapMinutes=snapDate.getHours()*60+snapDate.getMinutes();
-        // Filtre souple : ±90min autour de l'heure cible
-        if(Math.abs(snapMinutes-nowMinutes)>90) return;
+        const h=snapDate.getHours();
+        if(h!==targetH) return;
         const sts=getSts(snap),st=sts.find(s=>s.number===num);
         if(!st||!st.bike_stands) return;
         const depKey=bikeType==='elec'?'electrical_bikes':bikeType==='meca'?'mechanical_bikes':'available_bikes';
-        const snapM=snap.meteo;
-        const snapTemp=snapM?.temperature??null;
-        const w=wRec * wTemperature(snapTemp) * wPluie(snapM) * wHeure(snapMinutes);
-        if(w<0.01) return; // ignorer poids négligeables
+        const snapM=snap.meteo; if(snapM) snapM._ts=new Date(getTs(snap)).getTime();
+        const w=meteoW(snapM,currentlyRainy);
         const depVal=st[depKey]||0, arrVal=st.available_bike_stands||0;
-        const elecVal=st.electrical_bikes||0, mecaVal=st.mechanical_bikes||0;
         depSum+=depVal/st.bike_stands*100*w; arrSum+=arrVal/st.bike_stands*100*w; wSum+=w;
         if(depVal>=1) depHit+=w; if(arrVal>=1) arrHit+=w; samples++;
         _depNAcc[num]=(_depNAcc[num]||0)+depVal*w; _arrNAcc[num]=(_arrNAcc[num]||0)+arrVal*w;
-        _depElecAcc[num]=(_depElecAcc[num]||0)+elecVal*w; _depMecaAcc[num]=(_depMecaAcc[num]||0)+mecaVal*w;
       });
     });
     stationProba[num]={
       dep:wSum>0?Math.round(depSum/wSum):null, arr:wSum>0?Math.round(arrSum/wSum):null,
       depN:wSum>0?Math.round((_depNAcc[num]||0)/wSum*10)/10:null,
-      depElecN:wSum>0?Math.round((_depElecAcc[num]||0)/wSum*10)/10:null,
-      depMecaN:wSum>0?Math.round((_depMecaAcc[num]||0)/wSum*10)/10:null,
       arrN:wSum>0?Math.round((_arrNAcc[num]||0)/wSum*10)/10:null,
       depProb:wSum>0?Math.round(depHit/wSum*100):null,
       arrProb:wSum>0?Math.round(arrHit/wSum*100):null,
       samples
     };
   });
+  } // fin else fallback
 
+  // Debug : compter les résultats
+  let totalSamples=0;
+  allIds.forEach(num=>{ totalSamples+=stationProba[num]?.samples||0; });
+  console.log('allDays:',allDays.length,'filteredDays:',filteredDays.length,'allIds:',allIds.size,'totalSamples:',totalSamples,'targetH:',targetH,'targetDow:',targetDow);
 
+  // Si aucun sample — peut-être un problème d'heure
+  // Essayer avec +1 aussi (heure d'hiver)
+  if(totalSamples===0 && allDays.length>0){
+    const targetH2=(targetH+23)%24; // essayer H-1
+    console.log('Retry avec targetH2:',targetH2);
+    allIds.forEach(num=>{
+      let depSum=0,arrSum=0,wSum=0,depHit=0,arrHit=0,samples=0;
+      filteredDays.forEach(snaps=>{
+        snaps.forEach(snap=>{
+          const snapDate=getTs(snap);
+          const d=new Date(snapDate);
+          const h=d.getHours(); // heure locale directe
+          if(h!==targetH&&h!==targetH2) return;
+          const sts=getSts(snap),st=sts.find(s=>s.number===num);
+          if(!st||!st.bike_stands) return;
+          const depKey=bikeType==='elec'?'electrical_bikes':bikeType==='meca'?'mechanical_bikes':'available_bikes';
+          const w=0.8;
+          const depVal=st[depKey]||0, arrVal=st.available_bike_stands||0;
+          depSum+=depVal/st.bike_stands*100*w; arrSum+=arrVal/st.bike_stands*100*w; wSum+=w;
+          if(depVal>=1) depHit+=w; if(arrVal>=1) arrHit+=w; samples++;
+          _depNAcc[num]=(_depNAcc[num]||0)+depVal*w; _arrNAcc[num]=(_arrNAcc[num]||0)+arrVal*w;
+        });
+      });
+      if(wSum>0) stationProba[num]={
+        dep:Math.round(depSum/wSum), arr:Math.round(arrSum/wSum),
+        depN:Math.round((_depNAcc[num]||0)/wSum*10)/10,
+        arrN:Math.round((_arrNAcc[num]||0)/wSum*10)/10,
+        depProb:Math.round(depHit/wSum*100),
+        arrProb:Math.round(arrHit/wSum*100),
+        samples
+      };
+    });
+  }
 
   // Générer combinaisons
   const combos=[];
@@ -1286,8 +1251,16 @@ async function computePlan(){
         const liveDep=allStations.find(s=>s.number===dep.number);
         const liveArr=allStations.find(s=>s.number===arr.number);
         if(liveDep&&liveDep.bike_stands>0){
-          const liveDepPct=(bikeType==='elec'?(liveDep.electrical_bikes||0):bikeType==='meca'?(liveDep.mechanical_bikes||0):(liveDep.available_bikes||0))/liveDep.bike_stands*100;
-          score=Math.round(score*0.5+liveDepPct*0.3+(liveArr&&liveArr.bike_stands>0?liveArr.available_bike_stands/liveArr.bike_stands*100*0.2:0));
+          const liveDepCount=bikeType==='elec'?(liveDep.electrical_bikes||0):bikeType==='meca'?(liveDep.mechanical_bikes||0):(liveDep.available_bikes||0);
+          // Si 0 vélos du bon type disponibles → score 0 directement
+          if(liveDepCount===0){
+            score=0;
+          } else {
+            const liveDepPct=liveDepCount/liveDep.bike_stands*100;
+            const liveArrPct=liveArr&&liveArr.bike_stands>0?liveArr.available_bike_stands/liveArr.bike_stands*100:50;
+            // Live prime sur historique en mode now
+            score=Math.round(liveDepPct*0.5+liveArrPct*0.2+scoreBase*0.3);
+          }
         }
       }
       const liveDep2=allStations.find(s=>s.number===dep.number);
@@ -1296,7 +1269,7 @@ async function computePlan(){
         dep:Object.assign({},dep,{live:liveDep2||null}),
         arr:Object.assign({},arr,{live:liveArr2||null}),
         depPct,arrPct,depProb,arrProb,
-        depN:pd?.depN??null,depElecN:pd?.depElecN??null,depMecaN:pd?.depMecaN??null,arrN:pa?.arrN??null,
+        depN:pd?.depN??null,arrN:pa?.arrN??null,
         score,dist,rideMin,samples:pd?.samples??0
       });
     }
@@ -1311,7 +1284,7 @@ async function computePlan(){
 
   const meteoNote=isRainy?' 🌧️':'';
   document.getElementById('plan-results-title').textContent=
-    `Top ${top.length} combinaisons · ${DOW_NAMES[targetDow]} ${String(targetH).padStart(2,'0')}h · ${bikeType==='elec'?'⚡ Élec':bikeType==='meca'?'🔧 Méca':'🚲 Tous'} · ${allDays.length} sem.${meteoNote}`;
+    `Top ${top.length} combinaisons · ${DOW_NAMES[targetDow]} ${String(targetH).padStart(2,'0')}h · ${bikeType==='elec'?'⚡ Élec':bikeType==='meca'?'🔧 Méca':'🚲 Tous'} · ${filteredDays.length} sem.${meteoNote}`;
 
   const renderComboList=(limit)=>{
     const shown=top.slice(0,limit);
@@ -1320,44 +1293,29 @@ async function computePlan(){
       const bt=document.getElementById('plan-type')?.value||'elec';
       const rColors=bt==='meca'?['#7a1a1a','#a82a2a','#d04444']:['#1a6b36','#2a8a4a','#3eaa62'];
       const rColor=i<3?rColors[i]:'transparent';
-      const depCol=(combo.depProb??0)>=60?'#34c759':(combo.depProb??0)>=35?'#ff9f0a':'#ff453a';
-      const arrCol=(combo.arrProb??0)>=60?'#34c759':(combo.arrProb??0)>=35?'#ff9f0a':'#ff453a';
-      const scCol=sc>=60?'#34c759':sc>=35?'#ff9f0a':'#ff453a';
+      const depCol=(combo.depProb??0)>=60?'#1a7a3e':(combo.depProb??0)>=35?'#f59e0b':'#b52a2a';
+      const arrCol=(combo.arrProb??0)>=60?'#1a7a3e':(combo.arrProb??0)>=35?'#f59e0b':'#b52a2a';
+      const scCol=sc>=60?'#1a7a3e':sc>=35?'#f59e0b':'#b52a2a';
       const scBg=sc>=60?'#0d2b1a':sc>=35?'#2b1a00':'#2b0a0a';
       const liveElec=combo.dep.live?.electrical_bikes??0;
       const liveMeca=combo.dep.live?.mechanical_bikes??0;
       const livePlaces=combo.arr.live?.available_bike_stands??'?';
       const depDist=planFromFixed?'':` · ${Math.round(combo.dep.dist||0)}m`;
 
-      const avgDepN=combo.depN!==null?Math.round(combo.depN):null;
-      const avgArrN=combo.arrN!==null?Math.round(combo.arrN):null;
-      const scBadge=sc?`<div style="background:${scBg};border-radius:5px;padding:2px 5px;flex-shrink:0"><span style="font-size:11px;font-weight:700;color:${scCol}">${sc}%</span></div>`:'';
-
       const cardBody=isNowMode&&combo.dep.live?`
-        <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end;flex-shrink:0">
-          <div style="display:flex;gap:5px;align-items:center">
-            <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#f5f5f7;line-height:1">${liveElec}</div><div style="font-size:8px;color:rgba(255,255,255,.3)">⚡</div></div>
-            <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#f5f5f7;line-height:1">${liveMeca}</div><div style="font-size:8px;color:rgba(255,255,255,.3)">🔧</div></div>
-            <div style="text-align:center"><div style="font-size:15px;font-weight:700;line-height:1">${livePlaces}</div><div style="font-size:8px;color:rgba(255,255,255,.3)">🅿️</div></div>
-          </div>
-          <div style="display:flex;gap:5px;align-items:center">
-            ${avgDepN!==null?`<div style="font-size:9px;color:rgba(255,255,255,.35)">moy. <span style="color:rgba(255,255,255,.6);font-weight:600">${avgDepN}</span> dép · <span style="color:rgba(255,255,255,.6);font-weight:600">${avgArrN??'?'}</span> arr.</div>`:''}
-            ${scBadge}
-          </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+          <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#1a7a3e;line-height:1">${liveElec}</div><div style="font-size:8px;color:rgba(255,255,255,.35)">⚡</div></div>
+          <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#b52a2a;line-height:1">${liveMeca}</div><div style="font-size:8px;color:rgba(255,255,255,.35)">🔧</div></div>
+          <div style="text-align:center"><div style="font-size:15px;font-weight:700;line-height:1">${livePlaces}</div><div style="font-size:8px;color:rgba(255,255,255,.35)">🅿️</div></div>
+          ${sc?`<div style="background:${scBg};border-radius:5px;padding:2px 5px"><span style="font-size:11px;font-weight:700;color:${scCol}">${sc}%</span></div>`:''}
         </div>`:`
-        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0">
-          <div style="display:flex;gap:5px;align-items:center">
-            <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#f5f5f7;line-height:1">${combo.depElecN!=null?'~'+Math.round(combo.depElecN):'?'}</div><div style="font-size:8px;color:rgba(255,255,255,.3)">⚡</div></div>
-            <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#f5f5f7;line-height:1">${combo.depMecaN!=null?'~'+Math.round(combo.depMecaN):'?'}</div><div style="font-size:8px;color:rgba(255,255,255,.3)">🔧</div></div>
-            <div style="text-align:center"><div style="font-size:15px;font-weight:700;line-height:1">${avgArrN!=null?'~'+avgArrN:'?'}</div><div style="font-size:8px;color:rgba(255,255,255,.3)">🅿️</div></div>
-          </div>
-          <div style="display:flex;gap:5px;align-items:center">
-            <div style="font-size:9px;color:rgba(255,255,255,.35)"><span style="color:${depCol};font-weight:600">${combo.depProb??'?'}%</span> dép · <span style="color:${arrCol};font-weight:600">${combo.arrProb??'?'}%</span> arr.</div>
-            ${scBadge}
-          </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:12px;font-weight:700;color:${depCol}">${combo.depProb??'?'}%</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.35)">dép.</div>
+          <div style="font-size:12px;font-weight:700;color:${arrCol}">${combo.arrProb??'?'}%</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.35)">arr.</div>
         </div>`;
-
-      return `<div class="combo-card-slide combo-card${i===0?' selected':''}" onclick="selectComboIdx(${i})" data-idx="${i}">
+      return `<div class="combo-card${i===0?' selected':''}" onclick="toggleComboDetail(${i},this)" data-idx="${i}" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;margin-bottom:4px;background:rgba(255,255,255,.06);border:0.5px solid rgba(255,255,255,.09);cursor:pointer">
         <div style="width:3px;height:34px;border-radius:2px;background:${rColor};flex-shrink:0"></div>
         <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.28);min-width:14px;flex-shrink:0">${i+1}</div>
         <div style="flex:1;min-width:0">
@@ -1368,60 +1326,41 @@ async function computePlan(){
         ${cardBody}
       </div>`;
     }).join('');
-    // Desktop : liste verticale classique
-    if(window.innerWidth > 640){
-      const more=top.length>limit
-        ?`<div style="text-align:center;padding:10px"><button onclick="window._showMoreCombos()" style="padding:5px 16px;border-radius:20px;border:0.5px solid rgba(255,255,255,.08);background:rgba(255,255,255,.08);font-size:12px;cursor:pointer;color:var(--sub)">Voir les ${top.length-limit} autres combinaisons</button></div>`:'';
-      return html+more;
-    }
-    // Mobile : slider swipeable
-    const dots=shown.map((_,i)=>`<div class="cdot${i===0?' on':''}" style="width:${i===0?'14':'5'}px" data-cidx="${i}"></div>`).join('');
-    const sliderHtml=`
-      <div class="combo-slider-outer">
-        <div class="combo-slider-track" id="combo-slider-track">${html.replace(/class="combo-card/g,'class="combo-card-slide combo-card')}</div>
-      </div>
-      <div class="combo-dots" id="combo-dots">${dots}</div>`;
-    return sliderHtml;
+    const more=top.length>limit
+      ?`<div style="text-align:center;padding:10px"><button onclick="window._showMoreCombos()" style="padding:5px 16px;border-radius:20px;border:0.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);font-size:12px;cursor:pointer;color:var(--sub)">Voir les ${top.length-limit} autres combinaisons</button></div>`:'';
+    return html+more;
   };
 
   const topScore=top[0]?.score??0;
   const autoLimit=topScore<30?top.length:topScore<50?Math.min(5,top.length):3;
   results.innerHTML=renderComboList(autoLimit);
-  document.getElementById('plan-results').style.display='';
-  if(document.getElementById('plan-float')) document.getElementById('plan-float').style.maxHeight=window.innerWidth<=640?'58vh':'80vh';
-  window._showMoreCombos=()=>{ results.innerHTML=renderComboList(top.length); initSliderSwipe(); drawTop3Routes(); };
-  initSliderSwipe();
+  window._showMoreCombos=()=>{ results.innerHTML=renderComboList(top.length); drawTop3Routes(); };
   window._planCombos=top;
   _openComboIdx=null;
   drawTop3Routes();
-  hideBackgroundStations();
-  if(window.innerWidth<=640) compactPlanFloat();
-  } catch(err) {
-    console.error('computePlan error:', err);
-    if(results) results.innerHTML='<div class="no-data">Erreur: ' + err.message + '</div>';
-  }
 }
 
 let planLayerGroup=null;
 
 let _openComboIdx = null;
 
-async function selectComboIdx(idx){
-  window._openComboIdx=idx;
-  _openComboIdx=idx;
-  document.querySelectorAll('.combo-card,.combo-card-slide').forEach((c,i)=>c.classList.toggle('selected',i===idx));
-  // Sync slider position
-  const track=document.getElementById('combo-slider-track');
-  if(track){ const w=track.parentElement.offsetWidth||track.children[0]?.offsetWidth||300; track.style.transform=`translateX(calc(-${idx}*(${w}px + 8px)))`; }
-  // Sync dots
-  document.querySelectorAll('#combo-dots .cdot').forEach((d,i)=>{ d.classList.toggle('on',i===idx); d.style.width=i===idx?'14px':'5px'; });
-  await showRoute(idx);
-  // Compact vers pill résultat
-  if(window.innerWidth <= 640){
-    const pf=document.getElementById('plan-float');
-    if(pf) pf.style.maxHeight='62px';
-    compactPlanFloat();
+async function toggleComboDetail(idx, el){
+  // Si déjà sélectionné → désélectionner
+  if(_openComboIdx === idx){
+    document.querySelectorAll('.combo-card').forEach(c=>c.classList.remove('selected'));
+    _openComboIdx=null;
+    return;
   }
+  selectComboIdx(idx);
+}
+
+async function selectComboIdx(idx){
+  _openComboIdx=idx;
+  document.querySelectorAll('.combo-card').forEach((c,i)=>c.classList.toggle('selected',i===idx));
+  await showRoute(idx);
+  // Compact seulement si le float est encore étendu
+  const expanded=document.getElementById('plan-float-expanded');
+  if(expanded && expanded.style.display!=='none') compactPlanFloat();
 }
 
 
@@ -1470,18 +1409,18 @@ async function drawTop3Routes(){
   [...routes].reverse().forEach(({coords,i,combo})=>{
     if(coords){
       const pl=L.polyline(coords,{color:colors[i],weight:weights[i],opacity:opacities[i]}).addTo(planLayerGroup);
-      const _i=i; pl.on('click',(e)=>{window._routeClickGuard=true;L.DomEvent.stopPropagation(e);selectComboIdx(_i);});
+      const _i=i; pl.on('click',()=>selectComboIdx(_i));
       // Zone de clic élargie invisible
-      L.polyline(coords,{color:'transparent',weight:20,opacity:0}).on('click',(e)=>{window._routeClickGuard=true;L.DomEvent.stopPropagation(e);selectComboIdx(_i);}).addTo(planLayerGroup);
+      L.polyline(coords,{color:'transparent',weight:20,opacity:0}).on('click',()=>selectComboIdx(_i)).addTo(planLayerGroup);
     }
     // Marqueurs stations
     const depM=L.circleMarker([combo.dep.lat,combo.dep.lng],{radius:i===0?9:6,fillColor:colors[i],color:'#fff',weight:i===0?2:1,fillOpacity:.9});
     depM.bindTooltip(cleanName(combo.dep.name),{direction:'top',permanent:false});
-    depM.on('click',(e)=>{window._routeClickGuard=true;L.DomEvent.stopPropagation(e);selectComboIdx(i);});
+    depM.on('click',()=>selectComboIdx(_i));
     depM.addTo(planLayerGroup);
     const arrM=L.circleMarker([combo.arr.lat,combo.arr.lng],{radius:i===0?9:6,fillColor:colors[i],color:'#fff',weight:i===0?2:1,fillOpacity:.9});
     arrM.bindTooltip(cleanName(combo.arr.name),{direction:'top',permanent:false});
-    arrM.on('click',(e)=>{window._routeClickGuard=true;L.DomEvent.stopPropagation(e);selectComboIdx(i);});
+    arrM.on('click',()=>selectComboIdx(_i));
     arrM.addTo(planLayerGroup);
   });
   // Zoom sur le premier
@@ -1514,7 +1453,7 @@ async function showRoute(idx){
     .bindTooltip(cleanName(combo.arr.name),{permanent:false,direction:'top'}).addTo(planLayerGroup);
 
   // Routing Valhalla entre les deux stations
-  const bikeType=document.getElementById('plan-type').value; window._planBikeType=bikeType;
+  const bikeType=document.getElementById('plan-type').value;
   const speed=bikeType==='meca'?16:21;
   const routeColor=bikeType==='meca'?'#e8001c':'#1a7a3e';
   try{
@@ -1535,19 +1474,20 @@ async function showRoute(idx){
         const geom = db.features?.[0]?.geometry;
         if(geom?.type==='LineString') coords = geom.coordinates.map(([lng,lat])=>[lat,lng]);
       }
-    } catch{}
+    } catch(e){ console.warn('Brouter:', e.message); }
 
     // 2. Fallback OSRM bike
     if(!coords){
       try {
-          const osrmUrl = `https://router.project-osrm.org/route/v1/bike/${combo.dep.lng},${combo.dep.lat};${combo.arr.lng},${combo.arr.lat}?overview=full&geometries=polyline6`;
+        console.log('Fallback OSRM…');
+        const osrmUrl = `https://router.project-osrm.org/route/v1/bike/${combo.dep.lng},${combo.dep.lat};${combo.arr.lng},${combo.arr.lat}?overview=full&geometries=polyline6`;
         const ro = await fetch(osrmUrl, {signal: AbortSignal.timeout(12000)});
         if(ro.ok){
           const dor = await ro.json();
           const geom = dor.routes?.[0]?.geometry;
           if(geom) coords = decodePolyline(geom);
         }
-      } catch{}
+      } catch(e){ console.warn('OSRM:', e.message); }
     }
 
     // 3. Fallback Valhalla si de retour
@@ -1604,7 +1544,7 @@ async function showComboCourbes(combo, targetEl=null){
   }
   const allDays=(await Promise.all(promises)).filter(Boolean);
 
-  const bikeType=document.getElementById('plan-type').value; window._planBikeType=bikeType;
+  const bikeType=document.getElementById('plan-type').value;
   const depKey=bikeType==='elec'?'electrical_bikes':bikeType==='meca'?'mechanical_bikes':'available_bikes';
 
   const labels=[], depData=[], arrData=[];
@@ -1637,7 +1577,7 @@ async function showComboCourbes(combo, targetEl=null){
   _chartComboA?.destroy();
   _chartComboA=new Chart(document.getElementById('chart-combo'),{type:'line',
     data:{labels,datasets:[
-      {label:`${bikeLabel} dispo au départ`,data:depData,borderColor:'#0a84ff',backgroundColor:'rgba(10,132,255,.08)',borderWidth:2,tension:0,pointRadius:3,spanGaps:true,fill:true},
+      {label:`${bikeLabel} dispo au départ`,data:depData,borderColor:'#1a7a3e',backgroundColor:'rgba(40,205,65,.08)',borderWidth:2,tension:0,pointRadius:3,spanGaps:true,fill:true},
       {label:'🅿️ Place dispo à l\'arrivée',data:arrData,borderColor:'#ff3b30',backgroundColor:'rgba(255,59,48,.06)',borderWidth:2,tension:0,pointRadius:3,spanGaps:true,fill:true},
     ]},
     options:{...chartOpts(),scales:{...chartOpts().scales,y:{...chartOpts().scales.y,max:100,ticks:{...chartOpts().scales.y.ticks,callback:v=>v+'%'}}}}
@@ -1688,265 +1628,112 @@ async function showStationDetail(number, targetEl=null){
   // Highlight ligne
   document.querySelectorAll('#lb-body tr').forEach(r=>r.style.background='');
   const row=document.getElementById('lb-row-'+number);
-  if(row) row.style.background='rgba(255,255,255,.06)';
+  if(row) row.style.background='var(--blue-l, #e8f0fe)';
 
   const detail=targetEl || document.getElementById('stats-detail');
   const view=document.getElementById('lb-view')?.value||'day';
-  const chartH=window.innerWidth<=640?55:65;
+  const chartH=view==='day'?60:65;
   const chartType=view==='day'?'line':'bar';
-  // Détruire les charts AVANT de recréer le DOM
-  if(_chartSD_elec){ try{_chartSD_elec.destroy();}catch{} _chartSD_elec=null; }
-  if(_chartSD_meca){ try{_chartSD_meca.destroy();}catch{} _chartSD_meca=null; }
-  // Détruire aussi tout chart sur l'ancien canvas si présent
-  const oldCanvas=document.getElementById('sd-combined-'+number);
-  if(oldCanvas){ const existing=Chart.getChart(oldCanvas); if(existing) existing.destroy(); }
-  const isMob=window.innerWidth<=640;
   detail.innerHTML=
-    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'+
-    
-    '<div style="min-width:0"><div style="font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+cleanName(st.name)+'</div>'+
-    '<div style="font-size:11px;color:var(--sub);margin-top:2px">⚡'+st.electrical_bikes+' · 🔧'+st.mechanical_bikes+' · 🅿️'+st.available_bike_stands+'</div></div></div>'+
-    // Slide tabs
-    '<div id="sd-tabs-'+number+'" style="display:flex;gap:0;background:rgba(255,255,255,.06);border-radius:10px;padding:2px;margin-bottom:8px">'+
-    '<div class="sd-tab on" onclick="renderSDSlide(0,'+number+')" style="flex:1;text-align:center;padding:5px 4px;font-size:10px;font-weight:600;color:var(--ink);background:rgba(255,255,255,.14);border-radius:8px;cursor:pointer">🚲 Vélos</div>'+
-    '<div class="sd-tab" onclick="renderSDSlide(1,'+number+')" style="flex:1;text-align:center;padding:5px 4px;font-size:10px;font-weight:600;color:var(--sub);border-radius:8px;cursor:pointer">↕ Mvts</div>'+
-    '<div class="sd-tab" onclick="renderSDSlide(2,'+number+')" style="flex:1;text-align:center;padding:5px 4px;font-size:10px;font-weight:600;color:var(--sub);border-radius:8px;cursor:pointer">⚖️ Solde</div>'+
-    '</div>'+
-    '<div id="sd-legend-'+number+'" style="display:flex;gap:10px;font-size:10px;color:var(--sub);margin-bottom:4px"></div>'+
-    '<div style="position:relative;height:'+(isMob?120:150)+'px"><canvas id="sd-combined-'+number+'" style="position:absolute;inset:0;width:100%!important;height:100%!important"></canvas></div>'+
-    '<div id="sd-dots-'+number+'" style="display:flex;justify-content:center;gap:4px;padding:6px 0 2px">'+
-    '<div class="sd-dot on" style="height:3px;width:14px;border-radius:2px;background:#34c759;transition:all .2s;display:inline-block"></div>'+
-    '<div class="sd-dot" style="height:3px;width:5px;border-radius:2px;background:#38383a;transition:all .2s;display:inline-block"></div>'+
-    '<div class="sd-dot" style="height:3px;width:5px;border-radius:2px;background:#38383a;transition:all .2s;display:inline-block"></div>'+
-    '</div>'+
-    '<div id="sd-stats-row" style="display:flex;gap:8px;margin-top:6px"></div>';
+    '<div style="display:grid;grid-template-columns:110px 1fr;gap:10px;margin-bottom:10px;align-items:start">'+
+    '<div id="sd-map" style="height:90px;border-radius:8px;overflow:hidden"></div>'+
+    '<div><div style="font-size:12px;font-weight:600;margin-bottom:3px">'+cleanName(st.name)+'</div>'+
+    '<div style="font-size:11px;color:var(--sub)">⚡'+st.electrical_bikes+' · 🔧'+st.mechanical_bikes+' · 🅿️'+st.available_bike_stands+'</div></div></div>'+
+    '<div style="display:flex;gap:12px;font-size:10px;color:var(--sub);margin-bottom:5px">'+
+    '<span><span style="display:inline-block;width:10px;height:2px;background:#1a7a3e;vertical-align:middle;margin-right:3px"></span>⚡ Élec</span>'+
+    '<span><span style="display:inline-block;width:10px;height:2px;background:#b52a2a;vertical-align:middle;margin-right:3px"></span>🔧 Méca</span></div>'+
+    '<canvas id="sd-combined" height="'+chartH+'"></canvas>'+
+    '<div id="sd-stats-row" style="display:flex;gap:8px;margin-top:10px"></div>';
 
 
-
-  // ── Chargement des données selon la vue ──
+  if(st.lat && st.lng){
+    const sdMap=L.map('sd-map',{zoomControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false,keyboard:false,touchZoom:false})
+      .setView([st.lat,st.lng],16);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+      {attribution:''}).addTo(sdMap);
+    L.circleMarker([st.lat,st.lng],{radius:10,fillColor:stationColor(st),color:'#fff',weight:2,fillOpacity:.95}).addTo(sdMap);
+  }
+  // Période selon la vue
   const d=document.getElementById('lb-date').value;
   const mth=document.getElementById('lb-month')?.value;
   const yr=document.getElementById('lb-year')?.value;
 
-  // Fonction utilitaire : charge et agrège les snapshots d'une liste de dates
-  async function loadSnapsByDate(dates){
-    const BATCH=16;
-    const result=[];
-    for(let i=0;i<dates.length;i+=BATCH){
-      const batch=dates.slice(i,i+BATCH);
-      const res=await Promise.all(batch.map(dt=>fetchDay(dt).catch(()=>null)));
-      res.forEach((snaps,j)=>{ if(snaps) result.push({date:batch[j],snaps}); });
-    }
-    return result;
-  }
-
-  let labels=[], dataElec=[], dataMeca=[], dataMvts=[], dataSolde=[];
+  let labels=[], dataElec=[], dataMeca=[];
 
   if(view==='day'){
     if(!d) return;
     const snaps=await fetchDay(d)||[];
-    let prevMvts=null;
     snaps.forEach(snap=>{
       const sts=getSts(snap), st2=sts.find(x=>x.number===number);
       if(!st2) return;
       const t=new Date(getTs(snap));
-      labels.push(t.getMinutes()===0?t.getHours()+'h':'');
+      labels.push(t.getHours()+'h');
       dataElec.push(st2.electrical_bikes||0);
       dataMeca.push(st2.mechanical_bikes||0);
-      // Mouvements = delta sur available_bikes (proxy)
-      const total=(st2.electrical_bikes||0)+(st2.mechanical_bikes||0);
-      if(prevMvts!==null){ dataMvts.push(Math.abs(total-prevMvts)); dataSolde.push(total-prevMvts); }
-      else { dataMvts.push(0); dataSolde.push(0); }
-      prevMvts=total;
     });
   } else if(view==='month'){
     if(!mth) return;
     const [y,mo]=mth.split('-').map(Number);
     const daysInMonth=new Date(y,mo,0).getDate();
-    const today=new Date().toISOString().slice(0,10);
-    const dates=[];
     for(let day=1;day<=daysInMonth;day++){
-      const ds=y+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
-      if(ds<=today) dates.push(ds);
-    }
-    const loaded=await loadSnapsByDate(dates);
-    for(let day=1;day<=daysInMonth;day++){
-      const ds=y+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+      const dateStr=y+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
       labels.push(day+'');
-      const entry=loaded.find(x=>x.date===ds);
-      if(!entry||!entry.snaps.length){ dataElec.push(null);dataMeca.push(null);dataMvts.push(null);dataSolde.push(null);continue; }
-      let eSum=0,mSum=0,cnt=0,mvtsSum=0;
-      let firstTotal=null,lastTotal=null;
-      entry.snaps.forEach(snap=>{
+      const snaps=await fetchDay(dateStr)||[];
+      let e=0,m=0;
+      snaps.forEach(snap=>{
         const st2=getSts(snap).find(x=>x.number===number);
-        if(!st2) return;
-        eSum+=st2.electrical_bikes||0; mSum+=st2.mechanical_bikes||0; cnt++;
-        const tot=(st2.electrical_bikes||0)+(st2.mechanical_bikes||0);
-        if(firstTotal===null) firstTotal=tot;
-        lastTotal=tot;
+        if(st2){e+=st2.electrical_bikes||0;m+=st2.mechanical_bikes||0;}
       });
-      // Mouvements jour = somme des variations absolues entre snapshots
-      let prevT=null;
-      entry.snaps.forEach(snap=>{
-        const st2=getSts(snap).find(x=>x.number===number);
-        if(!st2) return;
-        const tot=(st2.electrical_bikes||0)+(st2.mechanical_bikes||0);
-        if(prevT!==null) mvtsSum+=Math.abs(tot-prevT);
-        prevT=tot;
-      });
-      dataElec.push(cnt?Math.round(eSum/cnt):null);
-      dataMeca.push(cnt?Math.round(mSum/cnt):null);
-      dataMvts.push(Math.round(mvtsSum));
-      // Solde = vélos nets arrivés dans la journée (entrées - sorties)
-      let entrees=0,sorties=0,prevSolde=null;
-      entry.snaps.forEach(snap=>{
-        const st2b=getSts(snap).find(x=>x.number===number);
-        if(!st2b) return;
-        const tot=(st2b.electrical_bikes||0)+(st2b.mechanical_bikes||0);
-        if(prevSolde!==null){ const d=tot-prevSolde; if(d>0)entrees+=d; else sorties+=d; }
-        prevSolde=tot;
-      });
-      dataSolde.push(entrees+sorties);
+      dataElec.push(Math.round(e/Math.max(1,snaps.length)));
+      dataMeca.push(Math.round(m/Math.max(1,snaps.length)));
     }
   } else {
     if(!yr) return;
     const today=new Date().toISOString().slice(0,10);
-    const MONTHS=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
-    // Précharger tous les jours de l'année en parallèle
-    const allDatesYear=[];
+    const yr2=yr;
     for(let mo=1;mo<=12;mo++){
+      labels.push(['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'][mo-1]);
       const daysInM=new Date(yr,mo,0).getDate();
+      let e=0,m=0,cnt=0;
       for(let day=1;day<=daysInM;day++){
-        const ds=yr+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
-        if(ds<=today) allDatesYear.push(ds);
-      }
-    }
-    const allLoadedYear=await loadSnapsByDate(allDatesYear);
-    const byDate={};
-    allLoadedYear.forEach(({date,snaps})=>{ byDate[date]={snaps}; });
-    for(let mo=1;mo<=12;mo++){
-      labels.push(MONTHS[mo-1]);
-      const daysInM=new Date(yr,mo,0).getDate();
-      const monthDates=[];
-      for(let day=1;day<=daysInM;day++){
-        const ds=yr+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
-        if(ds<=today) monthDates.push(ds);
-      }
-      if(!monthDates.length){ dataElec.push(null);dataMeca.push(null);dataMvts.push(null);dataSolde.push(null);continue; }
-      const loaded=monthDates.map(ds=>byDate[ds]).filter(Boolean);
-      let eSum=0,mSum=0,cnt=0,mvtsTotal=0,soldeTotal=0;
-      loaded.forEach(({snaps})=>{
-        let prevT=null,firstT=null,lastT=null;
+        const dateStr=yr+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+        if(dateStr>today) continue;
+        const snaps=await fetchDay(dateStr)||[];
         snaps.forEach(snap=>{
           const st2=getSts(snap).find(x=>x.number===number);
-          if(!st2) return;
-          eSum+=st2.electrical_bikes||0; mSum+=st2.mechanical_bikes||0; cnt++;
-          const tot=(st2.electrical_bikes||0)+(st2.mechanical_bikes||0);
-          if(firstT===null) firstT=tot; lastT=tot;
-          if(prevT!==null) mvtsTotal+=Math.abs(tot-prevT);
-          prevT=tot;
+          if(st2){e+=st2.electrical_bikes||0;m+=st2.mechanical_bikes||0;cnt++;}
         });
-        // Solde journée = entrées nettes
-        let ent=0,sor=0,prevSol=null;
-        snaps.forEach(snap=>{
-          const st2b=getSts(snap).find(x=>x.number===number);
-          if(!st2b) return;
-          const tot=(st2b.electrical_bikes||0)+(st2b.mechanical_bikes||0);
-          if(prevSol!==null){ const d=tot-prevSol; if(d>0)ent+=d; else sor+=d; }
-          prevSol=tot;
-        });
-        soldeTotal+=(ent+sor);
-      });
-      dataElec.push(cnt?Math.round(eSum/cnt):null);
-      dataMeca.push(cnt?Math.round(mSum/cnt):null);
-      dataMvts.push(Math.round(mvtsTotal/Math.max(1,loaded.length)));
-      dataSolde.push(Math.round(soldeTotal/Math.max(1,loaded.length)));
-    }
-  }
-
-  // ── Slide tabs ──
-  window._sdData={labels,dataElec,dataMeca,dataMvts,dataSolde,number,view};
-  window._sdSlide=0; // reset slide à chaque nouvelle station
-  renderSDSlide(0, number);
-} // fin showStationDetail
-
-function renderSDSlide(slideIdx, number){
-  window._sdSlide=slideIdx;
-  const {labels,dataElec,dataMeca,dataMvts,dataSolde,view}=window._sdData||{};
-  if(!labels) return;
-  const isLine=view==='day';
-  const chartType=isLine?'line':'bar';
-  const chartH=window.innerWidth<=640?120:150;
-
-  // Détruire l'ancien chart
-  if(_chartSD_elec){ try{_chartSD_elec.destroy();}catch{} _chartSD_elec=null; }
-  const cvs=document.getElementById('sd-combined-'+number);
-  if(cvs){ const ex=Chart.getChart(cvs); if(ex) ex.destroy(); }
-
-  // Update slide tabs UI
-  const tabsCont=document.getElementById('sd-tabs-'+number); if(tabsCont) [...tabsCont.children].forEach((t,i)=>{t.classList.toggle('on',i===slideIdx);t.style.background=i===slideIdx?'rgba(255,255,255,.14)':'';t.style.color=i===slideIdx?'var(--ink)':'var(--sub)';});
-  const dotsCont=document.getElementById('sd-dots-'+number); if(dotsCont) [...dotsCont.children].forEach((d,i)=>{ d.classList.toggle('on',i===slideIdx); d.style.width=i===slideIdx?'14px':'5px'; d.style.background=i===slideIdx?'#34c759':'#38383a'; });
-
-  let datasets=[], legendHtml='', statsHtml='';
-
-  if(slideIdx===0){
-    datasets=[
-      {label:'Élec',data:dataElec,borderColor:'#0a84ff',backgroundColor:isLine?'#0a84ff18':'#0a84ff88',borderWidth:isLine?1.8:0,borderRadius:2,tension:0,pointRadius:0,spanGaps:true,fill:isLine},
-      {label:'Méca',data:dataMeca,borderColor:'#ff9f0a',backgroundColor:isLine?'#ff9f0a18':'#ff9f0a88',borderWidth:isLine?1.8:0,borderRadius:2,tension:0,pointRadius:0,spanGaps:true,fill:isLine}
-    ];
-    legendHtml='<span style="display:inline-flex;align-items:center;gap:3px;color:#0a84ff"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Élec</span><span style="display:inline-flex;align-items:center;gap:3px;color:#ff9f0a;margin-left:10px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> Méca</span>';
-    const avgE=Math.round((dataElec.filter(Boolean).reduce((a,b)=>a+b,0)||0)/Math.max(1,dataElec.filter(Boolean).length));
-    const avgM=Math.round((dataMeca.filter(Boolean).reduce((a,b)=>a+b,0)||0)/Math.max(1,dataMeca.filter(Boolean).length));
-    statsHtml=`<div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#0a84ff">${avgE}</div><div style="font-size:10px;color:var(--sub)">⚡ moy.</div></div><div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#ff9f0a">${avgM}</div><div style="font-size:10px;color:var(--sub)">🔧 moy.</div></div>`;
-  } else if(slideIdx===1){
-    datasets=[{label:'Mvts',data:dataMvts,
-      borderColor:'#0a84ff',backgroundColor:isLine?'#0a84ff18':'#0a84ff99',
-      borderWidth:isLine?1.8:0,borderRadius:isLine?0:3,
-      tension:0,pointRadius:0,spanGaps:true,fill:isLine}];
-    legendHtml='<span style="display:inline-flex;align-items:center;gap:3px;color:#f5f5f7"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 16V4m0 0L3 8m4-4 4 4"/><path d="M17 8v12m0 0 4-4m-4 4-4-4"/></svg> Mouvements</span>';
-    const total=(dataMvts.filter(Boolean).reduce((a,b)=>a+b,0)||0);
-    const maxMvt=Math.max(...(dataMvts.filter(Boolean)||[0]));
-    statsHtml=`<div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#f5f5f7">${Math.round(total)}</div><div style="font-size:10px;color:var(--sub)">↕ total</div></div><div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:var(--ink)">${maxMvt}</div><div style="font-size:10px;color:var(--sub)">↕ max</div></div>`;
-  } else {
-    const soldeColors=dataSolde.map(v=>(v||0)>=0?'#34c75999':'#ff453a99');
-    const soldeBorders=dataSolde.map(v=>(v||0)>=0?'#34c759':'#ff453a');
-    datasets=[{label:'Solde',data:dataSolde,
-      backgroundColor:isLine?'transparent':soldeColors,
-      borderColor:isLine?soldeBorders:'transparent',
-      segment:{borderColor:ctx=>dataSolde[ctx.p0DataIndex]>=0?'#34c759':'#ff453a'},
-      borderWidth:isLine?1.8:0,borderRadius:isLine?0:3,
-      tension:0,pointRadius:0,spanGaps:true,fill:false}];
-    legendHtml='<span><span style="display:inline-block;width:10px;height:2px;background:#34c759;vertical-align:middle;margin-right:3px;border-radius:1px"></span>Entrées</span><span style="margin-left:10px"><span style="display:inline-block;width:10px;height:2px;background:#ff453a;vertical-align:middle;margin-right:3px;border-radius:1px"></span>Sorties</span>';
-    const bilan=(dataSolde.filter(Boolean).reduce((a,b)=>a+b,0)||0);
-    statsHtml=`<div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:${bilan>=0?'#34c759':'#ff453a'}">${bilan>=0?'+':''}${Math.round(bilan)}</div><div style="font-size:10px;color:var(--sub)">⚖️ bilan</div></div>`;
-  }
-
-  const legendEl=document.getElementById('sd-legend-'+number);
-  const statsEl=document.getElementById('sd-stats-row');
-  if(legendEl) legendEl.innerHTML=legendHtml;
-  if(statsEl) statsEl.innerHTML=statsHtml;
-
-  if(!cvs) return;
-  _chartSD_elec=new Chart(cvs,{type:isLine?'line':'bar',
-    data:{labels,datasets},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(28,28,30,.92)',titleColor:'#f5f5f7',bodyColor:'#8e8e93',padding:8,cornerRadius:8}},
-      scales:{
-        x:{ticks:{color:'#636366',font:{size:9},maxTicksLimit:view==='day'?8:12},grid:{display:false},border:{display:false}},
-        y:{ticks:{color:'#636366',font:{size:9},maxTicksLimit:4},grid:{color:'rgba(255,255,255,.05)'},border:{display:false}}
       }
+      dataElec.push(Math.round(e/Math.max(1,cnt)));
+      dataMeca.push(Math.round(m/Math.max(1,cnt)));
     }
-  });
-}
+  }
 
-function filterLbTable(q){
-  q=(q||'').toLowerCase().trim();
-  const rows=document.querySelectorAll('#lb-body tr');
-  rows.forEach(row=>{
-    const name=(row.querySelector('td:nth-child(2)')?.textContent||'').toLowerCase();
-    row.style.display=(!q||name.includes(q))?'':'none';
-  });
-}
+  _chartSD_elec?.destroy();
+  _chartSD_meca?.destroy();
+  // Moyenne réelle (pas somme cumulée)
+  const validElec=dataElec.filter(v=>v!==null&&v>0);
+  const validMeca=dataMeca.filter(v=>v!==null&&v>0);
+  const avgElec=validElec.length?Math.round(validElec.reduce((a,b)=>a+b,0)/validElec.length):0;
+  const avgMeca=validMeca.length?Math.round(validMeca.reduce((a,b)=>a+b,0)/validMeca.length):0;
+  const totalElec=avgElec;
+  const totalMeca=avgMeca;
+  const mvLabel=view==='day'?'vélos en moy.':'moy. vélos/j';
+  const statsRow=document.getElementById('sd-stats-row');
+  if(statsRow) statsRow.innerHTML=
+    '<div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px">'+
+    '<div style="font-size:15px;font-weight:600;color:#1a7a3e">'+totalElec+'</div>'+
+    '<div style="font-size:10px;color:var(--sub)">⚡ '+mvLabel+'</div></div>'+
+    '<div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px">'+
+    '<div style="font-size:15px;font-weight:600;color:#b52a2a">'+totalMeca+'</div>'+
+    '<div style="font-size:10px;color:var(--sub)">🔧 '+mvLabel+'</div></div>';
+  _chartSD_elec=new Chart(document.getElementById('sd-combined'),{type:chartType,
+    data:{labels,datasets:[
+      {label:'Élec',data:dataElec,borderColor:'#1a7a3e',backgroundColor:chartType==='line'?'#1a7a3e18':'#1a7a3ebb',borderWidth:chartType==='line'?1.8:0,borderRadius:2,tension:0,pointRadius:0,spanGaps:true,fill:chartType==='line'},
+      {label:'Méca',data:dataMeca,borderColor:'#b52a2a',backgroundColor:chartType==='line'?'#b52a2a18':'#b52a2abb',borderWidth:chartType==='line'?1.8:0,borderRadius:2,tension:0,pointRadius:0,spanGaps:true,fill:chartType==='line'}
+    ]},
+    options:chartOpts()});
+} // fin showStationDetail
 
 function setModeNow(){
   const sl=document.getElementById('toggle-slider');
@@ -2002,101 +1789,6 @@ function syncHourSelect(){
   if(sel) sel.value=String(h);
 }
 
-
-function hideBackgroundStations(){
-  if(markers && map && map.hasLayer(markers)){
-    map.removeLayer(markers);
-    window._stationsHidden=true;
-  }
-}
-
-function showBackgroundStations(){
-  if(markers && map && !map.hasLayer(markers)){
-    map.addLayer(markers);
-  }
-  window._stationsHidden=false;
-}
-
-function closePlanFloat(){
-  // Reset tout
-  const pf=document.getElementById('plan-float');
-  const expanded=document.getElementById('plan-float-expanded');
-  const compact=document.getElementById('plan-float-compact');
-  const results=document.getElementById('plan-results');
-  // Vider résultats
-  if(results) results.innerHTML='';
-  // Masquer compact, montrer expanded
-  if(compact) compact.style.display='none';
-  if(expanded) expanded.style.display='block';
-  // Remettre hauteur initiale
-  if(pf){ pf.style.maxHeight='250px'; pf.style.opacity='1'; pf.style.pointerEvents=''; }
-  // Effacer routes
-  if(planLayerGroup){ planLayerGroup.clearLayers(); }
-  // Restaurer stations
-  showBackgroundStations();
-  // Reset état interne
-  window._planCombos=null;
-  window._openComboIdx=null;
-  _openComboIdx=null;
-  // Vider les champs
-  const fromEl=document.getElementById('plan-from');
-  const toEl=document.getElementById('plan-to');
-  if(fromEl) fromEl.value='';
-  if(toEl) toEl.value='';
-  window._planFromPos=null;
-  window._planToPos=null;
-}
-
-function initPillSwipe(){
-  const pill=document.getElementById('plan-float-compact');
-  if(!pill||pill._swipeInit) return;
-  pill._swipeInit=true;
-  let sx=null,dragged=false;
-  const go=(dir)=>{
-    const cur=window._openComboIdx??0;
-    const n=Math.max(0,Math.min((window._planCombos?.length||1)-1,cur+dir));
-    if(n!==cur) selectComboIdx(n);
-  };
-  pill.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;dragged=false;},{passive:true});
-  pill.addEventListener('touchmove',e=>{if(sx!==null&&Math.abs(e.touches[0].clientX-sx)>8){dragged=true;e.stopPropagation();}},{passive:true});
-  pill.addEventListener('touchend',e=>{
-    if(sx===null)return;
-    const dx=e.changedTouches[0].clientX-sx;
-    if(dragged&&Math.abs(dx)>30){go(dx<0?1:-1);e.stopPropagation();}
-    else if(!dragged){expandPlanFloat();}
-    sx=null;dragged=false;
-  });
-}
-
-
-
-function initSliderSwipe(){
-  const track=document.getElementById('combo-slider-track');
-  if(!track||track._swipeInit) return;
-  track._swipeInit=true;
-  let sx=null,dragged=false;
-  const go=(dir)=>{
-    const cur=window._openComboIdx??0;
-    const n=Math.max(0,Math.min((window._planCombos?.length||1)-1,cur+dir));
-    if(n!==cur) selectComboIdx(n);
-  };
-  track.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;dragged=false;},{passive:true});
-  track.addEventListener('touchmove',e=>{if(sx!==null&&Math.abs(e.touches[0].clientX-sx)>8)dragged=true;},{passive:true});
-  track.addEventListener('touchend',e=>{
-    if(sx===null)return;
-    const dx=e.changedTouches[0].clientX-sx;
-    if(dragged&&Math.abs(dx)>30)go(dx<0?1:-1);
-    sx=null;dragged=false;
-  });
-  let md=false,mx=0;
-  track.addEventListener('mousedown',e=>{md=true;mx=e.clientX;dragged=false;});
-  window.addEventListener('mouseup',e=>{
-    if(!md)return;md=false;
-    const dx=e.clientX-mx;
-    if(Math.abs(dx)>30)go(dx<0?1:-1);
-  });
-}
-
 /* ═══ BOOT ════════════════════════════════════════════ */
 async function boot(){
   initRanges();
@@ -2107,7 +1799,7 @@ async function boot(){
   initPlanMap();
 }
 boot();
-setInterval(async()=>{ allStations=await loadLatest(); window._lastStationUpdate=Date.now(); updateLiveStatus(); await computeMovements(); renderStations(); },2*60*1000);
+setInterval(async()=>{ allStations=await loadLatest(); window._lastStationUpdate=Date.now(); updateLiveStatus(); await computeMovements(); renderStations(); },5*60*1000);
 </script>
 </body>
 </html>
