@@ -354,8 +354,10 @@ function compactPlanFloat(){
 }
 function expandPlanFloat(){
   document.getElementById('plan-float-expanded').style.display='block';
-  document.getElementById('plan-float-compact').style.display='none';
   document.getElementById('plan-results').style.display='';
+  document.getElementById('plan-float-compact').style.display='none';
+  // Re-init slider (track may have been re-rendered)
+  setTimeout(initSliderSwipe, 50);
   const pf=document.getElementById('plan-float');
   if(pf) pf.style.maxHeight=window.innerWidth<=640?'58vh':'80vh';
 }
@@ -1433,8 +1435,8 @@ async function computePlan(){
   if(_fromInput) _fromInput.style.color=depEmptyWarn?'#ff9f0a':'';
   if(_toInput) _toInput.style.color=arrFullWarn?'#ff9f0a':'';
   results.innerHTML=_warnHtml+renderComboList(autoLimit);
-  if(window.innerWidth<=640) initSliderSwipe();
-  window._showMoreCombos=()=>{ results.innerHTML=renderComboList(top.length); drawTop3Routes(); };
+  if(window.innerWidth<=640) setTimeout(initSliderSwipe,50);
+  window._showMoreCombos=()=>{ results.innerHTML=renderComboList(top.length); drawTop3Routes(); setTimeout(initSliderSwipe,50); };
   window._planCombos=top;
   _openComboIdx=null;
   drawTop3Routes();
@@ -1961,7 +1963,8 @@ function showStationPopup(s, lat, lon){
 
 function initSliderSwipe(){
   const track=document.getElementById('combo-slider-track');
-  if(!track||track._swipeInit) return;
+  if(!track) return;
+  if(track._swipeInit) return; // already attached
   track._swipeInit=true;
   let sx=null,dragged=false;
   const go=(dir)=>{
