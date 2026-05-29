@@ -1701,21 +1701,20 @@ async function showStationDetail(number, targetEl=null){
   const oldCanvas=document.getElementById('sd-combined-'+number);
   if(oldCanvas){ const existing=Chart.getChart(oldCanvas); if(existing) existing.destroy(); }
   const isMob=window.innerWidth<=640;
-  const isMob2=window.innerWidth<=640;
   detail.innerHTML=
     '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'+
     
     '<div style="min-width:0"><div style="font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+cleanName(st.name)+'</div>'+
     '<div style="font-size:11px;color:var(--sub);margin-top:2px">⚡'+st.electrical_bikes+' · 🔧'+st.mechanical_bikes+' · 🅿️'+st.available_bike_stands+'</div></div></div>'+
     // Slide tabs
-    '<div style="display:flex;gap:0;background:rgba(255,255,255,.06);border-radius:10px;padding:2px;margin-bottom:8px">'+
+    '<div id="sd-tabs-'+number+'" style="display:flex;gap:0;background:rgba(255,255,255,.06);border-radius:10px;padding:2px;margin-bottom:8px">'+
     '<div class="sd-tab on" onclick="renderSDSlide(0,'+number+')" style="flex:1;text-align:center;padding:5px 4px;font-size:10px;font-weight:600;color:var(--ink);background:rgba(255,255,255,.14);border-radius:8px;cursor:pointer">🚲 Vélos</div>'+
     '<div class="sd-tab" onclick="renderSDSlide(1,'+number+')" style="flex:1;text-align:center;padding:5px 4px;font-size:10px;font-weight:600;color:var(--sub);border-radius:8px;cursor:pointer">↕ Mvts</div>'+
     '<div class="sd-tab" onclick="renderSDSlide(2,'+number+')" style="flex:1;text-align:center;padding:5px 4px;font-size:10px;font-weight:600;color:var(--sub);border-radius:8px;cursor:pointer">⚖️ Solde</div>'+
     '</div>'+
     '<div id="sd-legend-'+number+'" style="display:flex;gap:10px;font-size:10px;color:var(--sub);margin-bottom:4px"></div>'+
-    '<div style="position:relative;height:'+(isMob2?120:150)+'px"><canvas id="sd-combined-'+number+'" style="position:absolute;inset:0;width:100%!important;height:100%!important"></canvas></div>'+
-    '<div style="display:flex;justify-content:center;gap:4px;padding:6px 0 2px">'+
+    '<div style="position:relative;height:'+(isMob?120:150)+'px"><canvas id="sd-combined-'+number+'" style="position:absolute;inset:0;width:100%!important;height:100%!important"></canvas></div>'+
+    '<div id="sd-dots-'+number+'" style="display:flex;justify-content:center;gap:4px;padding:6px 0 2px">'+
     '<div class="sd-dot on" style="height:3px;width:14px;border-radius:2px;background:#34c759;transition:all .2s;display:inline-block"></div>'+
     '<div class="sd-dot" style="height:3px;width:5px;border-radius:2px;background:#38383a;transition:all .2s;display:inline-block"></div>'+
     '<div class="sd-dot" style="height:3px;width:5px;border-radius:2px;background:#38383a;transition:all .2s;display:inline-block"></div>'+
@@ -1751,7 +1750,7 @@ async function showStationDetail(number, targetEl=null){
       const sts=getSts(snap), st2=sts.find(x=>x.number===number);
       if(!st2) return;
       const t=new Date(getTs(snap));
-      labels.push(t.getHours()+'h'+String(t.getMinutes()).padStart(2,'0'));
+      labels.push(t.getMinutes()===0?t.getHours()+'h':'');
       dataElec.push(st2.electrical_bikes||0);
       dataMeca.push(st2.mechanical_bikes||0);
       // Mouvements = delta sur available_bikes (proxy)
@@ -1804,16 +1803,28 @@ async function showStationDetail(number, targetEl=null){
     if(!yr) return;
     const today=new Date().toISOString().slice(0,10);
     const MONTHS=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+    // Précharger tous les jours de l'année en parallèle
+    const allDatesYear=[];
+    for(let mo=1;mo<=12;mo++){
+      const daysInM=new Date(yr,mo,0).getDate();
+      for(let day=1;day<=daysInM;day++){
+        const ds=yr+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+        if(ds<=today) allDatesYear.push(ds);
+      }
+    }
+    const allLoadedYear=await loadSnapsByDate(allDatesYear);
+    const byDate={};
+    allLoadedYear.forEach(({date,snaps})=>{ byDate[date]={snaps}; });
     for(let mo=1;mo<=12;mo++){
       labels.push(MONTHS[mo-1]);
       const daysInM=new Date(yr,mo,0).getDate();
-      const dates=[];
+      const monthDates=[];
       for(let day=1;day<=daysInM;day++){
         const ds=yr+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
-        if(ds<=today) dates.push(ds);
+        if(ds<=today) monthDates.push(ds);
       }
-      if(!dates.length){ dataElec.push(null);dataMeca.push(null);dataMvts.push(null);dataSolde.push(null);continue; }
-      const loaded=await loadSnapsByDate(dates);
+      if(!monthDates.length){ dataElec.push(null);dataMeca.push(null);dataMvts.push(null);dataSolde.push(null);continue; }
+      const loaded=monthDates.map(ds=>byDate[ds]).filter(Boolean);
       let eSum=0,mSum=0,cnt=0,mvtsTotal=0,soldeTotal=0;
       loaded.forEach(({snaps})=>{
         let prevT=null,firstT=null,lastT=null;
@@ -1837,7 +1848,8 @@ async function showStationDetail(number, targetEl=null){
 
   // ── Slide tabs ──
   window._sdData={labels,dataElec,dataMeca,dataMvts,dataSolde,number,view};
-  renderSDSlide(window._sdSlide||0, number);
+  window._sdSlide=0; // reset slide à chaque nouvelle station
+  renderSDSlide(0, number);
 } // fin showStationDetail
 
 function renderSDSlide(slideIdx, number){
@@ -1854,8 +1866,8 @@ function renderSDSlide(slideIdx, number){
   if(cvs){ const ex=Chart.getChart(cvs); if(ex) ex.destroy(); }
 
   // Update slide tabs UI
-  document.querySelectorAll('.sd-tab').forEach((t,i)=>t.classList.toggle('on',i===slideIdx));
-  document.querySelectorAll('.sd-dot').forEach((d,i)=>{ d.classList.toggle('on',i===slideIdx); d.style.width=i===slideIdx?'14px':'5px'; });
+  const tabsCont=document.getElementById('sd-tabs-'+number); if(tabsCont) [...tabsCont.children].forEach((t,i)=>{t.classList.toggle('on',i===slideIdx);t.style.background=i===slideIdx?'rgba(255,255,255,.14)':'';t.style.color=i===slideIdx?'var(--ink)':'var(--sub)';});
+  const dotsCont=document.getElementById('sd-dots-'+number); if(dotsCont) [...dotsCont.children].forEach((d,i)=>{ d.classList.toggle('on',i===slideIdx); d.style.width=i===slideIdx?'14px':'5px'; d.style.background=i===slideIdx?'#34c759':'#38383a'; });
 
   let datasets=[], legendHtml='', statsHtml='';
 
