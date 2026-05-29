@@ -23,7 +23,6 @@
   #top-nav{display:none !important}
 
   .card{padding:12px;border:0.5px solid rgba(255,255,255,.08)}
-  .loc-row{grid-template-columns:1fr}
   #map{height:100%}
 
   .params-row{gap:8px}
@@ -1943,20 +1942,23 @@ let _stationPopup=null;
 function showStationPopup(s, lat, lon){
   if(_stationPopup) _stationPopup.remove();
   const hasDep=!!window._planFromPos;
-  const btnDep=!hasDep?`<button onclick="setStationDep(${JSON.stringify(s.name)},${lat},${lon})" style="width:100%;padding:7px 10px;border-radius:8px;border:none;background:rgba(52,199,89,.15);color:#34c759;font-size:12px;font-weight:600;cursor:pointer;text-align:left">
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-    Partir d'ici</button>`:'';
-  const btnArr=hasDep?`<button onclick="setStationArr(${JSON.stringify(s.name)},${lat},${lon})" style="width:100%;padding:7px 10px;border-radius:8px;border:none;background:rgba(255,69,58,.12);color:#ff453a;font-size:12px;font-weight:600;cursor:pointer;text-align:left">
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-    Arriver ici</button>`:'';
+  // Store pending station data globally to avoid onclick escaping issues
+  window._popupStation={name:cleanName(s.name),lat,lon};
+  const dBtn=!hasDep?`<button id="stn-dep-btn" style="width:100%;padding:7px 10px;border-radius:8px;border:none;background:rgba(52,199,89,.15);color:#34c759;font-size:12px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Partir d'ici</button>`:'';
+  const aBtn=hasDep?`<button id="stn-arr-btn" style="width:100%;padding:7px 10px;border-radius:8px;border:none;background:rgba(255,69,58,.12);color:#ff453a;font-size:12px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Arriver ici</button>`:'';
   _stationPopup=L.popup({closeButton:false,className:'station-popup',offset:[0,-8]})
     .setLatLng([lat,lon])
     .setContent(`<div style="background:rgba(12,12,16,.92);backdrop-filter:blur(20px);border-radius:12px;padding:8px;min-width:140px;border:0.5px solid rgba(255,255,255,.1)">
       <div style="font-size:11px;font-weight:700;color:#f5f5f7;margin-bottom:6px">${cleanName(s.name)}</div>
       <div style="font-size:10px;color:#8e8e93;margin-bottom:7px">⚡${s.electrical_bikes} · 🔧${s.mechanical_bikes} · 🅿️${s.available_bike_stands}</div>
-      <div style="display:flex;flex-direction:column;gap:4px">${btnDep}${btnArr}</div>
+      <div style="display:flex;flex-direction:column;gap:4px">${dBtn}${aBtn}</div>
     </div>`)
     .addTo(map);
+  // Attach events after DOM insertion
+  setTimeout(()=>{
+    document.getElementById('stn-dep-btn')?.addEventListener('click',()=>{ const p=window._popupStation; setStationDep(p.name,p.lat,p.lon); });
+    document.getElementById('stn-arr-btn')?.addEventListener('click',()=>{ const p=window._popupStation; setStationArr(p.name,p.lat,p.lon); });
+  },50);
 }
 
 function setStationDep(name,lat,lon){
