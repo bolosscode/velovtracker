@@ -261,6 +261,7 @@ main{max-width:1500px;margin:auto;padding:20px}
         <option value="stands">Places libres</option>
         <option value="fill">% remplissage</option>
       </select>
+      <input id="lb-station-search" type="text" placeholder="🔍 Station…" oninput="filterLbTable(this.value)" style="padding:7px 10px;border-radius:10px;border:1px solid var(--border);background:var(--paper);color:var(--ink);font-size:13px;outline:none;min-width:0;flex:1"/>
       <button class="btn" onclick="computeLeaderboard()">Calculer</button>
       <span id="lb-meteo" style="font-size:12px;color:var(--sub)"></span>
     </div>
@@ -947,6 +948,7 @@ async function computeLeaderboard(){
   content.innerHTML='<div style="overflow-x:auto"><table id="lb-table"><thead id="lb-head"></thead><tbody id="lb-body"></tbody></table></div>';
   renderLbTable(lbMvCache);
   if(view==='day') showDayMeteo(document.getElementById('lb-date').value);
+  const srch=document.getElementById('lb-station-search'); if(srch) srch.value='';
 }
 function renderLbTable(mvData){
   const head=document.getElementById('lb-head'), body=document.getElementById('lb-body');
@@ -1702,7 +1704,7 @@ async function showStationDetail(number, targetEl=null){
   const isMob2=window.innerWidth<=640;
   detail.innerHTML=
     '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'+
-    (st.lat&&st.lng?'<div id="sd-map" style="width:44px;height:44px;border-radius:10px;overflow:hidden;flex-shrink:0"></div>':'')+
+    
     '<div style="min-width:0"><div style="font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+cleanName(st.name)+'</div>'+
     '<div style="font-size:11px;color:var(--sub);margin-top:2px">⚡'+st.electrical_bikes+' · 🔧'+st.mechanical_bikes+' · 🅿️'+st.available_bike_stands+'</div></div></div>'+
     // Slide tabs
@@ -1721,13 +1723,7 @@ async function showStationDetail(number, targetEl=null){
     '<div id="sd-stats-row" style="display:flex;gap:8px;margin-top:6px"></div>';
 
 
-  if(st.lat && st.lng && document.getElementById('sd-map')){
-    const sdMap=L.map('sd-map',{zoomControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false,keyboard:false,touchZoom:false})
-      .setView([st.lat,st.lng],16);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-      {attribution:''}).addTo(sdMap);
-    L.circleMarker([st.lat,st.lng],{radius:10,fillColor:stationColor(st),color:'#fff',weight:2,fillOpacity:.95}).addTo(sdMap);
-  }
+
   // ── Chargement des données selon la vue ──
   const d=document.getElementById('lb-date').value;
   const mth=document.getElementById('lb-month')?.value;
@@ -1900,6 +1896,15 @@ function renderSDSlide(slideIdx, number){
         y:{ticks:{color:'#636366',font:{size:9},maxTicksLimit:4},grid:{color:'rgba(255,255,255,.05)'},border:{display:false}}
       }
     }
+  });
+}
+
+function filterLbTable(q){
+  q=(q||'').toLowerCase().trim();
+  const rows=document.querySelectorAll('#lb-body tr');
+  rows.forEach(row=>{
+    const name=(row.querySelector('td:nth-child(2)')?.textContent||'').toLowerCase();
+    row.style.display=(!q||name.includes(q))?'':'none';
   });
 }
 
