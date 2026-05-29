@@ -156,6 +156,8 @@ main{max-width:1500px;margin:auto;padding:20px}
 .combo-dots{display:flex;justify-content:center;gap:5px;padding:6px 0 4px}
 .cdot{height:5px;border-radius:3px;background:#636366;transition:all .2s;display:inline-block}
 .cdot.on{width:14px!important;background:rgba(255,255,255,.55)}
+.station-popup .leaflet-popup-content-wrapper,.station-popup .leaflet-popup-tip{background:transparent;box-shadow:none;padding:0}
+.station-popup .leaflet-popup-content{margin:0}
 </style>
 </head>
 <body>
@@ -331,7 +333,7 @@ function compactPlanFloat(){
           <div style="background:${scBg};border-radius:6px;padding:2px 6px;flex-shrink:0"><span style="font-size:11px;font-weight:700;color:${scCol}">${sc}%</span></div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
-          <div style="font-size:10px;color:rgba(255,255,255,.4)">${Math.round(combo.dist/1000*10)/10}km · ~${combo.rideMin}min</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.4)">${combo._walkDepMin?`<span style='color:#0a84ff'>🚶${combo._walkDepMin}min · </span>`:''} ${Math.round(combo.dist/1000*10)/10}km · ~${combo.rideMin}min${combo._walkArrMin?` · <span style='color:#0a84ff'>🚶${combo._walkArrMin}min</span>`:''}</div>
           <div style="display:flex;align-items:center;gap:4px;margin-left:auto">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="#f5f5f7"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span style="font-size:11px;font-weight:700;color:#f5f5f7">${liveElec}</span>
             <span style="color:#38383a;font-size:10px">/</span>
@@ -631,8 +633,8 @@ async function computeMovements(){
 function initMap(){
   if(map) return;
   map=L.map('map',{zoomControl:false}).setView([45.757,4.832],13); L.control.zoom({position:'bottomright'}).addTo(map);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    {attribution:'© OpenStreetMap contributors',maxZoom:20}).addTo(map);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    {attribution:'© OpenStreetMap © CARTO',maxZoom:20}).addTo(map);
   map.on('zoomend', renderStations);
 }
 function renderStations(){
@@ -1353,7 +1355,7 @@ async function computePlan(){
         <div style="flex:1;min-width:0">
           <div style="font-size:11px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cleanName(combo.dep.name)}</div>
           <div style="font-size:10px;color:rgba(255,255,255,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cleanName(combo.arr.name)}</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:1px">${Math.round(combo.dist/1000*10)/10}km · ~${combo.rideMin}min</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:1px">${combo._walkDepMin?`<span style="color:#0a84ff">🚶${combo._walkDepMin}min</span> · `:''} ${Math.round(combo.dist/1000*10)/10}km · ~${combo.rideMin}min${combo._walkArrMin?` · <span style="color:#0a84ff">🚶${combo._walkArrMin}min</span>`:''}</div>
         </div>
         ${cardBody}
       </div>`;
@@ -1566,9 +1568,15 @@ async function showRoute(idx){
 
   // Lignes en pointillés piéton
   if(planFromPos&&!planFromFixed)
+    const walkDepDist=Math.round(Math.sqrt(Math.pow((planFromPos.lat-combo.dep.lat)*111000,2)+Math.pow((planFromPos.lng-combo.dep.lng)*111000*Math.cos(planFromPos.lat*Math.PI/180),2)));
+    const walkDepMin=Math.max(1,Math.round(walkDepDist/80)); // ~80m/min marche
+    combo._walkDepMin=walkDepMin;
     L.polyline([[planFromPos.lat,planFromPos.lng],[combo.dep.lat,combo.dep.lng]],{color:'#fff',weight:4,dashArray:'6,5',opacity:.5,lineCap:'round'}).addTo(planLayerGroup);
     L.polyline([[planFromPos.lat,planFromPos.lng],[combo.dep.lat,combo.dep.lng]],{color:'#0a84ff',weight:2.5,dashArray:'6,5',opacity:.85,lineCap:'round'}).addTo(planLayerGroup);
   if(planToPos&&!planToFixed)
+    const walkArrDist=Math.round(Math.sqrt(Math.pow((combo.arr.lat-planToPos.lat)*111000,2)+Math.pow((combo.arr.lng-planToPos.lng)*111000*Math.cos(combo.arr.lat*Math.PI/180),2)));
+    const walkArrMin=Math.max(1,Math.round(walkArrDist/80));
+    combo._walkArrMin=walkArrMin;
     L.polyline([[combo.arr.lat,combo.arr.lng],[planToPos.lat,planToPos.lng]],{color:'#fff',weight:4,dashArray:'6,5',opacity:.5,lineCap:'round'}).addTo(planLayerGroup);
     L.polyline([[combo.arr.lat,combo.arr.lng],[planToPos.lat,planToPos.lng]],{color:'#0a84ff',weight:2.5,dashArray:'6,5',opacity:.85,lineCap:'round'}).addTo(planLayerGroup);
 
@@ -1932,6 +1940,70 @@ function renderSDSlide(slideIdx, number){
       }
     }
   });
+}
+
+let _stationPopup=null;
+function showStationPopup(s, lat, lon){
+  if(_stationPopup) _stationPopup.remove();
+  const hasDep=!!window._planFromPos;
+  const btnDep=!hasDep?`<button onclick="setStationDep(${JSON.stringify(s.name)},${lat},${lon})" style="width:100%;padding:7px 10px;border-radius:8px;border:none;background:rgba(52,199,89,.15);color:#34c759;font-size:12px;font-weight:600;cursor:pointer;text-align:left">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    Partir d'ici</button>`:'';
+  const btnArr=hasDep?`<button onclick="setStationArr(${JSON.stringify(s.name)},${lat},${lon})" style="width:100%;padding:7px 10px;border-radius:8px;border:none;background:rgba(255,69,58,.12);color:#ff453a;font-size:12px;font-weight:600;cursor:pointer;text-align:left">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+    Arriver ici</button>`:'';
+  _stationPopup=L.popup({closeButton:false,className:'station-popup',offset:[0,-8]})
+    .setLatLng([lat,lon])
+    .setContent(`<div style="background:rgba(12,12,16,.92);backdrop-filter:blur(20px);border-radius:12px;padding:8px;min-width:140px;border:0.5px solid rgba(255,255,255,.1)">
+      <div style="font-size:11px;font-weight:700;color:#f5f5f7;margin-bottom:6px">${cleanName(s.name)}</div>
+      <div style="font-size:10px;color:#8e8e93;margin-bottom:7px">⚡${s.electrical_bikes} · 🔧${s.mechanical_bikes} · 🅿️${s.available_bike_stands}</div>
+      <div style="display:flex;flex-direction:column;gap:4px">${btnDep}${btnArr}</div>
+    </div>`)
+    .addTo(map);
+}
+
+function setStationDep(name,lat,lon){
+  if(_stationPopup){ _stationPopup.remove(); _stationPopup=null; }
+  window._planFromPos={lat,lng:lon};
+  planFromPos={lat,lng:lon};
+  document.getElementById('plan-from').value=name;
+  // Open plan float
+  expandPlanFloat();
+  document.getElementById('plan-float').style.maxHeight='250px';
+}
+
+function setStationArr(name,lat,lon){
+  if(_stationPopup){ _stationPopup.remove(); _stationPopup=null; }
+  window._planToPos={lat,lng:lon};
+  planToPos={lat,lng:lon};
+  document.getElementById('plan-to').value=name;
+  expandPlanFloat();
+  setTimeout(()=>computePlan(),200);
+}
+
+function showStationToast(s,type){}
+
+function geolocateFrom(){
+  if(!navigator.geolocation){ alert('Géolocalisation non disponible'); return; }
+  const btn=document.querySelector('[onclick="geolocateFrom()"]');
+  if(btn) btn.style.opacity='.5';
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      const {latitude:lat,longitude:lng}=pos.coords;
+      window._planFromPos={lat,lng};
+      planFromPos={lat,lng};
+      document.getElementById('plan-from').value='Ma position';
+      if(btn) btn.style.opacity='1';
+      // Show blue dot on map
+      if(window._geoMarker) window._geoMarker.remove();
+      window._geoMarker=L.circleMarker([lat,lng],{
+        radius:8,fillColor:'#0a84ff',color:'#fff',weight:2,fillOpacity:.95,
+        className:'geo-pulse'
+      }).addTo(planLayerGroup||map);
+    },
+    err=>{ if(btn) btn.style.opacity='1'; console.warn('Géoloc:', err.message); },
+    {enableHighAccuracy:true,timeout:8000}
+  );
 }
 
 function filterLbTable(q){
