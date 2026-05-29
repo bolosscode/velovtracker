@@ -346,6 +346,7 @@ function compactPlanFloat(){
     el.innerHTML=`<div style="font-size:12px;color:#8e8e93;cursor:pointer;flex:1" onclick="expandPlanFloat()">Tap pour voir les itinéraires</div>`;
   }
   document.getElementById('plan-float-expanded').style.display='none';
+  document.getElementById('plan-results').style.display='none';
   el.style.display='flex';
   const pf=document.getElementById('plan-float');
   if(pf) pf.style.maxHeight='100px';
@@ -354,6 +355,7 @@ function compactPlanFloat(){
 function expandPlanFloat(){
   document.getElementById('plan-float-expanded').style.display='block';
   document.getElementById('plan-float-compact').style.display='none';
+  document.getElementById('plan-results').style.display='';
   const pf=document.getElementById('plan-float');
   if(pf) pf.style.maxHeight=window.innerWidth<=640?'58vh':'80vh';
 }
