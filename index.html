@@ -1888,6 +1888,14 @@ function showStationPopup(s, lat, lon){
   _stationPopup=L.popup({closeButton:false,className:'station-popup',offset:[0,-6]})
     .setLatLng([lat,lon]).setContent(content).addTo(map);
 
+  // Force transparent wrapper (Leaflet inline styles override CSS)
+  setTimeout(()=>{
+    const wrapper=document.querySelector('.station-popup .leaflet-popup-content-wrapper');
+    if(wrapper){ wrapper.style.background='transparent'; wrapper.style.boxShadow='none'; wrapper.style.padding='0'; wrapper.style.borderRadius='0'; }
+    const tip=document.querySelector('.station-popup .leaflet-popup-tip-container');
+    if(tip) tip.style.display='none';
+  },10);
+
   setTimeout(()=>{
     document.getElementById('stn-dep-btn')?.addEventListener('click',()=>{
       const {s,lat,lon}=window._popupStation;
