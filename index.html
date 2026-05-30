@@ -1891,10 +1891,10 @@ function showStationPopup(s, lat, lon){
   div.id='stn-custom-popup';
   div.style.cssText=`position:absolute;z-index:500;transform:translate(-50%,-100%);
     left:${pt.x}px;top:${pt.y-10}px;
-    background:rgba(12,12,16,.92);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
-    border:0.5px solid rgba(255,255,255,.15);border-radius:14px;
-    padding:10px 12px;min-width:170px;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 24px rgba(0,0,0,.6);
+    background:rgba(16,16,20,.72);backdrop-filter:blur(48px) saturate(200%) brightness(1.05);-webkit-backdrop-filter:blur(48px) saturate(200%) brightness(1.05);
+    border:0.5px solid rgba(255,255,255,.12);border-radius:14px;
+    padding:10px 12px;min-width:160px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 24px rgba(0,0,0,.4);
     pointer-events:auto;`;
 
   div.innerHTML=`
@@ -1908,9 +1908,9 @@ function showStationPopup(s, lat, lon){
       </span>
       <span style="margin-left:auto;color:${cls};font-weight:700">${pct}%</span>
     </div>
-    ${!hasDep?`<button id="stn-dep-btn" style="width:100%;padding:6px 10px;border-radius:8px;border:none;background:rgba(52,199,89,.15);color:#34c759;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
+    ${!hasDep?`<button id="stn-dep-btn" style="width:100%;padding:5px 8px;border-radius:8px;border:0.5px solid rgba(52,199,89,.3);background:rgba(52,199,89,.1);color:#34c759;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Partir d'ici</button>`
-    :`<button id="stn-arr-btn" style="width:100%;padding:6px 10px;border-radius:8px;border:none;background:rgba(255,69,58,.12);color:#ff453a;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
+    :`<button id="stn-arr-btn" style="width:100%;padding:5px 8px;border-radius:8px;border:0.5px solid rgba(255,69,58,.3);background:rgba(255,69,58,.1);color:#ff453a;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Arriver ici</button>`}`;
 
   mapEl.appendChild(div);
