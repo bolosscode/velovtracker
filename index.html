@@ -246,11 +246,8 @@ main{max-width:1500px;margin:auto;padding:20px}
   </div>
 </div>
 
-<div class="panel" id="tab-stats" style="padding:10px;overflow-y:auto;max-height:100vh;position:relative;z-index:1;background:#111">
+<div class="panel" id="tab-stats" style="padding:10px;overflow-y:auto;max-height:100vh;background:#e8e0d5;min-height:100vh">
   <!-- Fond carte floutée -->
-  <div id="stats-map-bg" style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:0;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .3s">
-    <div id="stats-map-inner" style="position:absolute;inset:-20px;filter:blur(8px) saturate(60%) brightness(.35);background-size:cover"></div>
-  </div>
   <!-- Contrôles globaux -->
   <!-- Contrôles globaux -->
   <div class="card" style="padding:12px;margin-bottom:8px">
@@ -416,19 +413,7 @@ document.querySelectorAll('.tab').forEach(tab=>{
     if(tab.dataset.tab==='map') setTimeout(()=>{ if(!map)initMap(); map?.invalidateSize(); renderStations(); },150);
     if(tab.dataset.tab==='stats'){
       quickLeaderboard();
-      // Fond carte statique Lyon centre
-      setTimeout(()=>{
-        const bg=document.getElementById('stats-map-bg');
-        const inner=document.getElementById('stats-map-inner');
-        if(bg&&inner&&!inner._loaded){
-          inner._loaded=true;
-          inner.style.cssText=`position:absolute;inset:-20px;
-            background:url('https://tile.openstreetmap.org/13/4205/2930.png') repeat;
-            background-size:256px 256px;
-            filter:blur(4px) saturate(50%) brightness(.3)`;
-          bg.style.opacity='1';
-        }
-      },100);
+
     }
     if(tab.dataset.tab==='plan') initPlanMap();
   };
