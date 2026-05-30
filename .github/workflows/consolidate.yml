@@ -1,50 +1,98 @@
-name: Consolidation Vélo'v J-1
+name: Consolidation quotidienne
 
 on:
- workflow_dispatch:
-   inputs:
-     date:
-       description: 'Date à consolider (YYYY-MM-DD, défaut: hier)'
-       required: false
-       default: ''
+  
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Date à consolider (YYYY-MM-DD, vide = automatique)'
+        required: false
+        default: ''
 
 permissions:
- contents: write
+  contents: write
 
 jobs:
- consolidate:
-   runs-on: ubuntu-latest
-   timeout-minutes: 30
+  consolidate:
+    name: Consolider & rattraper les jours manquants
+    runs-on: ubuntu-latest
 
-   steps:
-     - uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-     - uses: actions/setup-python@v5
-       with:
-         python-version: "3.12"
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-     - run: pip install requests
+      - name: Install deps
+        run: pip install requests
 
-     - name: Setup git
-       run: |
-         git config user.name  "github-actions[bot]"
-         git config user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Consolider les jours manquants
+        env:
+          USER: ${{ secrets.GL_USER }}
+          PASSWORD: ${{ secrets.GL_PASSWORD }}
+          INPUT_DATE: ${{ github.event.inputs.date }}
+        run: |
+          python - << 'PYEOF'
+          import os, subprocess, sys
+          from datetime import date, timedelta
+          from pathlib import Path
 
-     - name: Consolidation J-1
-       env:
-         GL_USER:     ${{ secrets.GL_USER }}
-         GL_PASSWORD: ${{ secrets.GL_PASSWORD }}
-       run: |
-         ARGS=""
-         [ -n "$GL_USER" ]     && ARGS="$ARGS --user $GL_USER"
-         [ -n "$GL_PASSWORD" ] && ARGS="$ARGS --password $GL_PASSWORD"
-         [ -n "${{ github.event.inputs.date }}" ] && ARGS="$ARGS --date ${{ github.event.inputs.date }}"
-         python consolidate.py $ARGS
+          out_dir = Path("data/history")
+          out_dir.mkdir(parents=True, exist_ok=True)
 
-     - name: Pré-calcul stats
-       run: python precompute_stats.py
+          input_date = os.environ.get("INPUT_DATE", "").strip()
+          user = os.environ.get("USER", "")
+          password = os.environ.get("PASSWORD", "")
 
-     - name: Commit & push
-       run: |
-         git add data/history/ data/stats/
-         git diff --staged --quiet && echo "
+          auth_args = ["--user", user, "--password", password] if user else []
+
+          if input_date:
+              # Mode manuel : consolider une date précise
+              dates_to_run = [date.fromisoformat(input_date)]
+          else:
+              # Mode automatique : J-1 + tous les jours manquants depuis le 29/01/2025
+              start = date(2025, 1, 29)
+              today = date.today()
+              yesterday = today - timedelta(days=1)
+
+              dates_to_run = []
+              d = start
+              while d <= yesterday:
+                  # Vérifier si le fichier existe (json ou json.gz)
+                  exists = (out_dir / f"{d}.json").exists() or (out_dir / f"{d}.json.gz").exists()
+                  if not exists:
+                      dates_to_run.append(d)
+                  d += timedelta(days=1)
+
+              if not dates_to_run:
+                  print("Tous les jours sont déjà consolidés ✓")
+                  sys.exit(0)
+
+              print(f"{len(dates_to_run)} jour(s) à consolider : {dates_to_run[0]} → {dates_to_run[-1]}")
+
+          # Consolider chaque date manquante
+          errors = []
+          for target_date in dates_to_run:
+              print(f"\n=== Consolidation {target_date} ===", flush=True)
+              cmd = [sys.executable, "consolidate.py", "--date", str(target_date), "--out", str(out_dir)] + auth_args
+              result = subprocess.run(cmd, capture_output=False)
+              if result.returncode != 0:
+                  print(f"ERREUR pour {target_date}", flush=True)
+                  errors.append(target_date)
+
+          if errors:
+              print(f"\n{len(errors)} erreur(s) : {errors}", flush=True)
+              sys.exit(1)
+
+          PYEOF
+
+      - name: Commit & push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git diff --staged --quiet || git commit -m "consolidate: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+          git push
