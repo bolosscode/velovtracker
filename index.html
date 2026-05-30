@@ -1864,66 +1864,78 @@ function renderSDSlide(slideIdx,number){
 
 
 let _stationPopup=null;
+let _stationPopupEl=null;
 function showStationPopup(s, lat, lon){
-  if(_stationPopup){ _stationPopup.remove(); _stationPopup=null; }
-  window._popupStation={s, lat, lon};
+  closeStationPopup();
+  window._popupStation={s,lat,lon};
   const hasDep=!!(window._planFromPos||planFromPos||planFromFixed);
   const pct=s.bike_stands?Math.round(s.available_bikes/s.bike_stands*100):0;
   const cls=pct>=50?'#34c759':pct>=25?'#ff9f0a':'#ff453a';
-  const depBtnHtml=`<button id="stn-dep-btn" style="width:100%;padding:7px 10px;border-radius:8px;border:none;background:rgba(52,199,89,.12);color:#34c759;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;margin-top:6px">
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Partir d'ici</button>`;
-  const arrBtnHtml=`<button id="stn-arr-btn" style="width:100%;padding:7px 10px;border-radius:8px;border:none;background:rgba(255,69,58,.1);color:#ff453a;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;margin-top:4px">
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Arriver ici</button>`;
 
-  const content=`<div style="background:rgba(12,12,16,.92);backdrop-filter:blur(24px);border:0.5px solid rgba(255,255,255,.1);border-radius:14px;padding:10px 12px;min-width:160px;box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 8px 24px rgba(0,0,0,.5)">
-    <div style="font-size:11px;font-weight:700;color:#f5f5f7;margin-bottom:5px">${cleanName(s.name)}</div>
-    <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#8e8e93">
-      <span><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> ${s.electrical_bikes}</span>
-      <span><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:middle"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> ${s.mechanical_bikes}</span>
-      <span style="margin-left:auto;color:${cls};font-weight:600">${pct}%</span>
+  // Convertir lat/lng en coordonnées pixel sur la carte
+  const pt=map.latLngToContainerPoint([lat,lon]);
+  const mapEl=document.getElementById('map');
+  const mapRect=mapEl.getBoundingClientRect();
+
+  const div=document.createElement('div');
+  div.id='stn-custom-popup';
+  div.style.cssText=`position:absolute;z-index:500;transform:translate(-50%,-100%);
+    left:${pt.x}px;top:${pt.y-10}px;
+    background:rgba(12,12,16,.92);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+    border:0.5px solid rgba(255,255,255,.15);border-radius:14px;
+    padding:10px 12px;min-width:170px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 24px rgba(0,0,0,.6);
+    pointer-events:auto;`;
+
+  div.innerHTML=`
+    <div style="font-size:12px;font-weight:700;color:#f5f5f7;margin-bottom:6px">${cleanName(s.name)}</div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#8e8e93;margin-bottom:${hasDep?'6':'8'}px">
+      <span style="display:flex;align-items:center;gap:3px">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="#f5f5f7"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>${s.electrical_bikes}
+      </span>
+      <span style="display:flex;align-items:center;gap:3px">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#f5f5f7" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>${s.mechanical_bikes}
+      </span>
+      <span style="margin-left:auto;color:${cls};font-weight:700">${pct}%</span>
     </div>
-    ${hasDep ? arrBtnHtml : depBtnHtml}
-  </div>`;
+    ${!hasDep?`<button id="stn-dep-btn" style="width:100%;padding:6px 10px;border-radius:8px;border:none;background:rgba(52,199,89,.15);color:#34c759;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Partir d'ici</button>`
+    :`<button id="stn-arr-btn" style="width:100%;padding:6px 10px;border-radius:8px;border:none;background:rgba(255,69,58,.12);color:#ff453a;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Arriver ici</button>`}`;
 
-  _stationPopup=L.popup({closeButton:false,className:'station-popup',offset:[0,-6]})
-    .setLatLng([lat,lon]).setContent(content).addTo(map);
+  mapEl.appendChild(div);
+  _stationPopupEl=div;
 
-  // Force transparent wrapper (Leaflet inline styles override CSS)
-  setTimeout(()=>{
-    const wrapper=document.querySelector('.station-popup .leaflet-popup-content-wrapper');
-    if(wrapper){ wrapper.style.background='transparent'; wrapper.style.boxShadow='none'; wrapper.style.padding='0'; wrapper.style.borderRadius='0'; }
-    const tip=document.querySelector('.station-popup .leaflet-popup-tip-container');
-    if(tip) tip.style.display='none';
-  },10);
+  div.querySelector('#stn-dep-btn')?.addEventListener('click',()=>{
+    const {s,lat,lon}=window._popupStation;
+    closeStationPopup();
+    const depSt=allStations.find(x=>x.number===s.number)||s;
+    planFromFixed=depSt; planFromPos={lat,lng:lon};
+    window._planFromPos={lat,lng:lon};
+    document.getElementById('plan-from').value=cleanName(s.name);
+    document.getElementById('plan-from').style.color='';
+    expandPlanFloat();
+    window._waitingForArr=true;
+  });
+  div.querySelector('#stn-arr-btn')?.addEventListener('click',()=>{
+    const {s,lat,lon}=window._popupStation;
+    closeStationPopup();
+    const arrSt=allStations.find(x=>x.number===s.number)||s;
+    planToFixed=arrSt; planToPos={lat,lng:lon};
+    window._planToPos={lat,lng:lon};
+    document.getElementById('plan-to').value=cleanName(s.name);
+    document.getElementById('plan-to').style.color='';
+    window._waitingForArr=false;
+    expandPlanFloat();
+    setTimeout(()=>computePlan(),200);
+  });
 
-  setTimeout(()=>{
-    document.getElementById('stn-dep-btn')?.addEventListener('click',()=>{
-      const {s,lat,lon}=window._popupStation;
-      if(_stationPopup){ _stationPopup.remove(); _stationPopup=null; }
-      const depSt=allStations.find(x=>x.number===s.number)||s;
-      planFromFixed=depSt; planFromPos={lat,lng:lon};
-      window._planFromPos={lat,lng:lon};
-      document.getElementById('plan-from').value=cleanName(s.name);
-      document.getElementById('plan-from').style.color='';
-      // Ouvrir le panel
-      document.getElementById('plan-float').style.maxHeight='250px';
-      document.getElementById('plan-float').style.opacity='1';
-      document.getElementById('plan-float').style.pointerEvents='';
-      expandPlanFloat();
-      window._waitingForArr=true;
-    });
-    document.getElementById('stn-arr-btn')?.addEventListener('click',()=>{
-      const {s,lat,lon}=window._popupStation;
-      if(_stationPopup){ _stationPopup.remove(); _stationPopup=null; }
-      planToFixed=s; planToPos={lat,lng:lon};
-      window._planToPos={lat,lng:lon};
-      document.getElementById('plan-to').value=cleanName(s.name);
-      document.getElementById('plan-to').style.color='';
-      window._waitingForArr=false;
-      expandPlanFloat();
-      setTimeout(()=>computePlan(),200);
-    });
-  },50);
+  // Fermer au clic sur la carte
+  setTimeout(()=>map.once('click',closeStationPopup),10);
+}
+function closeStationPopup(){
+  if(_stationPopupEl){ _stationPopupEl.remove(); _stationPopupEl=null; }
+  if(_stationPopup){ _stationPopup.remove(); _stationPopup=null; }
 }
 
 function initSliderSwipe(){
@@ -2030,6 +2042,7 @@ function closePlanFloat(){
   window._planFromPos=null; window._planToPos=null;
   planFromPos=null; planFromFixed=null; planToPos=null; planToFixed=null;
   window._waitingForArr=false;
+  if(typeof closeStationPopup==='function') closeStationPopup();
   if(typeof _stationPopup!=='undefined'&&_stationPopup){ _stationPopup.remove(); _stationPopup=null; }
 }
 
