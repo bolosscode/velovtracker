@@ -1003,15 +1003,9 @@ let _planDropdownsInit=false;
 function initPlanMap(){
   if(!planMap && map){
     planMap=map;
-    map.on('click',()=>{
-      const pf=document.getElementById('plan-float');
-      const pr=document.getElementById('plan-results');
-      if(pf && pr && pr.innerHTML.trim()){
-        pf.style.maxHeight='38px';
-        pf.style.overflowY='hidden';
-      }
-      expandPlanFloat();
-
+    map.on('click',(e)=>{
+      closeStationPopup();
+      // Ne rien faire d'autre : laisser le panel tel quel
     });
   }
   if(_planDropdownsInit) return;
