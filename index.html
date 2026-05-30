@@ -149,8 +149,9 @@ main{max-width:1500px;margin:auto;padding:20px}
   .map-rel{height:100% !important}
   main{padding:0 !important;margin:0 !important;max-width:100vw !important}
 }
-.station-popup .leaflet-popup-content-wrapper,.station-popup .leaflet-popup-tip{background:transparent;box-shadow:none;padding:0}
-.station-popup .leaflet-popup-content{margin:0}
+.station-popup .leaflet-popup-content-wrapper{background:transparent!important;box-shadow:none!important;padding:0!important;border-radius:0!important}
+.station-popup .leaflet-popup-tip-container{display:none}
+.station-popup .leaflet-popup-content{margin:0!important;line-height:1.4}
 </style>
 </head>
 <body>
@@ -1891,13 +1892,16 @@ function showStationPopup(s, lat, lon){
     document.getElementById('stn-dep-btn')?.addEventListener('click',()=>{
       const {s,lat,lon}=window._popupStation;
       if(_stationPopup){ _stationPopup.remove(); _stationPopup=null; }
-      planFromFixed=s; planFromPos={lat,lng:lon};
+      const depSt=allStations.find(x=>x.number===s.number)||s;
+      planFromFixed=depSt; planFromPos={lat,lng:lon};
       window._planFromPos={lat,lng:lon};
       document.getElementById('plan-from').value=cleanName(s.name);
       document.getElementById('plan-from').style.color='';
-      expandPlanFloat();
+      // Ouvrir le panel
       document.getElementById('plan-float').style.maxHeight='250px';
-      // Mode: clic suivant = arriver ici
+      document.getElementById('plan-float').style.opacity='1';
+      document.getElementById('plan-float').style.pointerEvents='';
+      expandPlanFloat();
       window._waitingForArr=true;
     });
     document.getElementById('stn-arr-btn')?.addEventListener('click',()=>{
