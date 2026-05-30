@@ -1146,39 +1146,31 @@ async function computePlan(){
   const targetH=isNowMode?now2.getHours():planHourVal;
   const bikeSpeedKmh=bikeType==='meca'?16:21;
 
-  // Charger les stats pré-calculées (quasi-instantané)
-  results.innerHTML='<div class="loader">Chargement stats…</div>';
-  const dowPy = [6,0,1,2,3,4,5][targetDow]; // JS dow (0=dim) → Python dow (0=lun)
-  const statsUrl=`data/stats/dow${dowPy}_h${String(targetH).padStart(2,'0')}.json`;
-  let preStats=null;
-  try{
-    const r=await fetch(statsUrl,{signal:AbortSignal.timeout(5000)});
-    if(r.ok) preStats=await r.json();
-  }catch{}
 
-  // Fallback : charger l'historique si pas de stats pré-calculées
+
+  // Charger l'historique (500 jours, même jour de semaine)
+  results.innerHTML='<div class="loader">Calcul historique…</div>';
   const allDays=[];
-  if(!preStats){
-    results.innerHTML='<div class="loader">Calcul historique…</div>';
-    const today2=new Date();
-    const targetDates=[];
-    for(let i=0;i<182;i++){
-      const d=new Date(today2); d.setDate(d.getDate()-i);
-      if(d.getDay()===targetDow) targetDates.push(d.toISOString().slice(0,10));
-    }
-    for(let i=0;i<targetDates.length;i+=16){
-      const batch=targetDates.slice(i,i+16);
-      const res=await Promise.all(batch.map(dt=>fetchDay(dt).catch(()=>null)));
-      res.filter(Boolean).forEach(d=>allDays.push(d));
-    }
+  const today2=new Date();
+  const targetDates=[];
+  const dataStart=new Date('2025-01-29');
+  for(let i=0;;i++){
+    const d=new Date(today2); d.setDate(d.getDate()-i);
+    if(d<dataStart) break;
+    if(d.getDay()===targetDow) targetDates.push(d.toISOString().slice(0,10));
+  }
+  for(let i=0;i<targetDates.length;i+=16){
+    const batch=targetDates.slice(i,i+16);
+    const res=await Promise.all(batch.map(dt=>fetchDay(dt).catch(()=>null)));
+    res.filter(Boolean).forEach(d=>allDays.push(d));
   }
 
   // Stations proches
-  // Si station fixée → station prioritaire + voisines si vide/pleine
+  // Si station fixée → station prioritaire + voisines si vide/pleine (mode now uniquement)
   const depKey=bikeType==='elec'?'electrical_bikes':bikeType==='meca'?'mechanical_bikes':'available_bikes';
   let depStations, arrStations;
   if(planFromFixed){
-    const depLive=allStations.find(s=>s.number===planFromFixed.number);
+    const depLive=isNowMode?allStations.find(s=>s.number===planFromFixed.number):null;
     const depEmpty=depLive&&(depLive[depKey]||0)===0;
     if(depEmpty){
       // Station vide → proposer aussi les voisines
@@ -1197,7 +1189,7 @@ async function computePlan(){
       .filter(s=>s.dist<=radius).sort((a,b)=>a.dist-b.dist).slice(0,6);
   }
   if(planToFixed){
-    const arrLive=allStations.find(s=>s.number===planToFixed.number);
+    const arrLive=isNowMode?allStations.find(s=>s.number===planToFixed.number):null;
     const arrFull=arrLive&&(arrLive.available_bike_stands||0)===0;
     if(arrFull){
       // Station pleine → proposer aussi les voisines
@@ -1228,24 +1220,12 @@ async function computePlan(){
     try{ const mo=new Date(snapMeteo._ts||0).getMonth()+1||new Date().getMonth()+1; const r=(RAIN_R[mo]||RAIN_R[1])[targetH]||-0.15; return Math.max(0.3,1.0-Math.abs(r)*2); }catch{ return 0.5; }
   }
 
-  // Calcul probas — depuis preStats ou historique
+  // Calcul probas depuis l'historique
   const allIds=new Set([...depStations.map(s=>s.number),...arrStations.map(s=>s.number)]);
   const stationProba={};
   const _depNAcc={},_arrNAcc={};
 
-  if(preStats){
-    // Lecture directe des stats pré-calculées
-    allIds.forEach(num=>{
-      const p=preStats[String(num)];
-      if(!p) return;
-      stationProba[num]={
-        dep:p.ep??null, arr:p.sp??null,
-        depN:p.eN??null, arrN:p.sN??null,
-        depProb:p.eProb??null, arrProb:p.sProb??null,
-        samples:p.n??0
-      };
-    });
-  } else {
+ else {
   allIds.forEach(num=>{
     let depSum=0,arrSum=0,wSum=0,depHit=0,arrHit=0,samples=0;
     allDays.forEach(snaps=>{
@@ -1329,18 +1309,18 @@ async function computePlan(){
       if(isNowMode){
         const liveDep=allStations.find(s=>s.number===dep.number);
         const liveArr=allStations.find(s=>s.number===arr.number);
-        if(liveDep&&liveDep.bike_stands>0){
+        if(isNowMode&&liveDep&&liveDep.bike_stands>0){
           const liveDepCount=bikeType==='elec'?(liveDep.electrical_bikes||0):bikeType==='meca'?(liveDep.mechanical_bikes||0):(liveDep.available_bikes||0);
-          // Si 0 vélos du bon type disponibles → score 0 directement
           if(liveDepCount===0){
-            score=0;
+            score=0; // Aucun vélo disponible maintenant → score 0
           } else {
             const liveDepPct=liveDepCount/liveDep.bike_stands*100;
             const liveArrPct=liveArr&&liveArr.bike_stands>0?liveArr.available_bike_stands/liveArr.bike_stands*100:50;
-            // Live prime sur historique en mode now
             score=Math.round(liveDepPct*0.5+liveArrPct*0.2+scoreBase*0.3);
           }
         }
+        // Mode plan : score = pur historique pondéré
+        // scoreBase déjà calculé ci-dessus
       }
       const liveDep2=allStations.find(s=>s.number===dep.number);
       const liveArr2=allStations.find(s=>s.number===arr.number);
@@ -1428,8 +1408,8 @@ async function computePlan(){
   const topScore=top[0]?.score??0;
   const autoLimit=topScore<30?top.length:topScore<50?Math.min(5,top.length):3;
   let _warnHtml='';
-  if(depEmptyWarn) _warnHtml+=`<div style="display:flex;align-items:center;gap:6px;padding:6px 10px 4px;font-size:10px;color:#ff9f0a;background:rgba(255,159,10,.08);border-radius:8px;margin-bottom:4px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Station vide · stations voisines proposées</div>`;
-  if(arrFullWarn) _warnHtml+=`<div style="display:flex;align-items:center;gap:6px;padding:6px 10px 4px;font-size:10px;color:#ff9f0a;background:rgba(255,159,10,.08);border-radius:8px;margin-bottom:4px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Station pleine · stations voisines proposées</div>`;
+  if(isNowMode&&depEmptyWarn) _warnHtml+=`<div style="display:flex;align-items:center;gap:6px;padding:6px 10px 4px;font-size:10px;color:#ff9f0a;background:rgba(255,159,10,.08);border-radius:8px;margin-bottom:4px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Station vide · stations voisines proposées</div>`;
+  if(isNowMode&&arrFullWarn) _warnHtml+=`<div style="display:flex;align-items:center;gap:6px;padding:6px 10px 4px;font-size:10px;color:#ff9f0a;background:rgba(255,159,10,.08);border-radius:8px;margin-bottom:4px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Station pleine · stations voisines proposées</div>`;
   // Input feedback
   const _fromInput=document.getElementById('plan-from');
   const _toInput=document.getElementById('plan-to');
