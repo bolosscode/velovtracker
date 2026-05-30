@@ -1225,35 +1225,7 @@ async function computePlan(){
   const stationProba={};
   const _depNAcc={},_arrNAcc={};
 
- else {
-  allIds.forEach(num=>{
-    let depSum=0,arrSum=0,wSum=0,depHit=0,arrHit=0,samples=0;
-    allDays.forEach(snaps=>{
-      snaps.forEach(snap=>{
-        const snapDate=new Date(getTs(snap));
-        const h=snapDate.getHours();
-        if(h!==targetH) return;
-        const sts=getSts(snap),st=sts.find(s=>s.number===num);
-        if(!st||!st.bike_stands) return;
-        const depKey=bikeType==='elec'?'electrical_bikes':bikeType==='meca'?'mechanical_bikes':'available_bikes';
-        const snapM=snap.meteo; if(snapM) snapM._ts=new Date(getTs(snap)).getTime();
-        const w=meteoW(snapM,currentlyRainy);
-        const depVal=st[depKey]||0, arrVal=st.available_bike_stands||0;
-        depSum+=depVal/st.bike_stands*100*w; arrSum+=arrVal/st.bike_stands*100*w; wSum+=w;
-        if(depVal>=1) depHit+=w; if(arrVal>=1) arrHit+=w; samples++;
-        _depNAcc[num]=(_depNAcc[num]||0)+depVal*w; _arrNAcc[num]=(_arrNAcc[num]||0)+arrVal*w;
-      });
-    });
-    stationProba[num]={
-      dep:wSum>0?Math.round(depSum/wSum):null, arr:wSum>0?Math.round(arrSum/wSum):null,
-      depN:wSum>0?Math.round((_depNAcc[num]||0)/wSum*10)/10:null,
-      arrN:wSum>0?Math.round((_arrNAcc[num]||0)/wSum*10)/10:null,
-      depProb:wSum>0?Math.round(depHit/wSum*100):null,
-      arrProb:wSum>0?Math.round(arrHit/wSum*100):null,
-      samples
-    };
-  });
-  } // fin else fallback
+
 
   // Debug : compter les résultats
   let totalSamples=0;
