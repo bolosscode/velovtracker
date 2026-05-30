@@ -966,14 +966,13 @@ function renderLbTable(mvData){
   if(!head||!body) return;
   const view=document.getElementById('lb-view')?.value||'day';
   const isDay=view==='day';
+  const sortKey=document.getElementById('lb-sort')?.value||'mv';
   const sortLabels={
     mv:'Mvts', rotation:'Rotation', stands:'Places libres',
     fill:'Remplissage', elec:'Élec', meca:'Méca', bikes:'Vélos'
   };
-  // Métrique contextuelle : stock live en jour, rotation en mois/année
   const ctxLabel=isDay?'Stock':'Rotation';
   head.innerHTML=`<tr><th>#</th><th>Station</th><th>${sortLabels[sortKey]||'Valeur'}</th><th>${ctxLabel}</th></tr>`;
-  const sortKey=document.getElementById('lb-sort').value;
   const maxMv=Math.max(1,...Object.values(mvData));
   const rows=allStations.map(st=>{
     const mv=mvData[st.number]||0, fill=st.bike_stands?st.available_bikes/st.bike_stands:0, rot=st.bike_stands?mv/st.bike_stands:0;
