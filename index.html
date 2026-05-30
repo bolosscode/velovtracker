@@ -871,8 +871,8 @@ async function renderCourbes(){
   const mk=(cid,data,color,label)=>new Chart(document.getElementById(cid),{type:'line',
     data:{labels,datasets:[{label,data,borderColor:color,backgroundColor:color+'18',borderWidth:1.8,tension:0,pointRadius:pr,spanGaps:true,fill:true}]},
     options:chartOpts()});
-  chartElec=mk('elec-chart',dataElec,'#1a7a3e','Électriques');
-  chartMeca=mk('meca-chart',dataMeca,'#b52a2a','Mécaniques');
+  chartElec=mk('elec-chart',dataElec,'#0a84ff','Électriques');
+  chartMeca=mk('meca-chart',dataMeca,'#ff9f0a','Mécaniques');
   chartFlux=new Chart(document.getElementById('flux-chart'),{type:'bar',
     data:{labels,datasets:[{label:'Départs/h',data:dataFluxH,
       backgroundColor:dataFluxH.map(v=>v>5?'rgba(255,59,48,.65)':v>2?'rgba(255,159,10,.6)':'rgba(0,113,227,.5)'),borderWidth:0}]},
@@ -961,8 +961,8 @@ function renderLbTable(mvData){
         return `<tr onclick="toggleStationDetail(${st.number},this)" style="cursor:pointer" id="lb-row-${st.number}">
       <td class="rank-cell">${i+1}</td>
       <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cleanName(st.name)}</td>
-      <td style="color:#1a7a3e;font-weight:600">${st.electrical_bikes}</td>
-      <td style="color:#b52a2a;font-weight:600">${st.mechanical_bikes}</td>
+      <td>${st.electrical_bikes}</td>
+      <td>${st.mechanical_bikes}</td>
       <td><b>${st.available_bikes}</b></td>
       <td style="color:var(--sub)">${st.available_bike_stands}</td>
       <td>${st.mv}</td>
@@ -1341,9 +1341,9 @@ async function computePlan(){
       const bt=document.getElementById('plan-type')?.value||'elec';
       const rColors=bt==='meca'?['#7a1a1a','#a82a2a','#d04444']:['#1a6b36','#2a8a4a','#3eaa62'];
       const rColor=i<3?rColors[i]:'transparent';
-      const depCol=(combo.depProb??0)>=60?'#1a7a3e':(combo.depProb??0)>=35?'#f59e0b':'#b52a2a';
-      const arrCol=(combo.arrProb??0)>=60?'#1a7a3e':(combo.arrProb??0)>=35?'#f59e0b':'#b52a2a';
-      const scCol=sc>=60?'#1a7a3e':sc>=35?'#f59e0b':'#b52a2a';
+      const depCol=(combo.depProb??0)>=60?'#34c759':(combo.depProb??0)>=35?'#ff9f0a':'#ff453a';
+      const arrCol=(combo.arrProb??0)>=60?'#34c759':(combo.arrProb??0)>=35?'#ff9f0a':'#ff453a';
+      const scCol=sc>=60?'#34c759':sc>=35?'#ff9f0a':'#ff453a';
       const scBg=sc>=60?'#0d2b1a':sc>=35?'#2b1a00':'#2b0a0a';
       const liveElec=combo.dep.live?.electrical_bikes??0;
       const liveMeca=combo.dep.live?.mechanical_bikes??0;
@@ -1352,8 +1352,8 @@ async function computePlan(){
 
       const cardBody=isNowMode&&combo.dep.live?`
         <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
-          <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#1a7a3e;line-height:1">${liveElec}</div><div style="font-size:8px;color:rgba(255,255,255,.35)"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div></div>
-          <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#b52a2a;line-height:1">${liveMeca}</div><div style="font-size:8px;color:rgba(255,255,255,.35)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div></div>
+          <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#f5f5f7;line-height:1">${liveElec}</div><div style="font-size:8px;color:rgba(255,255,255,.35)"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div></div>
+          <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#f5f5f7;line-height:1">${liveMeca}</div><div style="font-size:8px;color:rgba(255,255,255,.35)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div></div>
           <div style="text-align:center"><div style="font-size:15px;font-weight:700;line-height:1">${livePlaces}</div><div style="font-size:8px;color:rgba(255,255,255,.35)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg></div></div>
           ${sc?`<div style="background:${scBg};border-radius:5px;padding:2px 5px"><span style="font-size:11px;font-weight:700;color:${scCol}">${sc}%</span></div>`:''}
         </div>`:`
@@ -1647,7 +1647,7 @@ async function showComboCourbes(combo, targetEl=null){
   _chartComboA?.destroy();
   _chartComboA=new Chart(document.getElementById('chart-combo'),{type:'line',
     data:{labels,datasets:[
-      {label:`${bikeLabel} dispo au départ`,data:depData,borderColor:'#1a7a3e',backgroundColor:'rgba(40,205,65,.08)',borderWidth:2,tension:0,pointRadius:3,spanGaps:true,fill:true},
+      {label:`${bikeLabel} dispo au départ`,data:depData,borderColor:'#0a84ff',backgroundColor:'rgba(10,132,255,.08)',borderWidth:2,tension:0,pointRadius:3,spanGaps:true,fill:true},
       {label:'🅿️ Place dispo à l\'arrivée',data:arrData,borderColor:'#ff3b30',backgroundColor:'rgba(255,59,48,.06)',borderWidth:2,tension:0,pointRadius:3,spanGaps:true,fill:true},
     ]},
     options:{...chartOpts(),scales:{...chartOpts().scales,y:{...chartOpts().scales.y,max:100,ticks:{...chartOpts().scales.y.ticks,callback:v=>v+'%'}}}}
@@ -1891,7 +1891,7 @@ function showStationPopup(s, lat, lon){
   div.id='stn-custom-popup';
   div.style.cssText=`position:absolute;z-index:500;transform:translate(-50%,-100%);
     left:${pt.x}px;top:${pt.y-10}px;
-    background:rgba(16,16,20,.72);backdrop-filter:blur(48px) saturate(200%) brightness(1.05);-webkit-backdrop-filter:blur(48px) saturate(200%) brightness(1.05);
+    background:rgba(12,12,16,.52);backdrop-filter:blur(56px) saturate(220%) brightness(1.08);-webkit-backdrop-filter:blur(56px) saturate(220%) brightness(1.08);
     border:0.5px solid rgba(255,255,255,.12);border-radius:14px;
     padding:10px 12px;min-width:160px;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 24px rgba(0,0,0,.4);
