@@ -1337,7 +1337,7 @@ async function computePlan(){
         dep:Object.assign({},dep,{live:liveDep2||null}),
         arr:Object.assign({},arr,{live:liveArr2||null}),
         depPct,arrPct,depProb,arrProb,
-        depN:pd?.depN??null,arrN:pa?.arrN??null,
+        depN:pd?.depN??null,depElecN:pd?.depElecN??null,depMecaN:pd?.depMecaN??null,arrN:pa?.arrN??null,
         score,dist,rideMin,samples:pd?.samples??0
       });
     }
