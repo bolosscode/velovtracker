@@ -16,8 +16,8 @@ LATEST_F  = OUT_DIR / "latest.json"
 STATIONS_URL = "https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov/all.json?maxfeatures=-1&start=1"
 BIKES_URL    = lambda n: f"https://api.cyclocity.fr/contracts/lyon/bikes?stationNumber={n}"
 ACCEPT       = "application/vnd.bikes.v4+json"
-BATCH_SIZE   = 20
-TIMEOUT      = 10
+BATCH_SIZE   = 40
+TIMEOUT      = 15
 
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -45,8 +45,8 @@ def get_token():
                 state['token'] = auth
 
         page.on('request', on_req)
-        page.goto('https://velov.grandlyon.com', wait_until='networkidle', timeout=30000)
-        page.wait_for_timeout(3000)
+        page.goto('https://velov.grandlyon.com', wait_until='domcontentloaded', timeout=30000)
+        page.wait_for_timeout(5000)
         browser.close()
 
     if not state['token']:
@@ -56,9 +56,24 @@ def get_token():
 
 # ── Fetch stations ────────────────────────────────────────────────────────────
 def fetch_stations():
-    req = urllib.request.Request(STATIONS_URL)
-    with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
-        return [s['number'] for s in json.loads(r.read())['values']]
+    for attempt in range(3):
+        try:
+            req = urllib.request.Request(STATIONS_URL)
+            with urllib.request.urlopen(req, timeout=30) as r:
+                return [s['number'] for s in json.loads(r.read())['values']]
+        except Exception as e:
+            print(f"  fetch_stations tentative {attempt+1}/3: {e}", flush=True)
+            if attempt < 2: time.sleep(2**attempt)
+    # Fallback: lire les numéros depuis latest.json si dispo
+    if LATEST_F.exists():
+        try:
+            data = json.loads(LATEST_F.read_text())
+            nums = list(set(b['st'] for b in data.get('bikes',[]) if b.get('st')))
+            if nums:
+                print(f"  Fallback: {len(nums)} stations depuis latest.json", flush=True)
+                return nums
+        except: pass
+    raise RuntimeError("Impossible de récupérer les stations")
 
 # ── Fetch bikes pour une station ─────────────────────────────────────────────
 def fetch_station_bikes(station_number, token):
@@ -81,7 +96,9 @@ def normalize(b):
         'borne':  b.get('standNumber'),
         'status': b.get('status', 'UNKNOWN')[:1],  # A=available R=rented S=reserved
         'rating': round(b['rating']['value'], 1) if b.get('rating', {}).get('value') else None,
+        'rcount': b['rating'].get('count', 0) if b.get('rating') else 0,
         'rev':    b.get('lastRevisionDateTime', '')[:10] or None,
+        'ctrl':   b.get('lastControlDateTime', '')[:10] or None,
         'trip':   b.get('lastTripDateTime', '')[:16] or None,
     }
     if b['type'] == 'ELECTRICAL' and b.get('battery'):
