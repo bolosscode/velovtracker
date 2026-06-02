@@ -1,40 +1,77 @@
 name: Collecte Vélo'v
 
 on:
-  workflow_dispatch: # Déclenchement manuel possible
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  collect:
-    name: Fetch & commit
+  collect-stations:
+    name: Stations Grand Lyon
     runs-on: ubuntu-latest
-
+    continue-on-error: true
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
-      - name: Install deps
-        run: pip install requests
-
-      - name: Collecter les données Grand Lyon
+      - run: pip install requests
+      - name: Collecter les stations
         env:
-          # Définissez cette variable dans Settings > Variables > Actions
-          # ex. "10002,10003,10007,10008,10015,10020,10025,10030"
-          # Laisser vide pour collecter toutes les stations Lyon
           STATION_IDS: ${{ vars.STATION_IDS }}
         run: python collect.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: data-stations
+          path: data/
+          retention-days: 1
 
+  collect-bikes:
+    name: Vélos JCDecaux
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install deps
+        run: |
+          pip install requests playwright
+          playwright install chromium --with-deps
+      - name: Collecter les vélos
+        run: python collect_bikes.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: data-bikes
+          path: data/
+          retention-days: 1
+
+  commit:
+    name: Commit & push
+    needs: [collect-stations, collect-bikes]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download stations artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: data-stations
+          path: data/
+        continue-on-error: true
+      - name: Download bikes artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: data-bikes
+          path: data/
+        continue-on-error: true
       - name: Commit & push
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/
           git diff --staged --quiet || git commit -m "data: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+          git pull --rebase origin main
           git push
