@@ -22,7 +22,7 @@
   #top-nav{display:none !important}
   #top-nav{display:none !important}
 
-  .card{padding:14px;border:0.5px solid var(--border)}
+  .card{padding:14px;border:0.5px solid rgba(255,255,255,.1)}
   .loc-row{grid-template-columns:1fr}
   #map{height:100%}
 
@@ -40,7 +40,7 @@
 }
 #bottom-nav{
   position:fixed;bottom:0;left:0;right:0;z-index:300;
-  background:#1c1c1e;backdrop-filter:blur(14px);
+  background:rgba(8,8,12,.5);backdrop-filter:blur(14px);
   border-top:0.5px solid #38383a;
   display:flex;padding:0;height:60px;
 }
@@ -50,31 +50,31 @@
   font-size:18px;font-weight:600;color:#bbb;
   border-bottom:none;border-top:2px solid transparent;
 }
-#bottom-nav .tab span{font-size:11px;display:block;color:var(--sub)}
-#bottom-nav .tab.on{color:#fff;border-top-color:rgba(255,255,255,.3)}
+#bottom-nav .tab span{font-size:11px;display:block;color:rgba(255,255,255,.55)}
+#bottom-nav .tab.on{color:#fff;border-top-color:rgba(255,255,255,.5)}
 :root{
-  --bg:#1c1c1e;--paper:#2c2c2e;--ink:#f5f5f7;--sub:#8e8e93;--dim:#636366;
+  --bg:#0a0a0e;--paper:rgba(12,12,16,.45);--ink:#fff;--sub:rgba(255,255,255,.55);--dim:rgba(255,255,255,.4);
   --border:#38383a;--blue:#f5f5f7;--green:#30d158;--orange:#ff9f0a;--red:#ff453a;
   --radius:14px;--shadow:0 2px 8px rgba(0,0,0,.4);
 }
-body{background:#1c1c1e;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Arial,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased;letter-spacing:-0.01em;color-scheme:dark}
+body{background:rgba(8,8,12,.5);color:#fff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Arial,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased;letter-spacing:-0.01em;color-scheme:dark}
 
-header{position:sticky;top:0;z-index:300;height:56px;background:#1c1c1e;backdrop-filter:blur(14px);border-bottom:none;display:flex;align-items:center;justify-content:space-between;padding:0 22px}
+header{position:sticky;top:0;z-index:300;height:56px;background:rgba(8,8,12,.5);backdrop-filter:blur(14px);border-bottom:none;display:flex;align-items:center;justify-content:space-between;padding:0 22px}
 .brand{font-weight:700;font-size:20px;color:#fff}.brand em{color:#fff;font-style:normal}
-.clock{font-size:12px;color:var(--dim)}
+.clock{font-size:12px;color:rgba(255,255,255,.4)}
 
-nav{position:sticky;top:56px;z-index:250;background:#1c1c1e;border-bottom:0.5px solid #38383a;display:flex;padding:0 20px;overflow-x:auto}
-nav{position:sticky;top:56px;z-index:250;background:#1c1c1e;border-bottom:0.5px solid #38383a;display:flex;padding:0 20px;overflow-x:auto}
-.tab.on{color:#fff;border-bottom-color:rgba(255,255,255,.3);background:transparent}
+nav{position:sticky;top:56px;z-index:250;background:rgba(8,8,12,.5);border-bottom:0.5px solid #38383a;display:flex;padding:0 20px;overflow-x:auto}
+nav{position:sticky;top:56px;z-index:250;background:rgba(8,8,12,.5);border-bottom:0.5px solid #38383a;display:flex;padding:0 20px;overflow-x:auto}
+.tab.on{color:#fff;border-bottom-color:rgba(255,255,255,.5);background:transparent}
 
 main{max-width:1500px;margin:auto;padding:20px}
 .panel{display:none;overflow:hidden}.panel.on{display:block}
-.card{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
-.card-title{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--sub);margin-bottom:14px}
+.card{background:rgba(12,12,16,.45);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
+.card-title{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:14px}
 
 #map{height:calc(100vh - 140px);border-radius:var(--radius);overflow:hidden;position:relative;z-index:1}
 .map-ctrl{position:absolute;top:10px;right:10px;z-index:500;display:flex;gap:6px}
-.map-btn{padding:6px 14px;border-radius:20px;border:none;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);box-shadow:var(--shadow);font-size:12px;font-weight:600;cursor:pointer;color:var(--sub);transition:all .15s}
+.map-btn{padding:6px 14px;border-radius:20px;border:none;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);box-shadow:var(--shadow);font-size:12px;font-weight:600;cursor:pointer;color:rgba(255,255,255,.55);transition:all .15s}
 .map-btn.on{background:var(--blue);color:#fff}
 .map-rel{position:relative;overflow:hidden}
 
@@ -84,38 +84,38 @@ main{max-width:1500px;margin:auto;padding:20px}
   #stats-layout{grid-template-columns:1fr !important}
   #stats-detail{display:block !important}.loc-row{grid-template-columns:1fr}}
 .loc-box{position:relative}
-.loc-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--sub);margin-bottom:5px;display:flex;align-items:center;gap:6px}
+.loc-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:5px;display:flex;align-items:center;gap:6px}
 .loc-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.search{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none;transition:border-color .15s;color:#fff;}
+.search{width:100%;padding:10px 12px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);font-size:13px;outline:none;transition:border-color .15s;color:#fff;}
 .search:focus{border-color:var(--blue)}
-.dropdown{position:fixed;z-index:9999;background:#2c2c2e;border:1px solid rgba(255,255,255,.12);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.6);display:none;max-height:240px;overflow-y:auto;min-width:280px;background:#2c2c2e;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);display:none;z-index:100;max-height:220px;overflow-y:auto}
+.dropdown{position:fixed;z-index:9999;background:rgba(12,12,16,.45);border:1px solid rgba(255,255,255,.12);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.6);display:none;max-height:240px;overflow-y:auto;min-width:280px;background:rgba(12,12,16,.45);border:0.5px solid rgba(255,255,255,.12);border-radius:10px;box-shadow:var(--shadow);display:none;z-index:100;max-height:220px;overflow-y:auto}
 .dropdown.open{display:block}
 .opt{padding:9px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0f0}
 .opt:last-child{border-bottom:none}
 .opt:hover{background:#3a3a3c}
-.opt-type{font-size:10px;color:var(--dim);float:right}
+.opt-type{font-size:10px;color:rgba(255,255,255,.4);float:right}
 
 /* params row */
 .params-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
-.params-row label{font-size:11px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
-.params-row select,.params-row input{padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none}
+.params-row label{font-size:11px;font-weight:600;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.params-row select,.params-row input{padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);font-size:13px;outline:none}
 .params-row select:focus,.params-row input:focus{border-color:var(--blue)}
 
 /* plan map */
 
 
 /* results */
-.combo-card{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
-.combo-card:hover{background:#2c2c2e}
-.combo-card.selected{background:#2c2c2e;border-left:3px solid var(--blue)}
+.combo-card{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:0.5px solid rgba(255,255,255,.08);cursor:pointer;transition:background .15s}
+.combo-card:hover{background:rgba(12,12,16,.45)}
+.combo-card.selected{background:rgba(12,12,16,.45);border-left:3px solid var(--blue)}
 .combo-card:last-child{border-bottom:none}
 .combo-rank{font-size:22px;font-weight:700;color:var(--blue);min-width:32px;text-align:center}
 .combo-info{flex:1}
 .combo-route{font-weight:600;font-size:13px;margin-bottom:3px}
-.combo-meta{font-size:11px;color:var(--sub);line-height:1.7}
+.combo-meta{font-size:11px;color:rgba(255,255,255,.55);line-height:1.7}
 .combo-score{text-align:right;flex-shrink:0}
 .combo-pct{font-size:22px;font-weight:700}
-.combo-detail{font-size:11px;color:var(--dim)}
+.combo-detail{font-size:11px;color:rgba(255,255,255,.4)}
 .score-high{color:#30d158}
 .score-med{color:#ff9f0a}
 .score-low{color:#ff453a}
@@ -126,9 +126,9 @@ main{max-width:1500px;margin:auto;padding:20px}
 
 /* table leaderboard */
 #lb-table{width:100%;border-collapse:collapse;font-size:13px}
-#lb-table th{text-align:left;padding:4px 7px;border-bottom:1px solid var(--border);font-size:10px;font-weight:600;text-transform:uppercase;color:var(--sub);background:#2c2c2e;white-space:nowrap}
-#lb-table td{padding:4px 7px;border-bottom:0.5px solid var(--border);font-variant-numeric:tabular-nums;font-size:12px}
-#lb-table tr:hover td{background:#2c2c2e}
+#lb-table th{text-align:left;padding:4px 7px;border-bottom:0.5px solid rgba(255,255,255,.08);font-size:10px;font-weight:600;text-transform:uppercase;color:rgba(255,255,255,.55);background:rgba(12,12,16,.45);white-space:nowrap}
+#lb-table td{padding:4px 7px;border-bottom:0.5px solid rgba(255,255,255,.08);font-variant-numeric:tabular-nums;font-size:12px}
+#lb-table tr:hover td{background:rgba(12,12,16,.45)}
 .rank-cell{font-weight:700;color:var(--blue);width:40px}
 .mv-bar{display:inline-block;height:6px;border-radius:3px;background:var(--blue);vertical-align:middle;margin-left:6px}
 .fill-pill{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
@@ -136,9 +136,9 @@ main{max-width:1500px;margin:auto;padding:20px}
 .fill-med{background:rgba(255,159,10,.15);color:#ff9f0a}
 .fill-low{background:rgba(255,69,58,.15);color:#ff453a}
 
-.loader,.no-data{padding:40px;text-align:center;color:var(--dim);background:var(--paper);border-radius:var(--radius)}
-.range{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--paper);padding:10px;border-radius:10px;margin-bottom:14px}
-.range select,.range input{padding:8px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px;outline:none}
+.loader,.no-data{padding:40px;text-align:center;color:rgba(255,255,255,.4);background:rgba(12,12,16,.45);border-radius:var(--radius)}
+.range{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:rgba(12,12,16,.45);padding:10px;border-radius:10px;margin-bottom:14px}
+.range select,.range input{padding:8px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);font-size:13px;outline:none}
 .btn{padding:8px 18px;border-radius:10px;border:none;background:#f5f5f7;color:#1c1c1e;font-size:13px;font-weight:600;cursor:pointer}
 .btn:hover{opacity:.85}
 .search::placeholder{color:rgba(255,255,255,.45)}
@@ -183,7 +183,7 @@ main{max-width:1500px;margin:auto;padding:20px}
 
     <!-- Flottant glass -->
     <div id="plan-float" style="position:absolute;top:58px;left:10px;right:10px;z-index:200;background:rgba(12,12,16,.52);backdrop-filter:blur(56px) saturate(220%) brightness(1.08);-webkit-backdrop-filter:blur(56px) saturate(220%) brightness(1.08);border-radius:16px;border:0.5px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),inset 1px 0 0 rgba(255,255,255,.1),0 8px 32px rgba(0,0,0,.35),0 2px 8px rgba(0,0,0,.2);overflow:visible;transition:max-height .3s cubic-bezier(.4,0,.2,1),opacity .2s;max-height:250px">
-      <div id="plan-close-btn" onclick="closePlanFloat()" style="position:absolute;top:-7px;right:-7px;width:16px;height:16px;border-radius:50%;background:#2c2c2e;border:0.5px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:201"><svg width="8" height="8" viewBox="0 0 8 8" fill="none"><line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="rgba(255,255,255,.45)" stroke-width="1.5" stroke-linecap="round"/><line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="rgba(255,255,255,.45)" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+      <div id="plan-close-btn" onclick="closePlanFloat()" style="position:absolute;top:-7px;right:-7px;width:16px;height:16px;border-radius:50%;background:rgba(12,12,16,.45);border:0.5px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:201"><svg width="8" height="8" viewBox="0 0 8 8" fill="none"><line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="rgba(255,255,255,.45)" stroke-width="1.5" stroke-linecap="round"/><line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="rgba(255,255,255,.45)" stroke-width="1.5" stroke-linecap="round"/></svg></div>
       <div id="plan-float-expanded" style="padding:8px 10px">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
           <div style="flex:1;background:rgba(255,255,255,.09);border-radius:10px;overflow:visible;border:0.5px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)">
@@ -196,7 +196,7 @@ main{max-width:1500px;margin:auto;padding:20px}
               <div class="dropdown" id="plan-to-dd"></div>
             </div>
           </div>
-          <button onclick="swapPlanFromTo()" style="width:30px;height:30px;border-radius:8px;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);cursor:pointer;font-size:15px;color:#8e8e93;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 16V4m0 0L3 8m4-4 4 4"/><path d="M17 8v12m0 0 4-4m-4 4-4-4"/></svg></button>
+          <button onclick="swapPlanFromTo()" style="width:30px;height:30px;border-radius:8px;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);cursor:pointer;font-size:15px;color:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 16V4m0 0L3 8m4-4 4 4"/><path d="M17 8v12m0 0 4-4m-4 4-4-4"/></svg></button>
         </div>
         <!-- Ligne 1 : now/plan + élec/méca + calculer -->
         <div style="display:flex;gap:6px;align-items:center">
@@ -217,27 +217,27 @@ main{max-width:1500px;margin:auto;padding:20px}
         </div>
         <!-- Ligne 2 : params plan (masqués par défaut) -->
         <div id="plan-params" style="display:none;gap:6px;align-items:center;margin-top:6px">
-          <select id="plan-dow" style="padding:4px 8px;border-radius:8px;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#f5f5f7;font-size:11px;flex:1"><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option><option value="6">Samedi</option><option value="0">Dimanche</option></select>
-          <input type="time" id="plan-hour-time" style="padding:4px 8px;border-radius:8px;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#f5f5f7;font-size:11px;outline:none;flex:1" oninput="syncHourSelect()"/>
+          <select id="plan-dow" style="padding:4px 8px;border-radius:8px;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#fff;font-size:11px;flex:1"><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option><option value="6">Samedi</option><option value="0">Dimanche</option></select>
+          <input type="time" id="plan-hour-time" style="padding:4px 8px;border-radius:8px;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#fff;font-size:11px;outline:none;flex:1" oninput="syncHourSelect()"/>
           <select id="plan-hour" style="display:none"></select>
-          <select id="plan-radius" style="padding:4px 8px;border-radius:8px;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#f5f5f7;font-size:11px"><option value="300">300m</option><option value="500" selected>500m</option><option value="800">800m</option><option value="1200">1.2km</option></select>
+          <select id="plan-radius" style="padding:4px 8px;border-radius:8px;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#fff;font-size:11px"><option value="300">300m</option><option value="500" selected>500m</option><option value="800">800m</option><option value="1200">1.2km</option></select>
         </div>
       </div>
 
       <!-- État compact -->
       <div id="plan-float-compact" style="display:none;align-items:center;gap:10px;padding:9px 12px;cursor:pointer" onclick="expandPlanFloat()">
-        <div style="color:#8e8e93"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+        <div style="color:rgba(255,255,255,.6)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
         <div style="flex:1;min-width:0">
           <div id="plan-compact-from" style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
-          <div id="plan-compact-to" style="font-size:11px;color:#8e8e93;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+          <div id="plan-compact-to" style="font-size:11px;color:rgba(255,255,255,.6);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
         </div>
-        <div style="width:26px;height:26px;border-radius:50%;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#8e8e93;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px">✎</div>
+        <div style="width:26px;height:26px;border-radius:50%;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px">✎</div>
       </div>
 
       <!-- Résultats (liste compacte) -->
       <div id="plan-results-divider" style="display:none;height:0.5px;background:rgba(255,255,255,.08)"></div>
       <div id="plan-results-inner-header" style="display:none;padding:6px 12px 4px;display:none">
-        <div id="plan-results-title" style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.3)"></div>
+        <div id="plan-results-title" style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.5)"></div>
       </div>
       <div id="plan-results" style="overflow-y:auto;max-height:calc(80vh - 220px);padding:0 10px 10px"></div>
 
@@ -251,27 +251,27 @@ main{max-width:1500px;margin:auto;padding:20px}
   <!-- Fond carte floutée -->
   <!-- Contrôles globaux -->
   <!-- Contrôles globaux -->
-  <div class="card" style="padding:12px;margin-bottom:8px">
+  <div class="card" style="backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);padding:12px;margin-bottom:8px">
     <div class="card-title" style="margin-bottom:8px;font-size:10px">Période &amp; tri</div>
     <div class="range" style="gap:5px;padding:8px">
-      <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px">
+      <div style="display:flex;background:rgba(12,12,16,.45);border-radius:20px;padding:2px">
         <button onclick="onLbViewChange('day')" id="lb-pill-day" style="padding:5px 14px;border:none;background:#3a3a3c;color:#fff;font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Jour</button>
-        <button onclick="onLbViewChange('month')" id="lb-pill-month" style="padding:5px 14px;border:none;background:transparent;color:var(--sub);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Mois</button>
-        <button onclick="onLbViewChange('year')" id="lb-pill-year" style="padding:5px 14px;border:none;background:transparent;color:var(--sub);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Année</button>
+        <button onclick="onLbViewChange('month')" id="lb-pill-month" style="padding:5px 14px;border:none;background:transparent;color:rgba(255,255,255,.55);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Mois</button>
+        <button onclick="onLbViewChange('year')" id="lb-pill-year" style="padding:5px 14px;border:none;background:transparent;color:rgba(255,255,255,.55);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Année</button>
       </div>
       <input type="hidden" id="lb-view" value="day"/>
       <input type="date" id="lb-date"/>
-      <input type="month" id="lb-month" style="display:none;padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px"/>
-      <select id="lb-year" style="display:none;padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-size:13px"><option value="2025">2025</option><option value="2026" selected>2026</option></select>
+      <input type="month" id="lb-month" style="display:none;padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);font-size:13px"/>
+      <select id="lb-year" style="display:none;padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);font-size:13px"><option value="2025">2025</option><option value="2026" selected>2026</option></select>
       <select id="lb-sort">
         <option value="mv">Mouvements ↕</option>
         <option value="rotation">Taux de rotation</option>
         <option value="stands">Places libres</option>
         <option value="fill">% remplissage</option>
       </select>
-      <input id="lb-station-search" type="text" placeholder="Station…" oninput="filterLbTable(this.value)" style="padding:7px 10px;border-radius:10px;border:1px solid var(--border);background:var(--paper);color:var(--ink);font-size:13px;outline:none;min-width:0;flex:1"/>
+      <input id="lb-station-search" type="text" placeholder="Station…" oninput="filterLbTable(this.value)" style="padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);background:rgba(12,12,16,.45);color:#fff;font-size:13px;outline:none;min-width:0;flex:1"/>
       <button class="btn" onclick="computeLeaderboard()">Calculer</button>
-      <span id="lb-meteo" style="font-size:12px;color:var(--sub)"></span>
+      <span id="lb-meteo" style="font-size:12px;color:rgba(255,255,255,.55)"></span>
     </div>
   </div>
 
@@ -279,7 +279,7 @@ main{max-width:1500px;margin:auto;padding:20px}
   <div id="stats-layout">
 
     <!-- Table -->
-    <div class="card" style="padding:0;overflow:hidden">
+    <div class="card" style="backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);padding:0;overflow:hidden">
       <div id="lb-content" style="overflow-x:auto;max-height:70vh;overflow-y:auto">
         <table id="lb-table" style="width:100%;border-collapse:collapse;font-size:13px">
           <thead id="lb-head"></thead>
@@ -297,23 +297,23 @@ main{max-width:1500px;margin:auto;padding:20px}
 
 
 <div class="panel" id="tab-bikes" style="padding:10px;overflow-y:auto;max-height:100vh">
-  <div class="card" style="padding:12px;margin-bottom:8px">
+  <div class="card" style="backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);padding:12px;margin-bottom:8px">
     <div class="card-title" style="margin-bottom:8px">Tri & filtre</div>
     <div class="range" style="gap:5px;padding:8px">
-      <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px">
+      <div style="display:flex;background:rgba(12,12,16,.45);border-radius:20px;padding:2px">
         <button onclick="onBikesSort('trips')" id="bk-pill-trips" style="padding:5px 14px;border:none;background:#3a3a3c;color:#fff;font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Trajets</button>
-        <button onclick="onBikesSort('rating')" id="bk-pill-rating" style="padding:5px 14px;border:none;background:transparent;color:var(--sub);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Note</button>
-        <button onclick="onBikesSort('batt')" id="bk-pill-batt" style="padding:5px 14px;border:none;background:transparent;color:var(--sub);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Batterie</button>
+        <button onclick="onBikesSort('rating')" id="bk-pill-rating" style="padding:5px 14px;border:none;background:transparent;color:rgba(255,255,255,.55);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Note</button>
+        <button onclick="onBikesSort('batt')" id="bk-pill-batt" style="padding:5px 14px;border:none;background:transparent;color:rgba(255,255,255,.55);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Batterie</button>
       </div>
       <select id="bk-type" onchange="renderBikesTable()">
         <option value="all">Tous</option>
         <option value="E">Élec</option>
         <option value="M">Méca</option>
       </select>
-      <input id="bk-search" type="text" placeholder="N° vélo…" oninput="renderBikesTable()" style="padding:7px 10px;border-radius:10px;border:1px solid var(--border);background:var(--paper);color:var(--ink);font-size:13px;outline:none;min-width:0;flex:1"/>
+      <input id="bk-search" type="text" placeholder="N° vélo…" oninput="renderBikesTable()" style="padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);background:rgba(12,12,16,.45);color:#fff;font-size:13px;outline:none;min-width:0;flex:1"/>
     </div>
   </div>
-  <div class="card" style="padding:0;overflow:hidden">
+  <div class="card" style="backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);padding:0;overflow:hidden">
     <div id="bk-content" style="overflow-x:auto;max-height:70vh;overflow-y:auto">
       <div class="loader">Charge les données vélos…</div>
     </div>
@@ -356,23 +356,23 @@ function compactPlanFloat(){
     el.innerHTML=`
       <div style="flex:1;min-width:0;cursor:pointer" onclick="expandPlanFloat()">
         <div style="display:flex;align-items:center;gap:7px;overflow:hidden">
-          <div style="width:18px;height:18px;border-radius:5px;flex-shrink:0;background:rgba(255,255,255,.08);color:#f5f5f7;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center">${idx+1}</div>
+          <div style="width:18px;height:18px;border-radius:5px;flex-shrink:0;background:rgba(255,255,255,.08);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center">${idx+1}</div>
           <div style="font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">${cleanName(combo.dep.name)} → ${cleanName(combo.arr.name)}</div>
-          <div style="display:flex;align-items:center;gap:3px;flex-shrink:0"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg><span style="font-size:16px;font-weight:800;color:#f5f5f7">${livePlacesDisp}</span></div>
+          <div style="display:flex;align-items:center;gap:3px;flex-shrink:0"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg><span style="font-size:16px;font-weight:800;color:#fff">${livePlacesDisp}</span></div>
           <div style="background:${scBg};border-radius:6px;padding:2px 6px;flex-shrink:0"><span style="font-size:11px;font-weight:700;color:${scCol}">${sc}%</span></div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
           <div style="font-size:10px;color:rgba(255,255,255,.5)">${Math.round(combo.dist/1000*10)/10}km · ~${combo.rideMin}min</div>
           <div style="display:flex;align-items:center;gap:4px;margin-left:auto">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span style="font-size:11px;font-weight:700;color:#f5f5f7">${liveElec}</span>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span style="font-size:11px;font-weight:700;color:#fff">${liveElec}</span>
             <span style="color:#38383a;font-size:10px">/</span>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg><span style="font-size:11px;font-weight:700;color:#f5f5f7">${liveMeca}</span>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg><span style="font-size:11px;font-weight:700;color:#fff">${liveMeca}</span>
           </div>
           <div style="display:flex;gap:3px">${dotsHtml}</div>
         </div>
       </div>`;
   } else {
-    el.innerHTML=`<div style="font-size:12px;color:#8e8e93;cursor:pointer;flex:1" onclick="expandPlanFloat()">Tap pour voir les itinéraires</div>`;
+    el.innerHTML=`<div style="font-size:12px;color:rgba(255,255,255,.6);cursor:pointer;flex:1" onclick="expandPlanFloat()">Tap pour voir les itinéraires</div>`;
   }
   document.getElementById('plan-float-expanded').style.display='none';
   document.getElementById('plan-results').style.display='none';
@@ -813,7 +813,7 @@ function buildDropdown(inputId, ddId, opts){
       lieuMatches.forEach(l=>{
         if(geoResults.some(g=>g.display_name?.includes(l.name))) return; // dédoublonner
         const el=document.createElement('div'); el.className='opt';
-        el.innerHTML=`<span style="font-size:14px">${l.type}</span><div><div style="font-weight:500">${l.name}</div><div style="font-size:11px;color:var(--dim)">Lyon</div></div>`;
+        el.innerHTML=`<span style="font-size:14px">${l.type}</span><div><div style="font-weight:500">${l.name}</div><div style="font-size:11px;color:rgba(255,255,255,.4)">Lyon</div></div>`;
         el.onclick=()=>{ input.value=l.name; dd.classList.remove('open'); opts.onGeoPos?.({lat:l.lat,lng:l.lng}); };
         dd.appendChild(el);
       });
@@ -1011,7 +1011,7 @@ function renderLbTable(mvData){
     if(isDay){
       // Stock actuel : élec + méca
       const e=st.electrical_bikes, m=st.mechanical_bikes;
-      return `<span style="font-size:10px;color:#0a84ff;font-weight:600">${e}</span><span style="color:rgba(255,255,255,.25);margin:0 2px">/</span><span style="font-size:10px;color:#ff9f0a;font-weight:600">${m}</span>`;
+      return `<span style="font-size:10px;color:#0a84ff;font-weight:600">${e}</span><span style="color:rgba(255,255,255,.45);margin:0 2px">/</span><span style="font-size:10px;color:#ff9f0a;font-weight:600">${m}</span>`;
     } else {
       // Rotation = mvts / capacité
       const rot=st.bike_stands>0?(st.mv/st.bike_stands).toFixed(1):'—';
@@ -1024,11 +1024,11 @@ function renderLbTable(mvData){
     return `<tr onclick="toggleStationDetail(${st.number},this)" style="cursor:pointer" id="lb-row-${st.number}">
       <td class="rank-cell">${i+1}</td>
       <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500">${cleanName(st.name)}</td>
-      <td style="font-weight:600;color:#f5f5f7">${sortVal(st)}</td>
+      <td style="font-weight:600;color:#fff">${sortVal(st)}</td>
       <td style="text-align:right">${ctxVal(st)}</td></tr>
       <tr class="detail-row" id="lb-detail-${st.number}" style="display:none">
         <td colspan="4" style="padding:0">
-          <div id="stats-detail-${st.number}" style="padding:14px;background:var(--bg);border-bottom:1px solid var(--border)"></div>
+          <div id="stats-detail-${st.number}" style="padding:14px;background:rgba(12,12,16,.35);border-bottom:0.5px solid rgba(255,255,255,.08)"></div>
         </td>
       </tr>`;
   }).join('');
@@ -1360,12 +1360,38 @@ async function computePlan(){
       }
       const liveDep2=allStations.find(s=>s.number===dep.number);
       const liveArr2=allStations.find(s=>s.number===arr.number);
+
+      // Batterie : pénalisation si aucun élec viable
+      let battPenalty=false;
+      const stBikes=(_bikesData?.bikes||[]).filter(b=>b.st===dep.number&&b.status==='A'&&b.type==='E');
+      if(bikeType==='elec'&&stBikes.length>0){
+        const distKm=dist/1000;
+        const minBatt=Math.ceil(distKm/40*100*1.10);
+        const hasViable=stBikes.some(b=>b.batt!=null&&b.batt>=minBatt);
+        if(!hasViable){ score=0; battPenalty=true; }
+      }
+
+      // Prix : surcoût si trajet > limite gratuite
+      const priceLimit=bikeType==='meca'?45:30;
+      const overMin=Math.max(0,rideMin-priceLimit);
+      const overPrice=overMin>0?Math.round(overMin*0.10*100)/100:0;
+
+      // Segmentation : suggérer station relai si trajet trop long
+      let relaiStation=null;
+      if(overMin>2){
+        const midLat=(dep.lat+arr.lat)/2, midLng=(dep.lng+arr.lng)/2;
+        relaiStation=allStations
+          .filter(s=>s.number!==dep.number&&s.number!==arr.number&&s.available_bike_stands>0)
+          .map(s=>({...s,d:haversine(s.lat,s.lng,midLat,midLng)}))
+          .sort((a,b)=>a.d-b.d)[0]||null;
+      }
+
       combos.push({
         dep:Object.assign({},dep,{live:liveDep2||null}),
         arr:Object.assign({},arr,{live:liveArr2||null}),
         depPct,arrPct,depProb,arrProb,
         depN:pd?.depN??null,depElecN:pd?.depElecN??null,depMecaN:pd?.depMecaN??null,arrN:pa?.arrN??null,
-        score,dist,rideMin,samples:pd?.samples??0
+        score,dist,rideMin,samples:pd?.samples??0,battPenalty,overPrice,relaiStation
       });
     }
   }
@@ -1414,32 +1440,55 @@ async function computePlan(){
         <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0">
           <div style="display:flex;gap:5px;align-items:center">
             <div style="display:flex;align-items:center;gap:2px">
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span style="font-size:13px;font-weight:700;color:#f5f5f7">${dispElec}</span>
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span style="font-size:13px;font-weight:700;color:#fff">${dispElec}</span>
             </div>
             <div style="display:flex;align-items:center;gap:2px">
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg><span style="font-size:13px;font-weight:700;color:#f5f5f7">${dispMeca}</span>
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg><span style="font-size:13px;font-weight:700;color:#fff">${dispMeca}</span>
             </div>
             <div style="display:flex;align-items:center;gap:2px">
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg><span style="font-size:13px;font-weight:700;color:#f5f5f7">${dispPlaces}</span>
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg><span style="font-size:13px;font-weight:700;color:#fff">${dispPlaces}</span>
             </div>
           </div>
           ${sc?`<div style="background:${scBg};border-radius:5px;padding:2px 6px;align-self:flex-end"><span style="font-size:11px;font-weight:700;color:${scCol}">${sc}%</span></div>`:''}
         </div>`;
-      return `<div class="combo-card${i===0?' selected':''}" onclick="toggleComboDetail(${i},this);loadComboBikes(${i})" data-idx="${i}" style="display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:8px;margin-bottom:4px;background:rgba(255,255,255,.05);border:0.5px solid rgba(255,255,255,.08);cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)">
-        <div style="width:3px;height:28px;border-radius:2px;background:${rColor};flex-shrink:0"></div>
-        <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.28);min-width:14px;flex-shrink:0">${i+1}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:11px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cleanName(combo.dep.name)}</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cleanName(combo.arr.name)}</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:1px">${Math.round(combo.dist/1000*10)/10}km · ~${combo.rideMin}min</div>
+      // Walk times
+      const walkDepMin=planFromPos&&!planFromFixed?walkMinutes(haversine(planFromPos.lat,planFromPos.lng,combo.dep.lat,combo.dep.lng)):null;
+      const walkArrMin=planToPos&&!planToFixed?walkMinutes(haversine(combo.arr.lat,combo.arr.lng,planToPos.lat,planToPos.lng)):null;
+      const walkDepHtml=walkDepMin!=null?`<div style="display:flex;align-items:center;gap:3px;margin-bottom:3px">
+        <span style="color:#0a84ff;display:flex;align-items:center">${WALK_SVG}</span>
+        <span style="font-size:9px;color:#0a84ff;font-weight:600">${walkDepMin} min</span>
+        <div style="flex:1;border-top:1.5px dashed rgba(10,132,255,.35);height:0;margin:0 3px"></div>
+        <span style="color:rgba(255,255,255,.4);display:flex;align-items:center">${BIKE_SVG}</span>
+      </div>`:'';
+      const walkArrHtml=walkArrMin!=null?`<div style="display:flex;align-items:center;gap:3px;margin-top:3px">
+        <span style="color:rgba(255,255,255,.4);display:flex;align-items:center">${BIKE_SVG}</span>
+        <div style="flex:1;border-top:1.5px dashed rgba(10,132,255,.35);height:0;margin:0 3px"></div>
+        <span style="font-size:9px;color:#0a84ff;font-weight:600">${walkArrMin} min</span>
+        <span style="color:#0a84ff;display:flex;align-items:center">${WALK_SVG}</span>
+      </div>`:'';
+      return `<div class="combo-card${i===0?' selected':''}" onclick="toggleComboDetail(${i},this);loadComboBikes(${i})" data-idx="${i}" style="padding:6px 9px;border-radius:8px;margin-bottom:4px;background:rgba(12,12,16,.42);border:0.5px solid rgba(255,255,255,.12);cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)">
+        ${walkDepHtml}
+        <div style="display:flex;align-items:center;gap:8px;padding:${walkDepMin||walkArrMin?'4px 0':0}">
+          <div style="width:3px;height:28px;border-radius:2px;background:${rColor};flex-shrink:0"></div>
+          <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.5);min-width:14px;flex-shrink:0">${i+1}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:11px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cleanName(combo.dep.name)} → ${cleanName(combo.arr.name)}</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:1px;display:flex;align-items:center;gap:4px">
+              <span>${Math.round(combo.dist/1000*10)/10}km · ~${combo.rideMin}min</span>
+              ${combo.overPrice>0?`<span style="background:rgba(255,159,10,.1);border:0.5px solid rgba(255,159,10,.25);border-radius:4px;padding:1px 4px;font-size:9px;color:#ff9f0a;font-weight:600">+${combo.overPrice.toFixed(2)}€</span>`:''}
+              ${combo.battPenalty?`<span style="color:#ff453a;font-size:9px;display:flex;align-items:center;gap:2px"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>batt. insuf.</span>`:''}
+            </div>
+            ${combo.relaiStation?`<div style="background:rgba(255,159,10,.08);border:0.5px solid rgba(255,159,10,.2);border-radius:5px;padding:2px 6px;margin-top:3px;font-size:9px;color:#ff9f0a;display:flex;align-items:center;gap:3px"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Relai suggéré : ${cleanName(combo.relaiStation.name)}</div>`:''}
+          </div>
+          ${cardBody}
         </div>
-        ${cardBody}
+        ${walkArrHtml}
       </div>`;
     }).join('');
     // Desktop : liste + bouton voir plus
     if(window.innerWidth>640){
       const more=top.length>limit
-        ?`<div style="text-align:center;padding:8px"><button onclick="window._showMoreCombos()" style="padding:5px 16px;border-radius:20px;border:0.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);font-size:12px;cursor:pointer;color:var(--sub)">Voir les ${top.length-limit} autres</button></div>`:'';
+        ?`<div style="text-align:center;padding:8px"><button onclick="window._showMoreCombos()" style="padding:5px 16px;border-radius:20px;border:0.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);font-size:12px;cursor:pointer;color:rgba(255,255,255,.55)">Voir les ${top.length-limit} autres</button></div>`:'';
       return html+more;
     }
     // Mobile : slider swipeable avec dots
@@ -1653,11 +1702,27 @@ async function showRoute(idx){
     }
   }catch{}
 
-  // Lignes en pointillés piéton
-  if(planFromPos&&!planFromFixed)
-    L.polyline([[planFromPos.lat,planFromPos.lng],[combo.dep.lat,combo.dep.lng]],{color:'#6e6e73',weight:2,dashArray:'5,5',opacity:.7}).addTo(planLayerGroup);
-  if(planToPos&&!planToFixed)
-    L.polyline([[combo.arr.lat,combo.arr.lng],[planToPos.lat,planToPos.lng]],{color:'#6e6e73',weight:2,dashArray:'5,5',opacity:.7}).addTo(planLayerGroup);
+  // Routing piéton via OSRM foot (bleu pointillé)
+  const walkRoutes=[];
+  if(planFromPos&&!planFromFixed) walkRoutes.push({from:planFromPos,to:{lat:combo.dep.lat,lng:combo.dep.lng}});
+  if(planToPos&&!planToFixed) walkRoutes.push({from:{lat:combo.arr.lat,lng:combo.arr.lng},to:planToPos});
+  for(const wr of walkRoutes){
+    try{
+      const wo=await fetch(`https://router.project-osrm.org/route/v1/foot/${wr.from.lng},${wr.from.lat};${wr.to.lng},${wr.to.lat}?overview=full&geometries=polyline6`,{signal:AbortSignal.timeout(6000)});
+      if(wo.ok){
+        const wd=await wo.json();
+        const wgeom=wd.routes?.[0]?.geometry;
+        if(wgeom){
+          const wcoords=decodePolyline(wgeom);
+          L.polyline(wcoords,{color:'#fff',weight:5,opacity:.3,lineCap:'round',lineJoin:'round'}).addTo(planLayerGroup);
+          L.polyline(wcoords,{color:'#0a84ff',weight:2.5,dashArray:'5,6',opacity:.8,lineCap:'round',lineJoin:'round'}).addTo(planLayerGroup);
+        }
+      }
+    }catch{
+      // Fallback ligne droite
+      L.polyline([[wr.from.lat,wr.from.lng],[wr.to.lat,wr.to.lng]],{color:'#0a84ff',weight:2,dashArray:'5,5',opacity:.6}).addTo(planLayerGroup);
+    }
+  }
 
 }
 
@@ -1711,7 +1776,7 @@ async function showComboCourbes(combo, targetEl=null){
 
   const bikeLabel=bikeType==='elec'?'⚡ Élec':bikeType==='meca'?'🔧 Méca':'🚲 Vélos';
   zone.innerHTML=`
-    <div class="card" style="margin-top:0;border-top:none;border-radius:0 0 var(--radius) var(--radius)">
+    <div class="card" style="backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);margin-top:0;border-top:none;border-radius:0 0 var(--radius) var(--radius)">
       <div class="card-title">Probabilité sur 24h · ${DOW_NAMES[targetDow]} · ${cleanName(combo.dep.name)} → ${cleanName(combo.arr.name)}</div>
       <canvas id="chart-combo" height="80"></canvas>
     </div>`;
@@ -1777,15 +1842,15 @@ async function showStationDetail(number, targetEl=null){
   if(oldCvs){ const ex=Chart.getChart(oldCvs); if(ex) ex.destroy(); }
   detail.innerHTML=
     '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'+
-    '<div style="min-width:0"><div style="font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+cleanName(st.name)+'</div>'+
-    '<div style="font-size:11px;color:var(--sub);margin-top:2px">⚡'+st.electrical_bikes+' · 🔧'+st.mechanical_bikes+' · 🅿️'+st.available_bike_stands+'</div></div></div>'+
+    '<div style="min-width:0"><div style="font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+cleanName(st.name)+'</div>'+
+    '<div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:2px">⚡'+st.electrical_bikes+' · 🔧'+st.mechanical_bikes+' · 🅿️'+st.available_bike_stands+'</div></div></div>'+
     '<div id="sd-tabs-'+number+'" style="display:flex;background:rgba(255,255,255,.06);border:0.5px solid rgba(255,255,255,.06);border-radius:20px;padding:2px;position:relative;margin-bottom:8px">'+
     '<div id="sd-thumb-'+number+'" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:33.33%;background:rgba(255,255,255,.18);border:0.5px solid rgba(255,255,255,.2);border-radius:18px;transition:transform .18s;pointer-events:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.2)"></div>'+
-    '<div class="sd-tab on" onclick="renderSDSlide(0,'+number+')" style="flex:1;text-align:center;padding:5px 4px;font-size:10px;font-weight:600;color:#f5f5f7;cursor:pointer;position:relative;z-index:1">Vélos</div>'+
-    '<div class="sd-tab" onclick="renderSDSlide(1,'+number+')" style="flex:1;text-align:center;padding:5px 4px;font-size:10px;font-weight:600;color:var(--sub);cursor:pointer;position:relative;z-index:1">Mvts</div>'+
-    '<div class="sd-tab" onclick="renderSDSlide(2,'+number+')" style="flex:1;text-align:center;padding:5px 4px;font-size:10px;font-weight:600;color:var(--sub);cursor:pointer;position:relative;z-index:1">Solde</div>'+
+    '<div class="sd-tab on" onclick="renderSDSlide(0,'+number+')" style="flex:1;text-align:center;padding:5px 4px;font-size:10px;font-weight:600;color:#fff;cursor:pointer;position:relative;z-index:1">Vélos</div>'+
+    '<div class="sd-tab" onclick="renderSDSlide(1,'+number+')" style="flex:1;text-align:center;padding:5px 4px;font-size:10px;font-weight:600;color:rgba(255,255,255,.55);cursor:pointer;position:relative;z-index:1">Mvts</div>'+
+    '<div class="sd-tab" onclick="renderSDSlide(2,'+number+')" style="flex:1;text-align:center;padding:5px 4px;font-size:10px;font-weight:600;color:rgba(255,255,255,.55);cursor:pointer;position:relative;z-index:1">Solde</div>'+
     '</div>'+
-    '<div id="sd-legend-'+number+'" style="display:flex;gap:10px;font-size:10px;color:var(--sub);margin-bottom:4px"></div>'+
+    '<div id="sd-legend-'+number+'" style="display:flex;gap:10px;font-size:10px;color:rgba(255,255,255,.55);margin-bottom:4px"></div>'+
     '<div style="position:relative;height:'+(isMob?130:160)+'px;margin:0 -14px;width:calc(100% + 28px)"><canvas id="sd-combined-'+number+'" style="position:absolute;inset:0;width:100%!important;height:100%!important"></canvas></div>'+
     '<div id="sd-dots-'+number+'" style="display:flex;justify-content:center;gap:4px;padding:6px 0 2px">'+
     '<div style="height:3px;width:14px;border-radius:2px;background:#34c759;display:inline-block;transition:all .2s"></div>'+
@@ -1924,18 +1989,18 @@ function renderSDSlide(slideIdx,number){
     legendHtml='<span style="color:#0a84ff;font-size:10px">⚡ Élec</span><span style="color:#ff9f0a;font-size:10px;margin-left:10px">🔧 Méca</span>';
     const avgE=Math.round((dataElec.filter(Boolean).reduce((a,b)=>a+b,0)||0)/Math.max(1,dataElec.filter(Boolean).length));
     const avgM=Math.round((dataMeca.filter(Boolean).reduce((a,b)=>a+b,0)||0)/Math.max(1,dataMeca.filter(Boolean).length));
-    statsHtml=`<div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#0a84ff">${avgE}</div><div style="font-size:10px;color:var(--sub)">⚡ moy.</div></div><div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#ff9f0a">${avgM}</div><div style="font-size:10px;color:var(--sub)">🔧 moy.</div></div>`;
+    statsHtml=`<div style="flex:1;background:rgba(12,12,16,.45);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#0a84ff">${avgE}</div><div style="font-size:10px;color:rgba(255,255,255,.55)">⚡ moy.</div></div><div style="flex:1;background:rgba(12,12,16,.45);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#ff9f0a">${avgM}</div><div style="font-size:10px;color:rgba(255,255,255,.55)">🔧 moy.</div></div>`;
   } else if(slideIdx===1){
     datasets=[{label:'Mvts',data:dataMvts,backgroundColor:'#f5f5f755',borderColor:'#f5f5f7',borderWidth:1,borderRadius:3,spanGaps:true}];
-    legendHtml='<span style="font-size:10px;color:var(--sub)">↕ Mouvements</span>';
+    legendHtml='<span style="font-size:10px;color:rgba(255,255,255,.55)">↕ Mouvements</span>';
     const total=(dataMvts.filter(Boolean).reduce((a,b)=>a+b,0)||0);
     const maxMvt=Math.max(...(dataMvts.filter(Boolean)||[0]));
-    statsHtml=`<div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#f5f5f7">${Math.round(total)}</div><div style="font-size:10px;color:var(--sub)">total</div></div><div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700">${maxMvt}</div><div style="font-size:10px;color:var(--sub)">max</div></div>`;
+    statsHtml=`<div style="flex:1;background:rgba(12,12,16,.45);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#fff">${Math.round(total)}</div><div style="font-size:10px;color:rgba(255,255,255,.55)">total</div></div><div style="flex:1;background:rgba(12,12,16,.45);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700">${maxMvt}</div><div style="font-size:10px;color:rgba(255,255,255,.55)">max</div></div>`;
   } else {
     datasets=[{label:'Solde',data:dataSolde,backgroundColor:dataSolde.map(v=>(v||0)>=0?'#34c75988':'#ff453a88'),borderColor:dataSolde.map(v=>(v||0)>=0?'#34c759':'#ff453a'),borderWidth:1,borderRadius:2,spanGaps:true}];
     legendHtml='<span style="color:#34c759;font-size:10px">▲ Entrées</span><span style="color:#ff453a;font-size:10px;margin-left:8px">▼ Sorties</span>';
     const bilan=(dataSolde.filter(Boolean).reduce((a,b)=>a+b,0)||0);
-    statsHtml=`<div style="flex:1;background:#2c2c2e;border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:${bilan>=0?'#34c759':'#ff453a'}">${bilan>=0?'+':''}${Math.round(bilan)}</div><div style="font-size:10px;color:var(--sub)">bilan</div></div>`;
+    statsHtml=`<div style="flex:1;background:rgba(12,12,16,.45);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:${bilan>=0?'#34c759':'#ff453a'}">${bilan>=0?'+':''}${Math.round(bilan)}</div><div style="font-size:10px;color:rgba(255,255,255,.55)">bilan</div></div>`;
   }
   const legendEl=document.getElementById('sd-legend-'+number);
   const statsEl=document.getElementById('sd-stats-row');
@@ -1975,9 +2040,46 @@ function showStationPopup(s, lat, lon){
     box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 24px rgba(0,0,0,.4);
     pointer-events:auto;`;
 
+  // Bikes from latest.json
+  const stationBikes=(_bikesData?.bikes||[])
+    .filter(b=>b.st===s.number&&b.status!=='X')
+    .sort((a,b)=>{
+      // Élec d'abord, triés par batterie desc
+      if(a.type!==b.type) return a.type==='E'?-1:1;
+      return (b.batt||0)-(a.batt||0);
+    });
+
+  const bikesHtml=stationBikes.length?`
+    <div style="margin-bottom:${hasDep?'5':'8'}px">
+      <div style="font-size:9px;color:rgba(255,255,255,.5);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">vélos · borne · batt · # · note</div>
+      ${stationBikes.map(b=>{
+        const isElec=b.type==='E';
+        const reserved=b.status==='S'||b.isReserved;
+        const typeTag=isElec
+          ?'<span style="font-size:8px;padding:1px 4px;border-radius:3px;background:rgba(10,132,255,.2);color:#60aaff;font-weight:700">⚡</span>'
+          :'<span style="font-size:8px;padding:1px 4px;border-radius:3px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);font-weight:600">M</span>';
+        let battEl='<span style="font-size:9px;color:rgba(255,255,255,.5);min-width:28px">—</span>';
+        if(isElec&&b.batt!=null){
+          const bc=b.batt>=70?'#34c759':b.batt>=40?'#ff9f0a':'#ff453a';
+          battEl=`<span style="font-size:9px;font-weight:700;color:${bc};min-width:28px">${b.batt}%</span>`;
+        }
+        const ratingEl=b.rating?`<span style="font-size:8px;color:#ff9f0a">${b.rating.toFixed(1)}<span style="color:rgba(255,255,255,.5)">(${b.rcount||0})</span></span>`:'';
+        const reservedEl=reserved?'<span style="font-size:8px;color:#ff9f0a">rés.</span>':'';
+        return `<div style="display:flex;align-items:center;gap:4px;padding:2px 0;border-bottom:0.5px solid rgba(255,255,255,.05);opacity:${reserved?'.45':'1'}">
+          ${typeTag}
+          <span style="font-size:9px;color:rgba(255,255,255,.5);min-width:16px">${b.borne||'?'}</span>
+          ${battEl}
+          <span style="font-size:9px;color:rgba(255,255,255,.5);flex:1">#${b.id}</span>
+          ${ratingEl}
+          ${reservedEl}
+        </div>`;
+      }).join('')}
+    </div>`
+  :'';
+
   div.innerHTML=`
-    <div style="font-size:12px;font-weight:700;color:#f5f5f7;margin-bottom:6px">${cleanName(s.name)}</div>
-    <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#8e8e93;margin-bottom:${hasDep?'6':'8'}px">
+    <div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:5px">${cleanName(s.name)}</div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(255,255,255,.6);margin-bottom:6px">
       <span style="display:flex;align-items:center;gap:3px">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="#f5f5f7"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>${s.electrical_bikes}
       </span>
@@ -1986,6 +2088,7 @@ function showStationPopup(s, lat, lon){
       </span>
       <span style="margin-left:auto;color:${cls};font-weight:700">${pct}%</span>
     </div>
+    ${bikesHtml}
     ${!hasDep?`<button id="stn-dep-btn" style="width:100%;padding:5px 8px;border-radius:8px;border:0.5px solid rgba(52,199,89,.3);background:rgba(52,199,89,.1);color:#34c759;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Partir d'ici</button>`
     :`<button id="stn-arr-btn" style="width:100%;padding:5px 8px;border-radius:8px;border:0.5px solid rgba(255,69,58,.3);background:rgba(255,69,58,.1);color:#ff453a;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px">
@@ -2172,9 +2275,33 @@ let _bikesData=null, _bikesSort='trips', _bikesOpenId=null;
 
 async function loadBikesData(){
   try{
-    const r=await fetch(`data/bikes/latest.json?t=${Date.now()}`,{cache:'no-store'});
-    if(!r.ok) return null;
-    return await r.json();
+    const [rLatest, rToday]=await Promise.all([
+      fetch(`data/bikes/latest.json?t=${Date.now()}`,{cache:'no-store'}),
+      fetch(`data/bikes/today.json?t=${Date.now()}`,{cache:'no-store'}).catch(()=>null)
+    ]);
+    if(!rLatest.ok) return null;
+    const data=await rLatest.json();
+
+    // Compter les trajets du jour depuis today.json
+    if(rToday?.ok){
+      const today=await rToday.json();
+      const tripCount={};
+      const events=today.events||[];
+      // Un trajet = vélo passe de R/X à A dans une station différente
+      const lastStatus={};
+      // Init depuis la base
+      (today.base?.bikes||[]).forEach(b=>{ lastStatus[b.id]=b.status; });
+      events.forEach(ev=>{
+        const prev=lastStatus[ev.id];
+        if(prev&&(prev==='R'||prev==='X')&&ev.status==='A'){
+          tripCount[ev.id]=(tripCount[ev.id]||0)+1;
+        }
+        if(ev.status) lastStatus[ev.id]=ev.status;
+      });
+      // Injecter le compte dans les bikes
+      data.bikes=(data.bikes||[]).map(b=>({...b,trips:tripCount[b.id]||0}));
+    }
+    return data;
   }catch{ return null; }
 }
 
@@ -2217,10 +2344,10 @@ function renderBikesTable(){
   const sortLabel={trips:'Trajets',rating:'Note',batt:'Batterie'}[_bikesSort];
   el.innerHTML=`<table id="bk-table" style="width:100%;border-collapse:collapse;font-size:12px">
     <thead><tr>
-      <th style="padding:5px 7px;text-align:left;border-bottom:1px solid var(--border);font-size:10px;font-weight:600;text-transform:uppercase;color:var(--sub);background:#2c2c2e">#</th>
-      <th style="padding:5px 7px;text-align:left;border-bottom:1px solid var(--border);font-size:10px;font-weight:600;text-transform:uppercase;color:var(--sub);background:#2c2c2e">Vélo</th>
-      <th style="padding:5px 7px;text-align:left;border-bottom:1px solid var(--border);font-size:10px;font-weight:600;text-transform:uppercase;color:var(--sub);background:#2c2c2e">${sortLabel}</th>
-      <th style="padding:5px 7px;text-align:left;border-bottom:1px solid var(--border);font-size:10px;font-weight:600;text-transform:uppercase;color:var(--sub);background:#2c2c2e">Statut</th>
+      <th style="padding:5px 7px;text-align:left;border-bottom:0.5px solid rgba(255,255,255,.08);font-size:10px;font-weight:600;text-transform:uppercase;color:rgba(255,255,255,.55);background:rgba(12,12,16,.45)">#</th>
+      <th style="padding:5px 7px;text-align:left;border-bottom:0.5px solid rgba(255,255,255,.08);font-size:10px;font-weight:600;text-transform:uppercase;color:rgba(255,255,255,.55);background:rgba(12,12,16,.45)">Vélo</th>
+      <th style="padding:5px 7px;text-align:left;border-bottom:0.5px solid rgba(255,255,255,.08);font-size:10px;font-weight:600;text-transform:uppercase;color:rgba(255,255,255,.55);background:rgba(12,12,16,.45)">${sortLabel}</th>
+      <th style="padding:5px 7px;text-align:left;border-bottom:0.5px solid rgba(255,255,255,.08);font-size:10px;font-weight:600;text-transform:uppercase;color:rgba(255,255,255,.55);background:rgba(12,12,16,.45)">Statut</th>
     </tr></thead>
     <tbody>${rows.map((b,i)=>bikeRow(b,i)).join('')}</tbody>
   </table>`;
@@ -2237,17 +2364,17 @@ function bikeRow(b,i){
   };
   const typeTag=b.type==='E'
     ?'<span style="font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(10,132,255,.2);color:#60aaff;font-weight:600">⚡</span>'
-    :'<span style="font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.08);color:#8e8e93;font-weight:600">M</span>';
+    :'<span style="font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);font-weight:600">M</span>';
   const statusDot=b.status==='A'?'#34c759':b.status==='R'?'#ff9f0a':'#636366';
   return `<tr onclick="toggleBikeDetail(${b.id},this)" style="cursor:pointer" id="bk-row-${b.id}">
-    <td style="padding:5px 7px;border-bottom:0.5px solid var(--border);color:var(--sub)">${i+1}</td>
-    <td style="padding:5px 7px;border-bottom:0.5px solid var(--border)">${typeTag} <b>#${b.id}</b></td>
-    <td style="padding:5px 7px;border-bottom:0.5px solid var(--border);font-weight:600;color:#f5f5f7">${sortVal()}</td>
-    <td style="padding:5px 7px;border-bottom:0.5px solid var(--border)"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${statusDot}"></span></td>
+    <td style="padding:5px 7px;border-bottom:0.5px solid rgba(255,255,255,.08);color:rgba(255,255,255,.55)">${i+1}</td>
+    <td style="padding:5px 7px;border-bottom:0.5px solid rgba(255,255,255,.08)">${typeTag} <b>#${b.id}</b></td>
+    <td style="padding:5px 7px;border-bottom:0.5px solid rgba(255,255,255,.08);font-weight:600;color:#fff">${sortVal()}</td>
+    <td style="padding:5px 7px;border-bottom:0.5px solid rgba(255,255,255,.08)"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${statusDot}"></span></td>
   </tr>
   <tr id="bk-detail-${b.id}" style="display:none">
     <td colspan="4" style="padding:0">
-      <div style="padding:8px 10px;background:#1c1c1e;border-bottom:1px solid var(--border);font-size:11px">
+      <div style="padding:8px 10px;background:rgba(8,8,12,.5);border-bottom:0.5px solid rgba(255,255,255,.08);font-size:11px">
         ${bikeDetailHtml(b)}
       </div>
     </td>
@@ -2259,12 +2386,13 @@ function bikeDetailHtml(b){
     ['Station', b.st?'#'+b.st+' · borne '+b.borne:'En trajet'],
     b.type==='E'&&b.batt!=null?['Batterie', battHtml(b.batt)]:null,
     b.type==='M'&&b.mv?['Tension', b.mv+'mV']:null,
-    ['Note', b.rating?`<span style="color:#ff9f0a">${b.rating.toFixed(1)}</span> / 5`:'—'],
+    ['Note', b.rating?`<span style="color:#ff9f0a">${b.rating.toFixed(1)}</span> / 5 <span style="color:rgba(255,255,255,.5)">(${b.rcount||0} avis)</span>`:'—'],
     ['Trajets auj.', b.trips||0],
     ['Dernière révision', b.rev||'—'],
+        ['Dernier contrôle', b.ctrl||'—'],
     ['Dernier trajet', b.trip?b.trip.replace('T',' ').slice(0,16):'—'],
   ].filter(Boolean);
-  return rows.map(([l,v])=>`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:0.5px solid rgba(255,255,255,.04)"><span style="color:#636366">${l}</span><span style="color:#f5f5f7;font-weight:500">${v}</span></div>`).join('');
+  return rows.map(([l,v])=>`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:0.5px solid rgba(255,255,255,.04)"><span style="color:rgba(255,255,255,.5)">${l}</span><span style="color:#fff;font-weight:500">${v}</span></div>`).join('');
 }
 
 function battHtml(pct){
@@ -2314,28 +2442,28 @@ function renderBikesList(bikes, tripDistKm){
     const isElec=b.type==='E';
     const typeTag=isElec
       ?'<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(10,132,255,.18);color:#60aaff;font-weight:600">⚡</span>'
-      :'<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(255,255,255,.08);color:#8e8e93;font-weight:600">M</span>';
-    let battHtml='<div style="flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.08)"><div style="height:100%;border-radius:2px;background:rgba(255,255,255,.2);width:100%"></div></div><span style="font-size:9px;color:#636366;min-width:28px">—</span>';
+      :'<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);font-weight:600">M</span>';
+    let battHtml='<div style="flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.08)"><div style="height:100%;border-radius:2px;background:rgba(255,255,255,.2);width:100%"></div></div><span style="font-size:9px;color:rgba(255,255,255,.5);min-width:28px">—</span>';
     if(isElec&&b.batt!=null){
       const c=b.batt>=70?'#34c759':b.batt>=40?'#ff9f0a':'#ff453a';
       battHtml=`<div style="flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.08)"><div style="height:100%;border-radius:2px;background:${c};width:${b.batt}%"></div></div><span style="font-size:9px;font-weight:600;color:${c};min-width:28px">${b.batt}%</span>`;
     } else if(!isElec&&b.mv){
-      battHtml=`<span style="font-size:9px;color:#636366;min-width:60px">${b.mv}mV</span>`;
+      battHtml=`<span style="font-size:9px;color:rgba(255,255,255,.5);min-width:60px">${b.mv}mV</span>`;
     }
-    const ratingHtml=b.rating?`<span style="font-size:9px;color:#ff9f0a">${b.rating.toFixed(1)}</span>`:'';
+    const ratingHtml=b.rating?`<span style="font-size:9px;color:#ff9f0a">${b.rating.toFixed(1)}</span><span style="font-size:8px;color:rgba(255,255,255,.5)">(${b.rcount||0})</span>`:'';
     const reserved=b.status==='S'?'style="opacity:.4"':'';
-    const reservedLabel=b.status==='S'?'<span style="font-size:8px;color:#636366">rés.</span>':'';
+    const reservedLabel=b.status==='S'?'<span style="font-size:8px;color:rgba(255,255,255,.5)">rés.</span>':'';
     return `<div style="display:flex;align-items:center;gap:5px;padding:3px 0;border-bottom:0.5px solid rgba(255,255,255,.05)" ${reserved}>
       ${typeTag}
-      <span style="font-size:9px;color:rgba(255,255,255,.35);min-width:14px">${b.borne||'?'}</span>
+      <span style="font-size:9px;color:rgba(255,255,255,.55);min-width:14px">${b.borne||'?'}</span>
       ${battHtml}
-      <span style="font-size:9px;color:rgba(255,255,255,.35);min-width:34px">#${b.id}</span>
+      <span style="font-size:9px;color:rgba(255,255,255,.55);min-width:34px">#${b.id}</span>
       ${ratingHtml}
       ${reservedLabel}
     </div>`;
   }).join('');
   return `<div style="margin-top:7px;padding:6px 8px;background:rgba(255,255,255,.04);border:0.5px solid rgba(255,255,255,.08);border-radius:8px">
-    <div style="font-size:9px;color:rgba(255,255,255,.3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">vélos disponibles au départ · borne / batt / # / note</div>
+    <div style="font-size:9px;color:rgba(255,255,255,.5);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">vélos disponibles au départ · borne / batt / # / note</div>
     ${warnHtml}${rows}
   </div>`;
 }
@@ -2360,6 +2488,11 @@ async function loadComboBikes(idx){
   bikesList.innerHTML=renderBikesList(bikes,distKm);
   card.appendChild(bikesList);
 }
+
+
+// Temps de marche : 1m ≈ 1.25min, min 1 min
+function walkMinutes(dist){ return Math.max(1, Math.round(dist/1000/5*60)); }
+function walkDistM(dist){ return Math.round(dist); }
 
 /* ═══ BOOT ════════════════════════════════════════════ */
 async function boot(){
