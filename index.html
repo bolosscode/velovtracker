@@ -439,8 +439,8 @@ document.querySelectorAll('.tab').forEach(tab=>{
     if(tab.dataset.tab==='map') setTimeout(()=>{ if(!map)initMap(); map?.invalidateSize(); renderStations(); },150);
     if(tab.dataset.tab==='stats'){
       quickLeaderboard();
-
     }
+    if(tab.dataset.tab==='bikes') initBikesTab();
     if(tab.dataset.tab==='plan') initPlanMap();
   };
 });
