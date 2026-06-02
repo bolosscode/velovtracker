@@ -1,0 +1,36 @@
+name: Consolidation Vélos
+
+on:
+  schedule:
+    - cron: '15 2 * * *'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Date (YYYY-MM-DD, vide = hier)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  consolidate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Consolider les vélos
+        env:
+          INPUT_DATE: ${{ github.event.inputs.date }}
+        run: |
+          python consolidate_bikes.py --date "$INPUT_DATE"
+      - name: Commit & push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/bikes/
+          git diff --staged --quiet || git commit -m "bikes-consolidate: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+          git pull --rebase origin main
+          git push
