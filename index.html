@@ -160,6 +160,7 @@ main{max-width:1500px;margin:auto;padding:20px}
   <div style="font-size:15px;font-weight:700;color:#fff;letter-spacing:-.01em">Vélo'v</div>
   <div style="display:flex;gap:2px">
     <div class="tab on" data-tab="map" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:#fff;font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg> Carte</div>
+    <div class="tab" data-tab="bikes" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:rgba(255,255,255,.55);font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2"/><path d="M12 17.5 10 7l-4.7 4.5 6.7 2"/><path d="m10 7 5 2.5"/></svg> Vélos</div>
     <div class="tab" data-tab="stats" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:rgba(255,255,255,.55);font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Stats</div>
   </div>
   <div style="display:flex;align-items:center;gap:8px">
@@ -293,6 +294,31 @@ main{max-width:1500px;margin:auto;padding:20px}
 </div>
 
 <!-- ═══ PLANIFIER ═══ -->
+
+
+<div class="panel" id="tab-bikes" style="padding:10px;overflow-y:auto;max-height:100vh">
+  <div class="card" style="padding:12px;margin-bottom:8px">
+    <div class="card-title" style="margin-bottom:8px">Tri & filtre</div>
+    <div class="range" style="gap:5px;padding:8px">
+      <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px">
+        <button onclick="onBikesSort('trips')" id="bk-pill-trips" style="padding:5px 14px;border:none;background:#3a3a3c;color:#fff;font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Trajets</button>
+        <button onclick="onBikesSort('rating')" id="bk-pill-rating" style="padding:5px 14px;border:none;background:transparent;color:var(--sub);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Note</button>
+        <button onclick="onBikesSort('batt')" id="bk-pill-batt" style="padding:5px 14px;border:none;background:transparent;color:var(--sub);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Batterie</button>
+      </div>
+      <select id="bk-type" onchange="renderBikesTable()">
+        <option value="all">Tous</option>
+        <option value="E">Élec</option>
+        <option value="M">Méca</option>
+      </select>
+      <input id="bk-search" type="text" placeholder="N° vélo…" oninput="renderBikesTable()" style="padding:7px 10px;border-radius:10px;border:1px solid var(--border);background:var(--paper);color:var(--ink);font-size:13px;outline:none;min-width:0;flex:1"/>
+    </div>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <div id="bk-content" style="overflow-x:auto;max-height:70vh;overflow-y:auto">
+      <div class="loader">Charge les données vélos…</div>
+    </div>
+  </div>
+</div>
 
 </main>
 <script>
@@ -1399,7 +1425,7 @@ async function computePlan(){
           </div>
           ${sc?`<div style="background:${scBg};border-radius:5px;padding:2px 6px;align-self:flex-end"><span style="font-size:11px;font-weight:700;color:${scCol}">${sc}%</span></div>`:''}
         </div>`;
-      return `<div class="combo-card${i===0?' selected':''}" onclick="toggleComboDetail(${i},this)" data-idx="${i}" style="display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:8px;margin-bottom:4px;background:rgba(255,255,255,.05);border:0.5px solid rgba(255,255,255,.08);cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)">
+      return `<div class="combo-card${i===0?' selected':''}" onclick="toggleComboDetail(${i},this);loadComboBikes(${i})" data-idx="${i}" style="display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:8px;margin-bottom:4px;background:rgba(255,255,255,.05);border:0.5px solid rgba(255,255,255,.08);cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)">
         <div style="width:3px;height:28px;border-radius:2px;background:${rColor};flex-shrink:0"></div>
         <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.28);min-width:14px;flex-shrink:0">${i+1}</div>
         <div style="flex:1;min-width:0">
@@ -1505,7 +1531,7 @@ async function drawTop3Routes(){
         return {coords:decodePolyline(leg.shape),dist:(d.trip.summary?.length||0)*1000};
       })(),
       (async()=>{
-        const r=await fetch(`https://brouter.de/brouter?lonlats=${combo.dep.lng},${combo.dep.lat}|${combo.arr.lng},${combo.arr.lat}&profile=shortest&alternativeidx=0&format=geojson`,{signal:AbortSignal.timeout(10000)});
+        const r=await fetch(`https://brouter.de/brouter?lonlats=${combo.dep.lng},${combo.dep.lat}|${combo.arr.lng},${combo.arr.lat}&profile=trekking&alternativeidx=0&format=geojson`,{signal:AbortSignal.timeout(10000)});
         if(!r.ok) throw 0;
         const d=await r.json(); const geom=d.features?.[0]?.geometry; if(!geom) throw 0;
         return {coords:geom.coordinates.map(([ln,la])=>[la,ln]),dist:parseInt(d.features[0].properties?.['track-length'])||0};
@@ -1581,7 +1607,7 @@ async function showRoute(idx){
 
     // 1. Brouter — direct, pas de Valhalla (down)
     try {
-      const brProfile='shortest';
+      const brProfile='trekking';
       const brUrl = `https://brouter.de/brouter?lonlats=${combo.dep.lng},${combo.dep.lat}|${combo.arr.lng},${combo.arr.lat}&profile=${brProfile}&alternativeidx=0&format=geojson`;
       const rb = await fetch(brUrl, {signal: AbortSignal.timeout(12000)});
       if(rb.ok){
@@ -2140,6 +2166,201 @@ function showBackgroundStations(){
   }
   window._stationsHidden=false;
 }
+
+/* ═══ BIKES ══════════════════════════════════════════════════════════════ */
+let _bikesData=null, _bikesSort='trips', _bikesOpenId=null;
+
+async function loadBikesData(){
+  try{
+    const r=await fetch(`data/bikes/latest.json?t=${Date.now()}`,{cache:'no-store'});
+    if(!r.ok) return null;
+    return await r.json();
+  }catch{ return null; }
+}
+
+function onBikesSort(s){
+  _bikesSort=s;
+  ['trips','rating','batt'].forEach(k=>{
+    const btn=document.getElementById('bk-pill-'+k);
+    if(!btn) return;
+    btn.style.background=k===s?'#3a3a3c':'transparent';
+    btn.style.color=k===s?'#fff':'var(--sub)';
+  });
+  renderBikesTable();
+}
+
+async function initBikesTab(){
+  if(!_bikesData){
+    document.getElementById('bk-content').innerHTML='<div class="loader">Chargement…</div>';
+    _bikesData=await loadBikesData();
+  }
+  renderBikesTable();
+}
+
+function renderBikesTable(){
+  const el=document.getElementById('bk-content');
+  if(!_bikesData){ el.innerHTML='<div class="no-data">Données vélos non disponibles.<br><small>Déployez collect_bikes.py pour activer cette fonctionnalité.</small></div>'; return; }
+  const bikes=_bikesData.bikes||[];
+  const typeF=document.getElementById('bk-type')?.value||'all';
+  const searchF=(document.getElementById('bk-search')?.value||'').trim();
+  let rows=bikes.filter(b=>{
+    if(typeF!=='all'&&b.type!==typeF) return false;
+    if(searchF&&!String(b.id).includes(searchF)) return false;
+    return true;
+  });
+  const sorters={
+    trips:(a,b)=>(b.trips||0)-(a.trips||0),
+    rating:(a,b)=>(b.rating||0)-(a.rating||0),
+    batt:(a,b)=>(b.batt??-1)-(a.batt??-1),
+  };
+  rows.sort(sorters[_bikesSort]||sorters.trips);
+  const sortLabel={trips:'Trajets',rating:'Note',batt:'Batterie'}[_bikesSort];
+  el.innerHTML=`<table id="bk-table" style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead><tr>
+      <th style="padding:5px 7px;text-align:left;border-bottom:1px solid var(--border);font-size:10px;font-weight:600;text-transform:uppercase;color:var(--sub);background:#2c2c2e">#</th>
+      <th style="padding:5px 7px;text-align:left;border-bottom:1px solid var(--border);font-size:10px;font-weight:600;text-transform:uppercase;color:var(--sub);background:#2c2c2e">Vélo</th>
+      <th style="padding:5px 7px;text-align:left;border-bottom:1px solid var(--border);font-size:10px;font-weight:600;text-transform:uppercase;color:var(--sub);background:#2c2c2e">${sortLabel}</th>
+      <th style="padding:5px 7px;text-align:left;border-bottom:1px solid var(--border);font-size:10px;font-weight:600;text-transform:uppercase;color:var(--sub);background:#2c2c2e">Statut</th>
+    </tr></thead>
+    <tbody>${rows.map((b,i)=>bikeRow(b,i)).join('')}</tbody>
+  </table>`;
+}
+
+function bikeRow(b,i){
+  const sortVal=()=>{
+    if(_bikesSort==='trips') return b.trips||0;
+    if(_bikesSort==='rating') return b.rating?b.rating.toFixed(1):'—';
+    if(_bikesSort==='batt'){
+      if(b.type==='E') return b.batt!=null?b.batt+'%':'—';
+      return b.mv?b.mv+'mV':'—';
+    }
+  };
+  const typeTag=b.type==='E'
+    ?'<span style="font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(10,132,255,.2);color:#60aaff;font-weight:600">⚡</span>'
+    :'<span style="font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.08);color:#8e8e93;font-weight:600">M</span>';
+  const statusDot=b.status==='A'?'#34c759':b.status==='R'?'#ff9f0a':'#636366';
+  return `<tr onclick="toggleBikeDetail(${b.id},this)" style="cursor:pointer" id="bk-row-${b.id}">
+    <td style="padding:5px 7px;border-bottom:0.5px solid var(--border);color:var(--sub)">${i+1}</td>
+    <td style="padding:5px 7px;border-bottom:0.5px solid var(--border)">${typeTag} <b>#${b.id}</b></td>
+    <td style="padding:5px 7px;border-bottom:0.5px solid var(--border);font-weight:600;color:#f5f5f7">${sortVal()}</td>
+    <td style="padding:5px 7px;border-bottom:0.5px solid var(--border)"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${statusDot}"></span></td>
+  </tr>
+  <tr id="bk-detail-${b.id}" style="display:none">
+    <td colspan="4" style="padding:0">
+      <div style="padding:8px 10px;background:#1c1c1e;border-bottom:1px solid var(--border);font-size:11px">
+        ${bikeDetailHtml(b)}
+      </div>
+    </td>
+  </tr>`;
+}
+
+function bikeDetailHtml(b){
+  const rows=[
+    ['Station', b.st?'#'+b.st+' · borne '+b.borne:'En trajet'],
+    b.type==='E'&&b.batt!=null?['Batterie', battHtml(b.batt)]:null,
+    b.type==='M'&&b.mv?['Tension', b.mv+'mV']:null,
+    ['Note', b.rating?`<span style="color:#ff9f0a">${b.rating.toFixed(1)}</span> / 5`:'—'],
+    ['Trajets auj.', b.trips||0],
+    ['Dernière révision', b.rev||'—'],
+    ['Dernier trajet', b.trip?b.trip.replace('T',' ').slice(0,16):'—'],
+  ].filter(Boolean);
+  return rows.map(([l,v])=>`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:0.5px solid rgba(255,255,255,.04)"><span style="color:#636366">${l}</span><span style="color:#f5f5f7;font-weight:500">${v}</span></div>`).join('');
+}
+
+function battHtml(pct){
+  const c=pct>=70?'#34c759':pct>=40?'#ff9f0a':'#ff453a';
+  return `<span style="color:${c};font-weight:600">${pct}%</span>`;
+}
+
+let _bkOpenId=null;
+function toggleBikeDetail(id,row){
+  const det=document.getElementById('bk-detail-'+id);
+  if(_bkOpenId!==null&&_bkOpenId!==id){
+    const old=document.getElementById('bk-detail-'+_bkOpenId);
+    const oldRow=document.getElementById('bk-row-'+_bkOpenId);
+    if(old) old.style.display='none';
+    if(oldRow) oldRow.style.background='';
+  }
+  if(_bkOpenId===id){ det.style.display='none'; row.style.background=''; _bkOpenId=null; return; }
+  det.style.display=''; row.style.background='rgba(255,255,255,.04)';
+  _bkOpenId=id;
+}
+
+/* ── Enrichissement itinéraire : liste des vélos de la station départ ── */
+async function fetchStationBikes(stationNumber){
+  try{
+    const latest=await loadBikesData();
+    if(!latest) return [];
+    return (latest.bikes||[]).filter(b=>b.st===stationNumber&&b.status==='A');
+  }catch{ return []; }
+}
+
+function renderBikesList(bikes, tripDistKm){
+  if(!bikes.length) return '';
+  const elec=bikes.filter(b=>b.type==='E').sort((a,b)=>(b.batt||0)-(a.batt||0));
+  const meca=bikes.filter(b=>b.type==='M').sort((a,b)=>(b.mv||0)-(a.mv||0));
+  const all=[...elec,...meca];
+  const RANGE_KM=40;
+  let warnHtml='';
+  // Avertissement batterie
+  if(tripDistKm&&elec.length){
+    const minBatt=Math.ceil(tripDistKm/RANGE_KM*100*1.15);
+    const lowBikes=elec.filter(b=>b.batt!=null&&b.batt<minBatt);
+    if(lowBikes.length===elec.length){
+      warnHtml=`<div style="background:rgba(255,69,58,.08);border:0.5px solid rgba(255,69,58,.25);border-radius:6px;padding:4px 8px;margin-bottom:5px;font-size:10px;color:#ff453a;display:flex;align-items:center;gap:5px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>Batterie insuffisante pour ce trajet (${tripDistKm.toFixed(1)}km) — tous les élec &lt;${minBatt}%</div>`;
+    }
+  }
+  const rows=all.slice(0,6).map(b=>{
+    const isElec=b.type==='E';
+    const typeTag=isElec
+      ?'<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(10,132,255,.18);color:#60aaff;font-weight:600">⚡</span>'
+      :'<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(255,255,255,.08);color:#8e8e93;font-weight:600">M</span>';
+    let battHtml='<div style="flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.08)"><div style="height:100%;border-radius:2px;background:rgba(255,255,255,.2);width:100%"></div></div><span style="font-size:9px;color:#636366;min-width:28px">—</span>';
+    if(isElec&&b.batt!=null){
+      const c=b.batt>=70?'#34c759':b.batt>=40?'#ff9f0a':'#ff453a';
+      battHtml=`<div style="flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.08)"><div style="height:100%;border-radius:2px;background:${c};width:${b.batt}%"></div></div><span style="font-size:9px;font-weight:600;color:${c};min-width:28px">${b.batt}%</span>`;
+    } else if(!isElec&&b.mv){
+      battHtml=`<span style="font-size:9px;color:#636366;min-width:60px">${b.mv}mV</span>`;
+    }
+    const ratingHtml=b.rating?`<span style="font-size:9px;color:#ff9f0a">${b.rating.toFixed(1)}</span>`:'';
+    const reserved=b.status==='S'?'style="opacity:.4"':'';
+    const reservedLabel=b.status==='S'?'<span style="font-size:8px;color:#636366">rés.</span>':'';
+    return `<div style="display:flex;align-items:center;gap:5px;padding:3px 0;border-bottom:0.5px solid rgba(255,255,255,.05)" ${reserved}>
+      ${typeTag}
+      <span style="font-size:9px;color:rgba(255,255,255,.35);min-width:14px">${b.borne||'?'}</span>
+      ${battHtml}
+      <span style="font-size:9px;color:rgba(255,255,255,.35);min-width:34px">#${b.id}</span>
+      ${ratingHtml}
+      ${reservedLabel}
+    </div>`;
+  }).join('');
+  return `<div style="margin-top:7px;padding:6px 8px;background:rgba(255,255,255,.04);border:0.5px solid rgba(255,255,255,.08);border-radius:8px">
+    <div style="font-size:9px;color:rgba(255,255,255,.3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">vélos disponibles au départ · borne / batt / # / note</div>
+    ${warnHtml}${rows}
+  </div>`;
+}
+
+
+const _comboBikesCache={};
+async function loadComboBikes(idx){
+  const combo=window._planCombos?.[idx]; if(!combo) return;
+  const cacheKey=combo.dep.number+'_'+combo.dist;
+  if(_comboBikesCache[cacheKey]) return; // déjà chargé
+  const bikes=await fetchStationBikes(combo.dep.number);
+  if(!bikes.length) return;
+  _comboBikesCache[cacheKey]=bikes;
+  // Injecter dans le card actif
+  const card=document.querySelector(`.combo-card[data-idx="${idx}"]`);
+  if(!card) return;
+  const existing=card.querySelector('.combo-bikes-list');
+  if(existing) return;
+  const distKm=combo.dist/1000;
+  const bikesList=document.createElement('div');
+  bikesList.className='combo-bikes-list';
+  bikesList.innerHTML=renderBikesList(bikes,distKm);
+  card.appendChild(bikesList);
+}
+
 /* ═══ BOOT ════════════════════════════════════════════ */
 async function boot(){
   initRanges();
