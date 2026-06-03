@@ -29,9 +29,12 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin main
-          git reset --hard origin/main
           git add data/
           git diff --staged --quiet && exit 0
+          git stash
+          git fetch origin main
+          git reset --hard origin/main
+          git stash pop
+          git add data/
           git commit -m "data: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
           git push
