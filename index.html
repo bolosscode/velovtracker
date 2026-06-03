@@ -559,7 +559,7 @@ async function idbSet(key,val){
 const _fetchDayCache={};
 async function fetchDay(date){
   if(_fetchDayCache[date]) return _fetchDayCache[date];
-  const today=new Date().toISOString().slice(0,10);
+  const today=localDateStr();
   // Vérifier IDB pour les dates passées
   if(date!==today){
     const cached=await idbGet(date);
@@ -955,7 +955,22 @@ async function computeLeaderboard(){
   if(view==='day'){
     const d=document.getElementById('lb-date').value;
     if(!d){ content.innerHTML='<div class="no-data">Sélectionnez une date.</div>'; return; }
-    const snaps=await fetchDay(d)||[];
+    const today=localDateStr();
+    let snaps=[];
+    if(d===today){
+      // Jour J : utiliser latest.json (données live JCDecaux)
+      try{
+        const r=await fetch(`data/latest.json?t=${Date.now()}`,{cache:'no-store'});
+        if(r.ok){
+          const data=await r.json();
+          // Construire un snapshot unique depuis latest
+          const stations=(data.stations||[]).map(s=>({...s,t:data.timestamp}));
+          snaps=[{t:data.timestamp,stations}];
+        }
+      }catch(e){ console.warn('latest.json fetch error',e); }
+    } else {
+      snaps=await fetchDay(d)||[];
+    }
     showDayMeteo(d);
     if(!snaps.length){ content.innerHTML='<div class="no-data">Aucune donnée.</div>'; return; }
     lbMvCache=calcMvFromSnaps(snaps);
@@ -974,7 +989,7 @@ async function computeLeaderboard(){
         dates.push(`${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
     }
     // Limiter aux dates passées
-    const today=new Date().toISOString().slice(0,10);
+    const today=localDateStr();
     dates=dates.filter(d=>d<=today);
     content.innerHTML=`<div class="loader">Calcul sur ${dates.length} jours…</div>`;
     // Agréger les mouvements
@@ -1915,7 +1930,7 @@ async function showStationDetail(number, targetEl=null){
     if(!mth) return;
     const [y,mo]=mth.split('-').map(Number);
     const daysInMonth=new Date(y,mo,0).getDate();
-    const today=new Date().toISOString().slice(0,10);
+    const today=localDateStr();
     const dates=[];
     for(let day=1;day<=daysInMonth;day++){
       const ds=y+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
@@ -1942,7 +1957,7 @@ async function showStationDetail(number, targetEl=null){
     }
   } else {
     if(!yr) return;
-    const today=new Date().toISOString().slice(0,10);
+    const today=localDateStr();
     const MONTHS=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
     const allDatesYear=[];
     for(let mo=1;mo<=12;mo++) for(let day=1;day<=new Date(yr,mo,0).getDate();day++){
@@ -2600,6 +2615,13 @@ function renderTrajets(){
       </td>
     </tr>`).join('')}</tbody>
   </table>`;
+}
+
+
+function localDateStr(){ 
+  const d=new Date(); 
+  d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); 
+  return d.toISOString().slice(0,10); 
 }
 
 /* ═══ BOOT ════════════════════════════════════════════ */
