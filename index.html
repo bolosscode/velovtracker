@@ -572,6 +572,19 @@ async function fetchDay(date){
       const r=await fetch(`data/today.json?t=${Date.now()}`,{cache:'no-store'});
       if(!r.ok) return null;
       const data=await r.json();
+      // Nouveau format JCDecaux : {date, snapshots:[{t, s:{num:[avail,elec,meca,stands]}}]}
+      if(data.snapshots){
+        return data.snapshots.map(snap=>({
+          t: snap.t,
+          stations: Object.entries(snap.s).map(([num,v])=>({
+            number: parseInt(num),
+            available_bikes: v[0],
+            electrical_bikes: v[1],
+            mechanical_bikes: v[2],
+            available_bike_stands: v[3]
+          }))
+        }));
+      }
       return data.base&&data.deltas ? expandDeltas(data) : Array.isArray(data)?data:null;
     }
     // Essayer .json.gz d'abord, puis .json en fallback
