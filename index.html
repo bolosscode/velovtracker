@@ -2075,23 +2075,26 @@ function showStationPopup(s, lat, lon){
       <div style="font-size:9px;color:rgba(255,255,255,.5);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">vélos · borne · batt · # · note</div>
       ${stationBikes.map(b=>{
         const isElec=b.type==='E';
-        const reserved=b.status==='S'||b.isReserved;
-        const typeTag=isElec
-          ?'<span style="font-size:8px;padding:1px 4px;border-radius:3px;background:rgba(10,132,255,.2);color:#60aaff;font-weight:700">⚡</span>'
-          :'<span style="font-size:8px;padding:1px 4px;border-radius:3px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);font-weight:600">M</span>';
-        let battEl='<span style="font-size:9px;color:rgba(255,255,255,.5);min-width:28px">—</span>';
+        const reserved=b.status==='S';
+        const icon=isElec
+          ?'<svg width="9" height="9" viewBox="0 0 24 24" fill="rgba(255,255,255,.8)"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'
+          :'<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
+        let battEl='<span style="font-size:9px;color:rgba(255,255,255,.3);min-width:24px">—</span>';
+        let autoEl='';
         if(isElec&&b.batt!=null){
           const bc=b.batt>=70?'#34c759':b.batt>=40?'#ff9f0a':'#ff453a';
-          battEl=`<span style="font-size:9px;font-weight:700;color:${bc};min-width:28px">${b.batt}%</span>`;
+          const km=Math.round(b.batt*40/100);
+          battEl=`<span style="font-size:9px;font-weight:700;color:${bc};min-width:24px">${b.batt}%</span>`;
+          autoEl=`<span style="font-size:8px;color:rgba(255,255,255,.28);min-width:26px">~${km}km</span>`;
         }
-        const ratingEl=b.rating?`<span style="font-size:8px;color:#ff9f0a">${b.rating.toFixed(1)}<span style="color:rgba(255,255,255,.5)">(${b.rcount||0})</span></span>`:'';
+        const ratingEl=b.rating?`<span style="font-size:8px;color:#ff9f0a">${b.rating.toFixed(1)}<span style="color:rgba(255,255,255,.22)">${b.rcount?'('+b.rcount+')':''}</span></span>`:'';
         const reservedEl=reserved?'<span style="font-size:8px;color:#ff9f0a">rés.</span>':'';
-        return `<div style="display:flex;align-items:center;gap:4px;padding:2px 0;border-bottom:0.5px solid rgba(255,255,255,.05);opacity:${reserved?'.45':'1'}">
-          ${typeTag}
-          <span style="font-size:9px;color:rgba(255,255,255,.5);min-width:16px">${b.borne||'?'}</span>
-          ${battEl}
-          <span style="font-size:9px;color:rgba(255,255,255,.5);flex:1">#${b.id}</span>
+        return `<div style="display:flex;align-items:center;gap:4px;padding:2.5px 0;border-bottom:0.5px solid rgba(255,255,255,.05);opacity:${reserved?'.4':'1'}">
+          <span style="display:flex;align-items:center">${icon}</span>
+          <span style="font-size:9px;color:rgba(255,255,255,.4);min-width:14px">${b.borne||'?'}</span>
+          ${battEl}${autoEl}
           ${ratingEl}
+          <span style="font-size:9px;color:rgba(255,255,255,.28);flex:1;text-align:right">#${b.id}</span>
           ${reservedEl}
         </div>`;
       }).join('')}
