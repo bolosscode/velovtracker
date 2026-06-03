@@ -31,9 +31,20 @@ jobs:
         run: pip install requests
 
 
-      - name: Collecter les stations
-        run: python collect.py
+      - name: Mettre à jour stations_meta.json
         continue-on-error: true
+        run: |
+          python - << 'PYEOF'
+          import json, urllib.request
+          from pathlib import Path
+          url = "https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov/all.json?maxfeatures=-1&start=1"
+          with urllib.request.urlopen(url, timeout=30) as r:
+              data = json.loads(r.read())
+          meta = {s['number']: {'number': s['number'], 'name': s['name'], 'lat': s['lat'], 'lng': s['lng'], 'bike_stands': s['bike_stands']} for s in data.get('values', [])}
+          Path('data').mkdir(exist_ok=True)
+          Path('data/stations_meta.json').write_text(json.dumps(meta, ensure_ascii=False, separators=(',', ':')))
+          print(f"✓ {len(meta)} stations")
+          PYEOF
 
       - name: Consolider les jours manquants
         env:
