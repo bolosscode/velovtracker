@@ -2281,25 +2281,30 @@ async function loadBikesData(){
     ]);
     if(!rLatest.ok) return null;
     const data=await rLatest.json();
-
-    // Compter les trajets du jour depuis today.json
     if(rToday?.ok){
       const today=await rToday.json();
-      const tripCount={};
-      const events=today.events||[];
-      // Un trajet = vélo passe de R/X à A dans une station différente
-      const lastStatus={};
-      // Init depuis la base
-      (today.base?.bikes||[]).forEach(b=>{ lastStatus[b.id]=b.status; });
-      events.forEach(ev=>{
-        const prev=lastStatus[ev.id];
-        if(prev&&(prev==='R'||prev==='X')&&ev.status==='A'){
-          tripCount[ev.id]=(tripCount[ev.id]||0)+1;
+      const tripCount={},tripHistory={},lastSt2={},lastStatus2={},depTime2={};
+      (today.base?.bikes||[]).forEach(b=>{lastStatus2[b.id]=b.status||'A';lastSt2[b.id]=b.st;});
+      (today.events||[]).forEach(ev=>{
+        const prev=lastStatus2[ev.id];
+        if(prev==='A'&&(ev.status==='R'||ev.status==='X')){
+          depTime2[ev.id]={t:ev.t,st:lastSt2[ev.id]};
         }
-        if(ev.status) lastStatus[ev.id]=ev.status;
+        if((prev==='R'||prev==='X')&&ev.status==='A'&&depTime2[ev.id]){
+          const dep=depTime2[ev.id];
+          const arrSt=ev.st??lastSt2[ev.id];
+          if(dep.st&&arrSt&&dep.st!==arrSt){
+            tripCount[ev.id]=(tripCount[ev.id]||0)+1;
+            if(!tripHistory[ev.id]) tripHistory[ev.id]=[];
+            tripHistory[ev.id].push({dep_st:dep.st,arr_st:arrSt,dep_t:(dep.t||'').slice(11,16),arr_t:(ev.t||'').slice(11,16)});
+          }
+          delete depTime2[ev.id];
+        }
+        if(ev.status) lastStatus2[ev.id]=ev.status;
+        if(ev.st!=null) lastSt2[ev.id]=ev.st;
       });
-      // Injecter le compte dans les bikes
-      data.bikes=(data.bikes||[]).map(b=>({...b,trips:tripCount[b.id]||0}));
+      data.bikes=(data.bikes||[]).map(b=>({...b,trips:tripCount[b.id]||0,history:tripHistory[b.id]||[]}));
+      data._stNames=Object.fromEntries(allStations.map(s=>[s.number,(s.name||'').replace(/^\d+\s*[-–]\s*/,'').trim()]));
     }
     return data;
   }catch{ return null; }
@@ -2382,17 +2387,24 @@ function bikeRow(b,i){
 }
 
 function bikeDetailHtml(b){
+  const stNames=_bikesData?._stNames||{};
+  const stnName=n=>stNames[n]||(n?'#'+n:'?');
   const rows=[
-    ['Station', b.st?'#'+b.st+' · borne '+b.borne:'En trajet'],
+    ['Station', b.st?stnName(b.st)+' · borne '+b.borne:'En trajet'],
     b.type==='E'&&b.batt!=null?['Batterie', battHtml(b.batt)]:null,
     b.type==='M'&&b.mv?['Tension', b.mv+'mV']:null,
-    ['Note', b.rating?`<span style="color:#ff9f0a">${b.rating.toFixed(1)}</span> / 5 <span style="color:rgba(255,255,255,.5)">(${b.rcount||0} avis)</span>`:'—'],
+    ['Note', b.rating?`<span style="color:#ff9f0a">${b.rating.toFixed(1)}</span> / 5 <span style="color:rgba(255,255,255,.4)">(${b.rcount||0} avis)</span>`:'—'],
     ['Trajets auj.', b.trips||0],
     ['Dernière révision', b.rev||'—'],
-        ['Dernier contrôle', b.ctrl||'—'],
-    ['Dernier trajet', b.trip?b.trip.replace('T',' ').slice(0,16):'—'],
+    ['Dernier contrôle', b.ctrl||'—'],
   ].filter(Boolean);
-  return rows.map(([l,v])=>`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:0.5px solid rgba(255,255,255,.04)"><span style="color:rgba(255,255,255,.5)">${l}</span><span style="color:#fff;font-weight:500">${v}</span></div>`).join('');
+  let html=rows.map(([l,v])=>`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:0.5px solid rgba(255,255,255,.04)"><span style="color:rgba(255,255,255,.5)">${l}</span><span style="color:#fff;font-weight:500">${v}</span></div>`).join('');
+  const hist=(b.history||[]).slice().reverse().slice(0,5);
+  if(hist.length){
+    html+=`<div style="margin-top:5px;font-size:9px;color:rgba(255,255,255,.35);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Trajets du jour</div>`;
+    html+=hist.map(t=>`<div style="display:flex;align-items:center;gap:4px;padding:2px 0;border-bottom:0.5px solid rgba(255,255,255,.04);font-size:10px"><span style="color:rgba(255,255,255,.4);min-width:36px">${t.dep_t}</span><span style="color:#fff;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${stnName(t.dep_st)}</span><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg><span style="color:#fff;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right">${stnName(t.arr_st)}</span><span style="color:rgba(255,255,255,.4);min-width:36px;text-align:right">${t.arr_t}</span></div>`).join('');
+  }
+  return html;
 }
 
 function battHtml(pct){
