@@ -508,10 +508,16 @@ function parseStation(r){
 }
 async function loadLatest(){
   try{
-    const r=await fetch('https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov/all.json?maxfeatures=-1&start=1',{signal:AbortSignal.timeout(8000),cache:'no-store'});
-    return (await r.json()).values?.map(parseStation)||[];
+    const r=await fetch(`data/latest.json?t=${Date.now()}`,{cache:'no-store',signal:AbortSignal.timeout(8000)});
+    if(!r.ok) throw new Error('no local');
+    const d=await r.json();
+    // Normaliser number en int
+    return (d.stations||[]).map(s=>({...s,number:parseInt(s.number)||s.number}));
   }catch{
-    const r=await fetch(`data/latest.json?t=${Date.now()}`,{cache:'no-store'}); const d=await r.json(); return d.stations||[];
+    try{
+      const r=await fetch('https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov/all.json?maxfeatures=-1&start=1',{signal:AbortSignal.timeout(8000),cache:'no-store'});
+      return (await r.json()).values?.map(parseStation)||[];
+    }catch{ return []; }
   }
 }
 
