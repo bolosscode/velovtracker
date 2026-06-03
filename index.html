@@ -160,7 +160,6 @@ main{max-width:1500px;margin:auto;padding:20px}
   <div style="font-size:15px;font-weight:700;color:#fff;letter-spacing:-.01em">Vélo'v</div>
   <div style="display:flex;gap:2px">
     <div class="tab on" data-tab="map" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:#fff;font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg> Carte</div>
-    <div class="tab" data-tab="bikes" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:rgba(255,255,255,.55);font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2"/><path d="M12 17.5 10 7l-4.7 4.5 6.7 2"/><path d="m10 7 5 2.5"/></svg> Vélos</div>
     <div class="tab" data-tab="stats" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:rgba(255,255,255,.55);font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Stats</div>
   </div>
   <div style="display:flex;align-items:center;gap:8px">
@@ -247,39 +246,39 @@ main{max-width:1500px;margin:auto;padding:20px}
   </div>
 </div>
 
-<div class="panel" id="tab-stats" style="padding:10px;overflow-y:auto;max-height:100vh">
-  <!-- Fond carte floutée -->
-  <!-- Contrôles globaux -->
-  <!-- Contrôles globaux -->
-  <div class="card" style="backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);padding:12px;margin-bottom:8px">
-    <div class="card-title" style="margin-bottom:8px;font-size:10px">Période &amp; tri</div>
-    <div class="range" style="gap:5px;padding:8px">
-      <div style="display:flex;background:rgba(12,12,16,.45);border-radius:20px;padding:2px">
-        <button onclick="onLbViewChange('day')" id="lb-pill-day" style="padding:5px 14px;border:none;background:#3a3a3c;color:#fff;font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Jour</button>
-        <button onclick="onLbViewChange('month')" id="lb-pill-month" style="padding:5px 14px;border:none;background:transparent;color:rgba(255,255,255,.55);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Mois</button>
-        <button onclick="onLbViewChange('year')" id="lb-pill-year" style="padding:5px 14px;border:none;background:transparent;color:rgba(255,255,255,.55);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Année</button>
-      </div>
-      <input type="hidden" id="lb-view" value="day"/>
-      <input type="date" id="lb-date"/>
-      <input type="month" id="lb-month" style="display:none;padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);font-size:13px"/>
-      <select id="lb-year" style="display:none;padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);font-size:13px"><option value="2025">2025</option><option value="2026" selected>2026</option></select>
-      <select id="lb-sort">
-        <option value="mv">Mouvements ↕</option>
-        <option value="rotation">Taux de rotation</option>
-        <option value="stands">Places libres</option>
-        <option value="fill">% remplissage</option>
-      </select>
-      <input id="lb-station-search" type="text" placeholder="Station…" oninput="filterLbTable(this.value)" style="padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);background:rgba(12,12,16,.45);color:#fff;font-size:13px;outline:none;min-width:0;flex:1"/>
-      <button class="btn" onclick="computeLeaderboard()">Calculer</button>
-      <span id="lb-meteo" style="font-size:12px;color:rgba(255,255,255,.55)"></span>
-    </div>
+<div class="panel" id="tab-stats" style="overflow-y:auto;max-height:100vh">
+
+  <div style="display:flex;gap:0;border-bottom:0.5px solid rgba(255,255,255,.08);background:rgba(12,12,16,.45);backdrop-filter:blur(40px);padding:0 10px;position:sticky;top:0;z-index:10">
+    <div class="stats-subtab on" id="stab-stations" onclick="setStatsSubTab('stations',this)" style="padding:10px 16px;font-size:12px;font-weight:600;color:#fff;cursor:pointer;border-bottom:2px solid rgba(255,255,255,.6)">Stations</div>
+    <div class="stats-subtab" id="stab-velos" onclick="setStatsSubTab('velos',this)" style="padding:10px 16px;font-size:12px;font-weight:600;color:rgba(255,255,255,.45);cursor:pointer;border-bottom:2px solid transparent">Vélos</div>
+    <div class="stats-subtab" id="stab-trajets" onclick="setStatsSubTab('trajets',this)" style="padding:10px 16px;font-size:12px;font-weight:600;color:rgba(255,255,255,.45);cursor:pointer;border-bottom:2px solid transparent">Trajets</div>
   </div>
 
-  <!-- Layout responsive : 2 col desktop, 1 col mobile -->
-  <div id="stats-layout">
-
-    <!-- Table -->
-    <div class="card" style="backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);padding:0;overflow:hidden">
+  <div id="spanel-stations" style="padding:10px">
+    <div class="card" style="padding:12px;margin-bottom:8px">
+      <div class="card-title" style="margin-bottom:8px;font-size:10px">Période &amp; tri</div>
+      <div class="range" style="gap:5px;padding:8px">
+        <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px">
+          <button onclick="onLbViewChange('day')" id="lb-pill-day" style="padding:5px 14px;border:none;background:#3a3a3c;color:#fff;font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Jour</button>
+          <button onclick="onLbViewChange('month')" id="lb-pill-month" style="padding:5px 14px;border:none;background:transparent;color:rgba(255,255,255,.55);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Mois</button>
+          <button onclick="onLbViewChange('year')" id="lb-pill-year" style="padding:5px 14px;border:none;background:transparent;color:rgba(255,255,255,.55);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Année</button>
+        </div>
+        <input type="hidden" id="lb-view" value="day"/>
+        <input type="date" id="lb-date"/>
+        <input type="month" id="lb-month" style="display:none;padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);font-size:13px;background:rgba(12,12,16,.45);color:#fff"/>
+        <select id="lb-year" style="display:none;padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);font-size:13px"><option value="2025">2025</option><option value="2026" selected>2026</option></select>
+        <select id="lb-sort">
+          <option value="mv">Mouvements</option>
+          <option value="rotation">Rotation</option>
+          <option value="stands">Places libres</option>
+          <option value="fill">Remplissage</option>
+        </select>
+        <input id="lb-station-search" type="text" placeholder="Station…" oninput="filterLbTable(this.value)" style="padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);background:rgba(12,12,16,.45);color:#fff;font-size:13px;outline:none;min-width:0;flex:1"/>
+        <button class="btn" onclick="computeLeaderboard()">Calculer</button>
+        <span id="lb-meteo" style="font-size:12px;color:rgba(255,255,255,.55)"></span>
+      </div>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
       <div id="lb-content" style="overflow-x:auto;max-height:70vh;overflow-y:auto">
         <table id="lb-table" style="width:100%;border-collapse:collapse;font-size:13px">
           <thead id="lb-head"></thead>
@@ -287,39 +286,55 @@ main{max-width:1500px;margin:auto;padding:20px}
         </table>
       </div>
     </div>
-
-    <!-- Détail injecté dans le tableau -->
-
   </div>
-</div>
 
-<!-- ═══ PLANIFIER ═══ -->
-
-
-<div class="panel" id="tab-bikes" style="padding:10px;overflow-y:auto;max-height:100vh">
-  <div class="card" style="backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);padding:12px;margin-bottom:8px">
-    <div class="card-title" style="margin-bottom:8px">Tri & filtre</div>
-    <div class="range" style="gap:5px;padding:8px">
-      <div style="display:flex;background:rgba(12,12,16,.45);border-radius:20px;padding:2px">
-        <button onclick="onBikesSort('trips')" id="bk-pill-trips" style="padding:5px 14px;border:none;background:#3a3a3c;color:#fff;font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Trajets</button>
-        <button onclick="onBikesSort('rating')" id="bk-pill-rating" style="padding:5px 14px;border:none;background:transparent;color:rgba(255,255,255,.55);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Note</button>
-        <button onclick="onBikesSort('batt')" id="bk-pill-batt" style="padding:5px 14px;border:none;background:transparent;color:rgba(255,255,255,.55);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Batterie</button>
+  <div id="spanel-velos" style="padding:10px;display:none">
+    <div class="card" style="padding:12px;margin-bottom:8px">
+      <div class="card-title" style="margin-bottom:8px;font-size:10px">Tri & filtre</div>
+      <div class="range" style="gap:5px;padding:8px">
+        <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px">
+          <button onclick="onBikesSort('trips')" id="bk-pill-trips" style="padding:5px 14px;border:none;background:#3a3a3c;color:#fff;font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Trajets</button>
+          <button onclick="onBikesSort('rating')" id="bk-pill-rating" style="padding:5px 14px;border:none;background:transparent;color:rgba(255,255,255,.55);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Note</button>
+          <button onclick="onBikesSort('batt')" id="bk-pill-batt" style="padding:5px 14px;border:none;background:transparent;color:rgba(255,255,255,.55);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Batterie</button>
+        </div>
+        <select id="bk-type" onchange="renderBikesTable()">
+          <option value="all">Tous</option>
+          <option value="E">Élec</option>
+          <option value="M">Méca</option>
+        </select>
+        <input id="bk-search" type="text" placeholder="N° vélo…" oninput="renderBikesTable()" style="padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);background:rgba(12,12,16,.45);color:#fff;font-size:13px;outline:none;min-width:0;flex:1"/>
       </div>
-      <select id="bk-type" onchange="renderBikesTable()">
-        <option value="all">Tous</option>
-        <option value="E">Élec</option>
-        <option value="M">Méca</option>
-      </select>
-      <input id="bk-search" type="text" placeholder="N° vélo…" oninput="renderBikesTable()" style="padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);background:rgba(12,12,16,.45);color:#fff;font-size:13px;outline:none;min-width:0;flex:1"/>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div id="bk-content" style="overflow-x:auto;max-height:70vh;overflow-y:auto">
+        <div class="loader">Charge les données vélos…</div>
+      </div>
     </div>
   </div>
-  <div class="card" style="backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);padding:0;overflow:hidden">
-    <div id="bk-content" style="overflow-x:auto;max-height:70vh;overflow-y:auto">
-      <div class="loader">Charge les données vélos…</div>
-    </div>
-  </div>
-</div>
 
+  <div id="spanel-trajets" style="padding:10px;display:none">
+    <div class="card" style="padding:12px;margin-bottom:8px">
+      <div class="card-title" style="margin-bottom:8px;font-size:10px">Flux entre stations</div>
+      <div class="range" style="gap:5px;padding:8px">
+        <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px">
+          <button onclick="onTrajetsView('today')" id="tr-pill-today" style="padding:5px 14px;border:none;background:#3a3a3c;color:#fff;font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Aujourd'hui</button>
+          <button onclick="onTrajetsView('history')" id="tr-pill-history" style="padding:5px 14px;border:none;background:transparent;color:rgba(255,255,255,.55);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Historique</button>
+        </div>
+        <select id="tr-type" onchange="renderTrajets()">
+          <option value="all">Tous</option>
+          <option value="E">Élec</option>
+          <option value="M">Méca</option>
+        </select>
+      </div>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div id="tr-content" style="overflow-x:auto;max-height:40vh;overflow-y:auto">
+        <div class="loader">Calcul des trajets…</div>
+      </div>
+    </div>
+  </div>
+
+</div>
 </main>
 <script>
 'use strict';
@@ -440,7 +455,7 @@ document.querySelectorAll('.tab').forEach(tab=>{
     if(tab.dataset.tab==='stats'){
       quickLeaderboard();
     }
-    if(tab.dataset.tab==='bikes') initBikesTab();
+    
     if(tab.dataset.tab==='plan') initPlanMap();
   };
 });
@@ -2505,6 +2520,80 @@ async function loadComboBikes(idx){
 // Temps de marche : 1m ≈ 1.25min, min 1 min
 function walkMinutes(dist){ return Math.max(1, Math.round(dist/1000/5*60)); }
 function walkDistM(dist){ return Math.round(dist); }
+
+
+/* ═══ STATS SUB-TABS ════════════════════════════════════════════════════ */
+let _statsSubTab='stations';
+function setStatsSubTab(tab, el){
+  _statsSubTab=tab;
+  ['stations','velos','trajets'].forEach(t=>{
+    const p=document.getElementById('spanel-'+t);
+    const btn=document.getElementById('stab-'+t);
+    if(p) p.style.display=t===tab?'block':'none';
+    if(btn){
+      btn.style.color=t===tab?'#fff':'rgba(255,255,255,.45)';
+      btn.style.borderBottomColor=t===tab?'rgba(255,255,255,.6)':'transparent';
+    }
+  });
+  if(tab==='velos') initBikesTab();
+  if(tab==='trajets') initTrajets();
+}
+
+/* ═══ TRAJETS ════════════════════════════════════════════════════════════ */
+let _trajetsView='today';
+function onTrajetsView(v){
+  _trajetsView=v;
+  ['today','history'].forEach(t=>{
+    const btn=document.getElementById('tr-pill-'+t);
+    if(btn){ btn.style.background=t===v?'#3a3a3c':'transparent'; btn.style.color=t===v?'#fff':'rgba(255,255,255,.55)'; }
+  });
+  renderTrajets();
+}
+
+async function initTrajets(){
+  if(!_bikesData) _bikesData=await loadBikesData();
+  renderTrajets();
+}
+
+function renderTrajets(){
+  const el=document.getElementById('tr-content');
+  if(!_bikesData){ el.innerHTML='<div class="no-data">Données vélos non disponibles.</div>'; return; }
+  const typeF=document.getElementById('tr-type')?.value||'all';
+  const stNames=_bikesData._stNames||{};
+  const stnName=n=>stNames[n]||(n?'#'+n:'?');
+  // Compter les flux depuis l'historique des trajets
+  const fluxMap={};
+  (_bikesData.bikes||[]).forEach(b=>{
+    if(typeF!=='all'&&b.type!==typeF) return;
+    (b.history||[]).forEach(t=>{
+      const key=t.dep_st+'→'+t.arr_st;
+      if(!fluxMap[key]) fluxMap[key]={dep:t.dep_st,arr:t.arr_st,count:0,type:b.type};
+      fluxMap[key].count++;
+    });
+  });
+  const rows=Object.values(fluxMap).sort((a,b)=>b.count-a.count).slice(0,30);
+  if(!rows.length){ el.innerHTML='<div class="no-data">Aucun trajet aujourd\'hui.</div>'; return; }
+  const maxCount=rows[0].count;
+  el.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead><tr>
+      <th style="padding:5px 8px;border-bottom:0.5px solid rgba(255,255,255,.1);font-size:10px;font-weight:600;color:rgba(255,255,255,.5);background:rgba(12,12,16,.45)">#</th>
+      <th style="padding:5px 8px;border-bottom:0.5px solid rgba(255,255,255,.1);font-size:10px;font-weight:600;color:rgba(255,255,255,.5);background:rgba(12,12,16,.45)">Départ</th>
+      <th style="padding:5px 8px;border-bottom:0.5px solid rgba(255,255,255,.1);font-size:10px;font-weight:600;color:rgba(255,255,255,.5);background:rgba(12,12,16,.45)">Arrivée</th>
+      <th style="padding:5px 8px;border-bottom:0.5px solid rgba(255,255,255,.1);font-size:10px;font-weight:600;color:rgba(255,255,255,.5);background:rgba(12,12,16,.45)">Volume</th>
+    </tr></thead>
+    <tbody>${rows.map((r,i)=>`<tr>
+      <td style="padding:5px 8px;border-bottom:0.5px solid rgba(255,255,255,.05);color:rgba(255,255,255,.5)">${i+1}</td>
+      <td style="padding:5px 8px;border-bottom:0.5px solid rgba(255,255,255,.05);color:#fff">${stnName(r.dep)}</td>
+      <td style="padding:5px 8px;border-bottom:0.5px solid rgba(255,255,255,.05);color:#fff">${stnName(r.arr)}</td>
+      <td style="padding:5px 8px;border-bottom:0.5px solid rgba(255,255,255,.05)">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="height:4px;border-radius:2px;background:#0a84ff;width:${Math.round(r.count/maxCount*80)}px"></div>
+          <span style="color:#fff;font-weight:600">${r.count}</span>
+        </div>
+      </td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
 
 /* ═══ BOOT ════════════════════════════════════════════ */
 async function boot(){
