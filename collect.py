@@ -25,31 +25,19 @@ TIMEOUT      = 15
 
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# ── Token Playwright ─────────────────────────────────────────────────────────
+# ── Token depuis data/token.json ────────────────────────────────────────────
 def get_token():
+    token_f = Path("data/token.json")
+    if not token_f.exists():
+        print("ERREUR: data/token.json introuvable — lancez refresh_token.py d'abord")
+        sys.exit(1)
     try:
-        from playwright.sync_api import sync_playwright
-    except ImportError:
-        print("ERREUR: playwright non installé"); sys.exit(1)
-    state = {'token': None}
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        ctx = browser.new_context(
-            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36',
-            viewport={'width': 1280, 'height': 800}
-        )
-        page = ctx.new_page()
-        def on_req(r):
-            auth = r.headers.get('authorization', '')
-            if auth and 'cyclocity.fr' in r.url:
-                state['token'] = auth
-        page.on('request', on_req)
-        page.goto('https://velov.grandlyon.com', wait_until='domcontentloaded', timeout=30000)
-        page.wait_for_timeout(5000)
-        browser.close()
-    if not state['token']:
-        print("ERREUR: token non trouvé"); sys.exit(1)
-    return state['token']
+        data = json.loads(token_f.read_text())
+        token_type = data.get('token_type', 'Taknv1')
+        access_token = data['access_token']
+        return f"{token_type} {access_token}"
+    except Exception as e:
+        print(f"ERREUR lecture token: {e}"); sys.exit(1)
 
 # ── Métadonnées stations ──────────────────────────────────────────────────────
 def load_station_meta():
