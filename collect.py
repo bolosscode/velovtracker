@@ -1,179 +1,236 @@
 #!/usr/bin/env python3
 """
-collect.py — Collecte temps réel Vélo'v Lyon.
-- Fetch état complet → latest.json
-- Ajoute delta dans today.json
-- Reset today.json à 2h00 (heure Paris)
+collect_bikes.py — Collecte tous les vélos JCDecaux et reconstruit les données stations.
+Génère :
+  data/latest.json          — stations (compatible avec l'existant)
+  data/bikes/latest.json    — état live de tous les vélos
+  data/bikes/today.json     — événements du jour (base + deltas)
 """
-import os, json, sys, csv, io, ast, requests
-from datetime import datetime, timezone, timedelta
+import os, sys, json, time, concurrent.futures
+from datetime import datetime, timezone, date, timedelta
+from pathlib import Path
+import urllib.request, urllib.error
 
-LIVE_URL = (
-    "https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov"
-    "/all.csv?maxfeatures=-1&start=1"
-)
-METEO_URL = (
-    "https://api.open-meteo.com/v1/forecast"
-    "?latitude=45.75&longitude=4.83"
-    "&current=precipitation,rain,weathercode,temperature_2m"
-    "&timezone=Europe%2FParis"
-)
-VAE_LAUNCH  = '2025-01-29'
-TODAY_FILE  = 'data/today.json'
-LATEST_FILE = 'data/latest.json'
-RESET_HOUR  = 0  # reset à minuit heure locale Paris
+OUT_DIR   = Path("data/bikes")
+TODAY_F   = OUT_DIR / "today.json"
+BIKES_F   = OUT_DIR / "latest.json"
+LATEST_F  = Path("data/latest.json")
+META_F    = Path("data/stations_meta.json")
 
-def parse_stands(raw):
-    if not raw or raw.strip() in ('', '""', "''"):
-        return {}
+STATIONS_URL = "https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov/all.json?maxfeatures=-1&start=1"
+BIKES_URL    = lambda n: f"https://api.cyclocity.fr/contracts/lyon/bikes?stationNumber={n}"
+ACCEPT       = "application/vnd.bikes.v4+json"
+TIMEOUT      = 15
+
+OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+# ── Token Playwright ─────────────────────────────────────────────────────────
+def get_token():
     try:
-        return ast.literal_eval(raw.strip().strip('"'))
-    except Exception:
-        pass
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        print("ERREUR: playwright non installé"); sys.exit(1)
+    state = {'token': None}
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        ctx = browser.new_context(
+            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36',
+            viewport={'width': 1280, 'height': 800}
+        )
+        page = ctx.new_page()
+        def on_req(r):
+            auth = r.headers.get('authorization', '')
+            if auth and 'cyclocity.fr' in r.url:
+                state['token'] = auth
+        page.on('request', on_req)
+        page.goto('https://velov.grandlyon.com', wait_until='domcontentloaded', timeout=30000)
+        page.wait_for_timeout(5000)
+        browser.close()
+    if not state['token']:
+        print("ERREUR: token non trouvé"); sys.exit(1)
+    return state['token']
+
+# ── Métadonnées stations ──────────────────────────────────────────────────────
+def load_station_meta():
+    """Charge les métadonnées stations (nom, lat, lng, capacité)."""
+    if META_F.exists():
+        return json.loads(META_F.read_text())
+    # Fallback: fetch depuis Grand Lyon
     try:
-        return json.loads(raw.strip().strip('"').replace("'", '"'))
-    except Exception:
-        return {}
-
-def safe_int(v):
-    try: return int(v or 0)
-    except Exception: return 0
-
-def parse_station(row, today):
-    tot   = parse_stands(row.get('total_stands', '') or row.get('main_stands', ''))
-    tav   = tot.get('availabilities', {}) if isinstance(tot, dict) else {}
-    bikes = safe_int(tav.get('bikes'))
-    cap   = safe_int(tot.get('capacity') if isinstance(tot, dict) else 0)
-    stands = (cap - bikes) if cap else safe_int(tav.get('stands'))
-    if today >= VAE_LAUNCH:
-        elec = safe_int(tav.get('electricalInternalBatteryBikes'))
-        meca = safe_int(tav.get('mechanicalBikes')) + safe_int(tav.get('electricalRemovableBatteryBikes'))
-    else:
-        elec = 0
-        meca = bikes
-    try:
-        lat = float(row.get('lat', '0').replace(',', '.'))
-        lng = float(row.get('lng', '0').replace(',', '.'))
-    except Exception:
-        lat = lng = None
-    return {
-        "number": safe_int(row.get('number')), "name": row.get('name', ''),
-        "available_bikes": bikes, "available_bike_stands": stands,
-        "bike_stands": cap, "electrical_bikes": elec, "mechanical_bikes": meca,
-        "status": row.get('status', 'OPEN'), "lat": lat, "lng": lng,
-    }
-
-def fetch_meteo():
-    try:
-        r = requests.get(METEO_URL, timeout=10)
-        r.raise_for_status()
-        cur = r.json().get('current', {})
-        precip = cur.get('precipitation', 0) or 0
-        return {"precipitation": round(precip, 2), "rain": precip > 0.1,
-                "weathercode": cur.get('weathercode', 0) or 0,
-                "temp": round(cur.get('temperature_2m', 0) or 0, 1)}
-    except Exception:
-        return None
-
-def main():
-    now    = datetime.now(timezone.utc)
-    paris  = now + timedelta(hours=2)  # approximation UTC+2 (heure d'été)
-    ts     = now.isoformat(timespec='seconds')
-    today  = now.strftime('%Y-%m-%d')
-
-    # ── Fetch live ────────────────────────────────────────────────────────────
-    try:
-        r = requests.get(LIVE_URL, timeout=30)
-        r.raise_for_status()
-        reader = csv.DictReader(io.StringIO(r.text.lstrip('\ufeff')), delimiter=';')
-        stations = [parse_station(row, today) for row in reader]
-        stations = [s for s in stations if s['number']]
+        req = urllib.request.Request(STATIONS_URL)
+        with urllib.request.urlopen(req, timeout=30) as r:
+            data = json.loads(r.read())
+            meta = {}
+            for s in data.get('values', []):
+                meta[s['number']] = {
+                    'number': s['number'],
+                    'name': s['name'],
+                    'lat': s['lat'],
+                    'lng': s['lng'],
+                    'bike_stands': s['bike_stands']
+                }
+            META_F.write_text(json.dumps(meta, ensure_ascii=False, separators=(',', ':')))
+            print(f"  Métadonnées: {len(meta)} stations", flush=True)
+            return meta
     except Exception as e:
-        print(f"ERREUR live : {e}", file=sys.stderr)
-        sys.exit(1)
+        print(f"  AVERT: métadonnées non disponibles ({e})", flush=True)
+        return {}
 
-    meteo = fetch_meteo()
+# ── Fetch bikes d'une station ────────────────────────────────────────────────
+def fetch_station_bikes(args):
+    station_number, token = args
+    req = urllib.request.Request(
+        BIKES_URL(station_number),
+        headers={'Authorization': token, 'Accept': ACCEPT, 'Content-Type': ACCEPT}
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
+            return station_number, json.loads(r.read())
+    except Exception:
+        return station_number, []
 
-    # ── latest.json ───────────────────────────────────────────────────────────
-    os.makedirs("data", exist_ok=True)
-    snapshot = {"timestamp": ts, "stations": stations}
-    if meteo:
-        snapshot["meteo"] = meteo
-    with open(LATEST_FILE, "w", encoding="utf-8") as f:
-        json.dump(snapshot, f, ensure_ascii=False, separators=(",", ":"))
+# ── Normaliser un vélo ────────────────────────────────────────────────────────
+def normalize(b):
+    out = {
+        'id':     b['number'],
+        'type':   'E' if b['type'] == 'ELECTRICAL' else 'M',
+        'st':     b.get('stationNumber'),
+        'borne':  b.get('standNumber'),
+        'status': b.get('status', 'UNKNOWN')[:1],
+        'rating': round(b['rating']['value'], 1) if b.get('rating', {}).get('value') else None,
+        'rcount': b['rating'].get('count', 0) if b.get('rating') else 0,
+        'rev':    b.get('lastRevisionDateTime', '')[:10] or None,
+        'ctrl':   b.get('lastControlDateTime', '')[:10] or None,
+        'trip':   b.get('lastTripDateTime', '')[:16] or None,
+    }
+    if b['type'] == 'ELECTRICAL' and b.get('battery'):
+        out['batt'] = b['battery'].get('percentage')
+    if b.get('bikeBatteryMv'):
+        out['mv'] = b['bikeBatteryMv']
+    return out
 
-    # ── today.json ────────────────────────────────────────────────────────────
-    FIELDS = ['b', 's', 'c', 'e', 'm', 'st']
+# ── Main ──────────────────────────────────────────────────────────────────────
+def main():
+    print(f"[{datetime.now().isoformat(timespec='seconds')}] collect_bikes", flush=True)
+    t0 = time.time()
 
-    def st_compact(s):
-        return {'n': s['number'], 'b': s['available_bikes'],
-                's': s['available_bike_stands'], 'c': s['bike_stands'],
-                'e': s['electrical_bikes'], 'm': s['mechanical_bikes'],
-                'st': s['status']}
+    token = get_token()
+    print(f"  Token OK ({time.time()-t0:.1f}s)", flush=True)
 
-    curr_by_n = {s['number']: st_compact(s) for s in stations}
+    meta = load_station_meta()
+    station_numbers = [int(k) if str(k).isdigit() else k for k in meta.keys()] if meta else []
 
-    # Reset si on est après RESET_HOUR et que le fichier date d'avant
-    should_reset = paris.hour == RESET_HOUR and paris.minute < 2
-
-    today_data = None
-    if os.path.exists(TODAY_FILE) and not should_reset:
+    # Fallback si meta vide
+    if not station_numbers and BIKES_F.exists():
         try:
-            with open(TODAY_FILE, encoding='utf-8') as f:
-                today_data = json.load(f)
-            # Vérifier que c'est bien du jour
-            base_date = (today_data.get('base', {}).get('t', '') or '')[:10]
-            if base_date != today:
-                today_data = None  # date différente → reset
-        except Exception:
-            today_data = None
+            prev = json.loads(BIKES_F.read_text())
+            station_numbers = list(set(b['st'] for b in prev.get('bikes', []) if b.get('st')))
+            print(f"  Fallback: {len(station_numbers)} stations depuis latest.json", flush=True)
+        except: pass
+
+    if not station_numbers:
+        print("ERREUR: aucune station disponible"); sys.exit(1)
+
+    # Fetch en parallèle
+    print(f"  Fetch {len(station_numbers)} stations…", flush=True)
+    bikes_by_station = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=60) as ex:
+        for stn, bikes in ex.map(fetch_station_bikes, [(n, token) for n in station_numbers]):
+            bikes_by_station[stn] = bikes
+
+    # Normaliser tous les vélos
+    now_ts = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S')
+    current_bikes = {}
+    for bikes in bikes_by_station.values():
+        for b in bikes:
+            nb = normalize(b)
+            current_bikes[nb['id']] = nb
+
+    total_bikes = len(current_bikes)
+    print(f"  {total_bikes} vélos ({time.time()-t0:.1f}s)", flush=True)
+
+    # ── Écrire data/bikes/latest.json ──
+    BIKES_F.write_text(json.dumps({
+        't': now_ts,
+        'bikes': list(current_bikes.values())
+    }, ensure_ascii=False, separators=(',', ':')))
+
+    # ── Reconstruire data/latest.json (format stations compatible) ──
+    stations_live = []
+    for stn_num, bikes in bikes_by_station.items():
+        m = meta.get(stn_num, {}) or meta.get(str(stn_num), {}) or meta.get(int(stn_num) if str(stn_num).isdigit() else stn_num, {})
+        if not m: continue
+        available = [b for b in bikes if b.get('status') == 'AVAILABLE']
+        elec = [b for b in available if b['type'] == 'ELECTRICAL']
+        meca = [b for b in available if b['type'] == 'MECHANICAL']
+        total_avail = len(available)
+        capacity = m.get('bike_stands', 0)
+        stations_live.append({
+            'number': int(stn_num) if str(stn_num).isdigit() else stn_num,
+            'name': m.get('name', ''),
+            'available_bikes': total_avail,
+            'available_bike_stands': max(0, capacity - total_avail),
+            'bike_stands': capacity,
+            'electrical_bikes': len(elec),
+            'mechanical_bikes': len(meca),
+            'status': 'OPEN',
+            'lat': m.get('lat'),
+            'lng': m.get('lng'),
+        })
+
+    LATEST_F.write_text(json.dumps({
+        'timestamp': now_ts,
+        'stations': stations_live
+    }, ensure_ascii=False, separators=(',', ':')))
+    print(f"  {len(stations_live)} stations reconstituées", flush=True)
+
+    # ── Mettre à jour data/bikes/today.json ──
+    today_str = date.today().isoformat()
+    today_data = None
+    if TODAY_F.exists():
+        try:
+            td = json.loads(TODAY_F.read_text())
+            if td.get('date') == today_str:
+                today_data = td
+        except: pass
 
     if today_data is None:
-        # Nouveau fichier today : snapshot complet en base
         today_data = {
-            "base": {"t": ts, "s": list(curr_by_n.values())},
-            "deltas": []
+            'date': today_str,
+            'base': {'t': now_ts, 'bikes': list(current_bikes.values())},
+            'events': []
         }
-        if meteo:
-            today_data["base"]["meteo"] = meteo
+        TODAY_F.write_text(json.dumps(today_data, ensure_ascii=False, separators=(',', ':')))
+        print(f"  Nouveau today.json (base: {total_bikes} vélos)", flush=True)
     else:
-        # Calculer le delta depuis le dernier état connu
-        # Reconstruire l'état précédent depuis base + deltas
-        prev_by_n = {st['n']: {**st} for st in today_data['base']['s']}
-        for d in today_data['deltas']:
-            for ch in d.get('d', []):
-                n = ch['n']
-                if n not in prev_by_n:
-                    prev_by_n[n] = {'n': n}
-                prev_by_n[n].update(ch)
+        prev_bikes = {b['id']: b for b in today_data['base']['bikes']}
+        for ev in today_data['events']:
+            bid = ev['id']
+            if bid not in prev_bikes: prev_bikes[bid] = {'id': bid}
+            prev_bikes[bid].update({k: v for k, v in ev.items() if k not in ('id', 't')})
 
-        changed = []
-        for n, curr in curr_by_n.items():
-            prev = prev_by_n.get(n)
-            if prev is None:
-                changed.append(curr)
-            else:
-                diff = {'n': n}
-                for f in FIELDS:
-                    if curr.get(f) != prev.get(f):
-                        diff[f] = curr.get(f)
-                if len(diff) > 1:
-                    changed.append(diff)
-        for n in prev_by_n:
-            if n not in curr_by_n:
-                changed.append({'n': n, 'st': 'CLOSED'})
+        TRACKED = ('st', 'borne', 'status', 'batt', 'mv', 'rating', 'rcount')
+        events = []
+        for bid, cur in current_bikes.items():
+            prev = prev_bikes.get(bid, {})
+            diff = {'id': bid, 't': now_ts}
+            for k in TRACKED:
+                if cur.get(k) != prev.get(k):
+                    diff[k] = cur.get(k)
+            if len(diff) > 2:
+                events.append(diff)
+        for bid in prev_bikes:
+            if bid not in current_bikes:
+                events.append({'id': bid, 't': now_ts, 'status': 'X'})
 
-        delta = {"t": ts, "d": changed}
-        if meteo:
-            delta["meteo"] = meteo
-        today_data["deltas"].append(delta)
+        if events:
+            today_data['events'].extend(events)
+            TODAY_F.write_text(json.dumps(today_data, ensure_ascii=False, separators=(',', ':')))
+            print(f"  {len(events)} événements (total: {len(today_data['events'])})", flush=True)
+        else:
+            print(f"  Aucun changement", flush=True)
 
-    with open(TODAY_FILE, "w", encoding="utf-8") as f:
-        json.dump(today_data, f, ensure_ascii=False, separators=(",", ":"))
+    print(f"  Done {time.time()-t0:.1f}s", flush=True)
 
-    n_deltas = len(today_data.get('deltas', []))
-    size_kb  = os.path.getsize(TODAY_FILE) // 1024
-    print(f"[{ts}] OK — {len(stations)} stations | {n_deltas} deltas | today={size_kb}Ko")
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
