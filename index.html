@@ -2514,6 +2514,8 @@ async function boot(){
   initMap();
   renderStations();
   initPlanMap();
+  // Charger les données vélos en arrière-plan
+  loadBikesData().then(d=>{ if(d) _bikesData=d; });
 }
 boot();
 setInterval(async()=>{ allStations=await loadLatest(); window._lastStationUpdate=Date.now(); updateLiveStatus(); await computeMovements(); renderStations(); },5*60*1000);
