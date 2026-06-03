@@ -627,7 +627,7 @@ function getSts(snap){
   else if(Array.isArray(snap?.stations)) a=snap.stations;
   else if(Array.isArray(snap?.s)) a=snap.s;
   return a.map(st=>{
-    if(st.number!==undefined) return st;
+    if(!st.n) return st;
     return {number:st.n,available_bikes:st.b??0,available_bike_stands:st.s??0,
       bike_stands:st.c??0,electrical_bikes:st.e??0,mechanical_bikes:st.m??0,lat:st.la,lng:st.ln};
   });
@@ -1174,9 +1174,9 @@ async function fetchCurrentMeteo(){
       precipitation: cur.precipitation||0,
       rain: (cur.precipitation||0)>0.1,
       weathercode: cur.weathercode||0,
-      temp: cur.temperature_2m !== undefined ? Math.round(cur.temperature_2m*10)/10 : undefined,
-      wind: cur.windspeed_10m !== undefined ? Math.round(cur.windspeed_10m) : undefined,
-      winddir: cur.winddirection_10m !== undefined ? Math.round(cur.winddirection_10m) : undefined,
+      temp: cur.temperature_2m !== undefined ? Math.round(cur.temperature_2m*10)/10 : null,
+      wind: cur.windspeed_10m !== undefined ? Math.round(cur.windspeed_10m) : null,
+      winddir: cur.winddirection_10m !== undefined ? Math.round(cur.winddirection_10m) : null,
     };
   }catch{ return null; }
 }
@@ -2044,7 +2044,7 @@ function showStationPopup(s, lat, lon){
   window._popupStation={s,lat,lon};
   const hasDep=!!(window._planFromPos||planFromPos||planFromFixed);
   const pct=s.bike_stands?Math.round(s.available_bikes/s.bike_stands*100):0;
-  const cls=pct>=50?'#34c759':pct>=25?'#ff9f0a':'#ff453a';
+  const cls='rgba(255,255,255,.7)';
 
   // Convertir lat/lng en coordonnées pixel sur la carte
   const pt=map.latLngToContainerPoint([lat,lon]);
@@ -2072,7 +2072,6 @@ function showStationPopup(s, lat, lon){
 
   const bikesHtml=stationBikes.length?`
     <div style="margin-bottom:${hasDep?'5':'8'}px">
-      <div style="font-size:9px;color:rgba(255,255,255,.5);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">vélos · borne · batt · # · note</div>
       ${stationBikes.map(b=>{
         const isElec=b.type==='E';
         const reserved=b.status==='S';
@@ -2083,8 +2082,8 @@ function showStationPopup(s, lat, lon){
         let autoEl='';
         if(isElec&&b.batt!=null){
           const km=Math.round(b.batt*40/100);
-          battEl=`<span style="font-size:9px;font-weight:600;color:#fff;min-width:24px">${b.batt}%</span>`;
-          autoEl=`<span style="font-size:8px;color:rgba(255,255,255,.35);min-width:26px">~${km}km</span>`;
+          battEl=`<span style="font-size:9px;font-weight:600;color:#fff;min-width:50px">${b.batt}% <span style="font-size:8px;color:rgba(255,255,255,.3)">~${km}km</span></span>`;
+          autoEl='';
         }
         const ratingEl=b.rating?`<span style="font-size:8px;color:rgba(255,255,255,.7)">${b.rating.toFixed(1)}<span style="color:rgba(255,255,255,.28)">${b.rcount?'('+b.rcount+')':''}</span></span>`:'';
         const reservedEl=reserved?'<span style="font-size:8px;color:rgba(255,255,255,.5)">rés.</span>':'';;
