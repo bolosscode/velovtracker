@@ -8,6 +8,7 @@ Génère :
 """
 import os, sys, json, time, concurrent.futures
 from datetime import datetime, timezone, date, timedelta
+import time as _time
 from pathlib import Path
 import urllib.request, urllib.error
 
@@ -139,7 +140,8 @@ def main():
             bikes_by_station[stn] = bikes
 
     # Normaliser tous les vélos
-    now_ts = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S')
+    import zoneinfo; tz=zoneinfo.ZoneInfo('Europe/Paris')
+    now_ts = datetime.now(tz).strftime('%Y-%m-%dT%H:%M:%S')  # heure Paris
     current_bikes = {}
     for bikes in bikes_by_station.values():
         for b in bikes:
