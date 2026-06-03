@@ -37,4 +37,5 @@ jobs:
           git diff --staged --quiet && exit 0
           git commit -m "data: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
           git fetch origin main
-          git push origin HEAD:main --force-with-lease=main:origin/main
+          git rebase -X ours origin/main
+          git push
