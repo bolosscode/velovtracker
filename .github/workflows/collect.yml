@@ -16,25 +16,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
       - name: Install deps
         run: |
           pip install requests playwright
           playwright install chromium --with-deps
+
       - name: Collecter
         run: python collect_bikes.py
+
       - name: Commit & push
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/
-          git diff --staged --quiet && exit 0
-          git stash
+          # Sauvegarder les nouveaux fichiers
+          cp data/bikes/latest.json /tmp/bikes_latest.json
+          cp data/bikes/today.json /tmp/bikes_today.json 2>/dev/null || true
+          cp data/latest.json /tmp/stations_latest.json
+          # Revenir à l'état du remote
           git fetch origin main
           git reset --hard origin/main
-          git stash pop
-          git add data/
+          # Restaurer les nouveaux fichiers
+          cp /tmp/bikes_latest.json data/bikes/latest.json
+          cp /tmp/bikes_today.json data/bikes/today.json 2>/dev/null || true
+          cp /tmp/stations_latest.json data/latest.json
+          # Commit
+          git add data/bikes/latest.json data/bikes/today.json data/latest.json
+          git diff --staged --quiet && exit 0
           git commit -m "data: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
           git push
