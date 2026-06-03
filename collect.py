@@ -186,6 +186,36 @@ def main():
     }, ensure_ascii=False, separators=(',', ':')))
     print(f"  {len(stations_live)} stations reconstituées", flush=True)
 
+    # ── Mettre à jour data/today.json (snapshots stations intraday) ──
+    TODAY_STATIONS_F = Path("data/today.json")
+    today_str = date.today().isoformat()
+
+    # Snapshot compact : {number: [available_bikes, electrical_bikes, mechanical_bikes, available_bike_stands]}
+    snap = {str(s['number']): [s['available_bikes'], s['electrical_bikes'], s['mechanical_bikes'], s['available_bike_stands']]
+            for s in stations_live}
+
+    ts_data = None
+    if TODAY_STATIONS_F.exists():
+        try:
+            td = json.loads(TODAY_STATIONS_F.read_text())
+            if td.get('date') == today_str:
+                ts_data = td
+        except: pass
+
+    if ts_data is None:
+        ts_data = {
+            'date': today_str,
+            'snapshots': [{
+                't': now_ts,
+                's': snap
+            }]
+        }
+    else:
+        ts_data['snapshots'].append({'t': now_ts, 's': snap})
+
+    TODAY_STATIONS_F.write_text(json.dumps(ts_data, ensure_ascii=False, separators=(',', ':')))
+    print(f"  today.json stations: {len(ts_data['snapshots'])} snapshots", flush=True)
+
     # ── Mettre à jour data/bikes/today.json ──
     today_str = date.today().isoformat()
     today_data = None
