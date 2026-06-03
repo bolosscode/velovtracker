@@ -11,29 +11,73 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  collect:
-    name: JCDecaux
+  collect-stations:
+    name: Stations Grand Lyon
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - run: pip install requests
+      - name: Collecter stations
+        env:
+          STATION_IDS: ${{ vars.STATION_IDS }}
+        run: python collect.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: data-stations
+          path: |
+            data/today.json
+            data/latest.json
+          retention-days: 1
 
-      - name: Install deps
-        run: |
-          pip install requests playwright
-          playwright install chromium --with-deps
-
-      - name: Collecter
+  collect-bikes:
+    name: Vélos JCDecaux
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Collecter vélos
         run: python collect_bikes.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: data-bikes
+          path: |
+            data/bikes/latest.json
+            data/bikes/today.json
+          retention-days: 1
 
+  commit:
+    name: Commit & push
+    needs: [collect-stations, collect-bikes]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: data-stations
+          path: data/
+        continue-on-error: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: data-bikes
+          path: data/bikes/
+        continue-on-error: true
       - name: Commit & push
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/bikes/latest.json data/bikes/today.json data/latest.json data/today.json
+          git add data/today.json data/latest.json data/bikes/latest.json data/bikes/today.json
           git diff --staged --quiet && exit 0
           git commit -m "data: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
           git fetch origin main
