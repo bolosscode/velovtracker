@@ -39,7 +39,7 @@ def get_token_playwright():
     except ImportError:
         print("ERREUR: playwright non installé"); sys.exit(1)
 
-    state = {'access_token': None, 'refresh_token': None}
+    state = {'access_token': None, 'refresh_token': None, 'token_type': 'Taknv1'}
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -50,19 +50,32 @@ def get_token_playwright():
         page = ctx.new_page()
 
         def on_response(r):
-            if 'openid-connect/token' in r.url:
+            if 'openid-connect/token' in r.url or 'cyclocity.fr' in r.url:
                 try:
-                    body = r.json()
-                    if 'access_token' in body:
-                        state['access_token'] = body['access_token']
-                        state['refresh_token'] = body.get('refresh_token')
-                        print(f"  Tokens capturés depuis: {r.url[:60]}", flush=True)
+                    # Pour les appels token IAM
+                    if 'openid-connect/token' in r.url:
+                        body = r.json()
+                        if 'access_token' in body:
+                            state['access_token'] = body['access_token']
+                            state['refresh_token'] = body.get('refresh_token')
+                            print(f"  Token IAM capturé", flush=True)
                 except: pass
 
+        def on_request(r):
+            auth = r.headers.get('authorization', '')
+            if auth and 'cyclocity.fr' in r.url:
+                # Extraire le token depuis le header Authorization
+                parts = auth.split(' ', 1)
+                if len(parts) == 2:
+                    state['access_token'] = parts[1]
+                    state['token_type'] = parts[0]
+                    print(f"  Token capturé depuis requête cyclocity", flush=True)
+
         page.on('response', on_response)
+        page.on('request', on_request)
         print("  Chargement velov.grandlyon.com…", flush=True)
-        page.goto('https://velov.grandlyon.com', wait_until='domcontentloaded', timeout=30000)
-        page.wait_for_timeout(5000)
+        page.goto('https://velov.grandlyon.com', wait_until='networkidle', timeout=60000)
+        page.wait_for_timeout(8000)
         browser.close()
 
     return state
@@ -102,7 +115,7 @@ def main():
     token_data = {
         'access_token': state['access_token'],
         'refresh_token': state['refresh_token'],
-        'token_type': 'Taknv1',
+        'token_type': state.get('token_type', 'Taknv1'),
         'updated_at': datetime.now().isoformat(timespec='seconds'),
         'expires_in': 3600,
     }
