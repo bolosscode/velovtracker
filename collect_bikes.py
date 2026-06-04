@@ -8,6 +8,7 @@ Génère :
 """
 import os, sys, json, time, concurrent.futures
 from datetime import datetime, timezone, date, timedelta
+import time as _time
 from pathlib import Path
 import urllib.request, urllib.error
 
@@ -24,31 +25,19 @@ TIMEOUT      = 15
 
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# ── Token Playwright ─────────────────────────────────────────────────────────
+# ── Token depuis data/token.json ────────────────────────────────────────────
 def get_token():
+    token_f = Path("data/token.json")
+    if not token_f.exists():
+        print("ERREUR: data/token.json introuvable — lancez refresh_token.py d'abord")
+        sys.exit(1)
     try:
-        from playwright.sync_api import sync_playwright
-    except ImportError:
-        print("ERREUR: playwright non installé"); sys.exit(1)
-    state = {'token': None}
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        ctx = browser.new_context(
-            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36',
-            viewport={'width': 1280, 'height': 800}
-        )
-        page = ctx.new_page()
-        def on_req(r):
-            auth = r.headers.get('authorization', '')
-            if auth and 'cyclocity.fr' in r.url:
-                state['token'] = auth
-        page.on('request', on_req)
-        page.goto('https://velov.grandlyon.com', wait_until='domcontentloaded', timeout=30000)
-        page.wait_for_timeout(5000)
-        browser.close()
-    if not state['token']:
-        print("ERREUR: token non trouvé"); sys.exit(1)
-    return state['token']
+        data = json.loads(token_f.read_text())
+        token_type = data.get('token_type', 'Taknv1')
+        access_token = data['access_token']
+        return f"{token_type} {access_token}"
+    except Exception as e:
+        print(f"ERREUR lecture token: {e}"); sys.exit(1)
 
 # ── Métadonnées stations ──────────────────────────────────────────────────────
 def load_station_meta():
@@ -118,7 +107,7 @@ def main():
     print(f"  Token OK ({time.time()-t0:.1f}s)", flush=True)
 
     meta = load_station_meta()
-    station_numbers = list(meta.keys()) if meta else []
+    station_numbers = [int(k) if str(k).isdigit() else k for k in meta.keys()] if meta else []
 
     # Fallback si meta vide
     if not station_numbers and BIKES_F.exists():
@@ -139,7 +128,8 @@ def main():
             bikes_by_station[stn] = bikes
 
     # Normaliser tous les vélos
-    now_ts = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S')
+    import zoneinfo; tz=zoneinfo.ZoneInfo('Europe/Paris')
+    now_ts = datetime.now(tz).strftime('%Y-%m-%dT%H:%M:%S')  # heure Paris
     current_bikes = {}
     for bikes in bikes_by_station.values():
         for b in bikes:
@@ -158,7 +148,7 @@ def main():
     # ── Reconstruire data/latest.json (format stations compatible) ──
     stations_live = []
     for stn_num, bikes in bikes_by_station.items():
-        m = meta.get(stn_num, {})
+        m = meta.get(stn_num, {}) or meta.get(str(stn_num), {}) or meta.get(int(stn_num) if str(stn_num).isdigit() else stn_num, {})
         if not m: continue
         available = [b for b in bikes if b.get('status') == 'AVAILABLE']
         elec = [b for b in available if b['type'] == 'ELECTRICAL']
@@ -166,7 +156,7 @@ def main():
         total_avail = len(available)
         capacity = m.get('bike_stands', 0)
         stations_live.append({
-            'number': stn_num,
+            'number': int(stn_num) if str(stn_num).isdigit() else stn_num,
             'name': m.get('name', ''),
             'available_bikes': total_avail,
             'available_bike_stands': max(0, capacity - total_avail),
@@ -183,6 +173,36 @@ def main():
         'stations': stations_live
     }, ensure_ascii=False, separators=(',', ':')))
     print(f"  {len(stations_live)} stations reconstituées", flush=True)
+
+    # ── Mettre à jour data/today.json (snapshots stations intraday) ──
+    TODAY_STATIONS_F = Path("data/today.json")
+    today_str = date.today().isoformat()
+
+    # Snapshot compact : {number: [available_bikes, electrical_bikes, mechanical_bikes, available_bike_stands]}
+    snap = {str(s['number']): [s['available_bikes'], s['electrical_bikes'], s['mechanical_bikes'], s['available_bike_stands']]
+            for s in stations_live}
+
+    ts_data = None
+    if TODAY_STATIONS_F.exists():
+        try:
+            td = json.loads(TODAY_STATIONS_F.read_text())
+            if td.get('date') == today_str:
+                ts_data = td
+        except: pass
+
+    if ts_data is None:
+        ts_data = {
+            'date': today_str,
+            'snapshots': [{
+                't': now_ts,
+                's': snap
+            }]
+        }
+    else:
+        ts_data['snapshots'].append({'t': now_ts, 's': snap})
+
+    TODAY_STATIONS_F.write_text(json.dumps(ts_data, ensure_ascii=False, separators=(',', ':')))
+    print(f"  today.json stations: {len(ts_data['snapshots'])} snapshots", flush=True)
 
     # ── Mettre à jour data/bikes/today.json ──
     today_str = date.today().isoformat()
