@@ -2,7 +2,6 @@
 """
 collect_bikes.py — Collecte tous les vélos JCDecaux et reconstruit les données stations.
 Génère :
-  data/latest.json          — stations (compatible avec l'existant)
   data/bikes/latest.json    — état live de tous les vélos
   data/bikes/today.json     — événements du jour (base + deltas)
 """
@@ -15,7 +14,6 @@ import urllib.request, urllib.error
 OUT_DIR   = Path("data/bikes")
 TODAY_F   = OUT_DIR / "today.json"
 BIKES_F   = OUT_DIR / "latest.json"
-LATEST_F  = Path("data/latest.json")
 META_F    = Path("data/stations_meta.json")
 
 STATIONS_URL = "https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov/all.json?maxfeatures=-1&start=1"
@@ -144,65 +142,6 @@ def main():
         't': now_ts,
         'bikes': list(current_bikes.values())
     }, ensure_ascii=False, separators=(',', ':')))
-
-    # ── Reconstruire data/latest.json (format stations compatible) ──
-    stations_live = []
-    for stn_num, bikes in bikes_by_station.items():
-        m = meta.get(stn_num, {}) or meta.get(str(stn_num), {}) or meta.get(int(stn_num) if str(stn_num).isdigit() else stn_num, {})
-        if not m: continue
-        available = [b for b in bikes if b.get('status') == 'AVAILABLE']
-        elec = [b for b in available if b['type'] == 'ELECTRICAL']
-        meca = [b for b in available if b['type'] == 'MECHANICAL']
-        total_avail = len(available)
-        capacity = m.get('bike_stands', 0)
-        stations_live.append({
-            'number': int(stn_num) if str(stn_num).isdigit() else stn_num,
-            'name': m.get('name', ''),
-            'available_bikes': total_avail,
-            'available_bike_stands': max(0, capacity - total_avail),
-            'bike_stands': capacity,
-            'electrical_bikes': len(elec),
-            'mechanical_bikes': len(meca),
-            'status': 'OPEN',
-            'lat': m.get('lat'),
-            'lng': m.get('lng'),
-        })
-
-    LATEST_F.write_text(json.dumps({
-        'timestamp': now_ts,
-        'stations': stations_live
-    }, ensure_ascii=False, separators=(',', ':')))
-    print(f"  {len(stations_live)} stations reconstituées", flush=True)
-
-    # ── Mettre à jour data/today.json (snapshots stations intraday) ──
-    TODAY_STATIONS_F = Path("data/today.json")
-    today_str = date.today().isoformat()
-
-    # Snapshot compact : {number: [available_bikes, electrical_bikes, mechanical_bikes, available_bike_stands]}
-    snap = {str(s['number']): [s['available_bikes'], s['electrical_bikes'], s['mechanical_bikes'], s['available_bike_stands']]
-            for s in stations_live}
-
-    ts_data = None
-    if TODAY_STATIONS_F.exists():
-        try:
-            td = json.loads(TODAY_STATIONS_F.read_text())
-            if td.get('date') == today_str:
-                ts_data = td
-        except: pass
-
-    if ts_data is None:
-        ts_data = {
-            'date': today_str,
-            'snapshots': [{
-                't': now_ts,
-                's': snap
-            }]
-        }
-    else:
-        ts_data['snapshots'].append({'t': now_ts, 's': snap})
-
-    TODAY_STATIONS_F.write_text(json.dumps(ts_data, ensure_ascii=False, separators=(',', ':')))
-    print(f"  today.json stations: {len(ts_data['snapshots'])} snapshots", flush=True)
 
     # ── Mettre à jour data/bikes/today.json ──
     today_str = date.today().isoformat()
