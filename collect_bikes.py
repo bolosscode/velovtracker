@@ -73,7 +73,20 @@ def fetch_station_bikes(args):
     try:
         with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
             return station_number, json.loads(r.read())
-    except Exception:
+    except Exception as e:
+        # Logguer la 1re erreur pour diagnostic (sans spammer)
+        global _first_error_logged
+        if not globals().get('_first_error_logged'):
+            globals()['_first_error_logged'] = True
+            detail = ''
+            try:
+                if hasattr(e, 'code'):
+                    detail = f" HTTP {e.code}"
+                if hasattr(e, 'read'):
+                    detail += f" body={e.read()[:200]!r}"
+            except Exception:
+                pass
+            print(f"  ERREUR station {station_number}: {type(e).__name__}: {e}{detail}", flush=True)
         return station_number, []
 
 # ── Normaliser un vélo ────────────────────────────────────────────────────────
