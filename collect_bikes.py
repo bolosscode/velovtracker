@@ -68,7 +68,7 @@ def fetch_station_bikes(args):
     station_number, token = args
     req = urllib.request.Request(
         BIKES_URL(station_number),
-        headers={'Authorization': token, 'Accept': ACCEPT, 'Content-Type': ACCEPT}
+        headers={'Authorization': token, 'Accept': ACCEPT}
     )
     try:
         with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
