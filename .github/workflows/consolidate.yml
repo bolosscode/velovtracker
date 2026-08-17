@@ -5,7 +5,7 @@ on:
     - cron: '10 2 * * *'   # 2h10 UTC chaque nuit
   workflow_dispatch:
     inputs:
-      date
+      date:
         description: 'Date à consolider (YYYY-MM-DD, vide = automatique)'
         required: false
         default: ''
