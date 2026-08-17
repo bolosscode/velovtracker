@@ -2,11 +2,11 @@ name: Consolidation quotidienne
 
 on:
   schedule:
-    - cron: '10 2 * * *'   # 2h10 UTC chaque nuit
+    - cron: '10 2 * * *'
   workflow_dispatch:
     inputs:
       date:
-        description: 'Date à consolider (YYYY-MM-DD, vide = automatique)'
+        description: 'Date a consolider (YYYY-MM-DD, vide = automatique)'
         required: false
         default: ''
 
@@ -17,39 +17,20 @@ jobs:
   consolidate:
     name: Consolider & rattraper les jours manquants
     runs-on: ubuntu-latest
+    timeout-minutes: 90
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Install deps
         run: pip install requests
 
-
-      - name: Mettre à jour stations_meta.json
-        continue-on-error: true
-        run: |
-          python - << 'PYEOF'
-          import json, urllib.request
-          from pathlib import Path
-          url = "https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov/all.json?maxfeatures=-1&start=1"
-          with urllib.request.urlopen(url, timeout=30) as r:
-              data = json.loads(r.read())
-          meta = {s['number']: {'number': s['number'], 'name': s['name'], 'lat': s['lat'], 'lng': s['lng'], 'bike_stands': s['bike_stands']} for s in data.get('values', [])}
-          Path('data').mkdir(exist_ok=True)
-          Path('data/stations_meta.json').write_text(json.dumps(meta, ensure_ascii=False, separators=(',', ':')))
-          print(f"✓ {len(meta)} stations")
-          PYEOF
-
       - name: Consolider les jours manquants
         env:
-          USER: ${{ secrets.GL_USER }}
-          PASSWORD: ${{ secrets.GL_PASSWORD }}
           INPUT_DATE: ${{ github.event.inputs.date }}
         run: |
           python - << 'PYEOF'
@@ -61,57 +42,44 @@ jobs:
           out_dir.mkdir(parents=True, exist_ok=True)
 
           input_date = os.environ.get("INPUT_DATE", "").strip()
-          user = os.environ.get("USER", "")
-          password = os.environ.get("PASSWORD", "")
-
-          auth_args = ["--user", user, "--password", password] if user else []
 
           if input_date:
-              # Mode manuel : consolider une date précise
-              dates_to_run = [date.fromisoformat(input_date)]
+            dates_to_run = [date.fromisoformat(input_date)]
           else:
-              # Mode automatique : J-1 + tous les jours manquants depuis le 29/01/2025
-              start = date(2025, 1, 29)
-              today = date.today()
-              yesterday = today - timedelta(days=1)
+            start = date(2025, 1, 29)
+            yesterday = date.today() - timedelta(days=1)
+            dates_to_run = []
+            d = start
+            while d <= yesterday:
+              exists = (out_dir / f"{d}.json").exists() or (out_dir / f"{d}.json.gz").exists()
+              if not exists:
+                dates_to_run.append(d)
+              d += timedelta(days=1)
 
-              dates_to_run = []
-              d = start
-              while d <= yesterday:
-                  # Vérifier si le fichier existe (json ou json.gz)
-                  exists = (out_dir / f"{d}.json").exists() or (out_dir / f"{d}.json.gz").exists()
-                  if not exists:
-                      dates_to_run.append(d)
-                  d += timedelta(days=1)
+          if not dates_to_run:
+            print("Tous les jours sont deja consolides")
+            sys.exit(0)
 
-              if not dates_to_run:
-                  print("Tous les jours sont déjà consolidés ✓")
-                  sys.exit(0)
+          print(f"{len(dates_to_run)} jour(s) a consolider : {dates_to_run[0]} -> {dates_to_run[-1]}")
 
-              print(f"{len(dates_to_run)} jour(s) à consolider : {dates_to_run[0]} → {dates_to_run[-1]}")
-
-          # Consolider chaque date manquante
           errors = []
           for target_date in dates_to_run:
-              print(f"\n=== Consolidation {target_date} ===", flush=True)
-              cmd = [sys.executable, "consolidate.py", "--date", str(target_date), "--out", str(out_dir)] + auth_args
-              result = subprocess.run(cmd, capture_output=False)
-              if result.returncode != 0:
-                  print(f"ERREUR pour {target_date}", flush=True)
-                  errors.append(target_date)
+            print(f"=== {target_date} ===", flush=True)
+            cmd = [sys.executable, "consolidate.py", "--date", str(target_date), "--out", str(out_dir)]
+            result = subprocess.run(cmd)
+            if result.returncode != 0:
+              errors.append(target_date)
 
           if errors:
-              print(f"\n{len(errors)} erreur(s) : {errors}", flush=True)
-              sys.exit(1)
-
+            print(f"{len(errors)} erreur(s) : {errors}", flush=True)
+            sys.exit(1)
           PYEOF
 
       - name: Commit & push
         run: |
-          git config user.name  "github-actions[bot]"
+          git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/
           git diff --staged --quiet || git commit -m "consolidate: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
           git pull origin main --rebase -X ours
           git push
-
