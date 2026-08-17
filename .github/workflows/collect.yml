@@ -43,4 +43,5 @@ jobs:
           git commit -m "data: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
           git fetch origin main
           git rebase -X ours origin/main
+          git pull origin main --rebase -X ours
           git push
