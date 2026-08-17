@@ -33,7 +33,12 @@ def refresh_with_token(refresh_token):
     return None
 
 def get_token_playwright():
-    """Récupère JWT + refresh_token via Playwright."""
+    """Récupère JWT + refresh_token via Playwright.
+
+    Le token utilisable pour /bikes est celui stocké par l'app dans
+    localStorage['cpr_access_token'] — les appels GBFS publics utilisent
+    un autre token moins privilégié qu'il ne faut PAS capturer.
+    """
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
@@ -49,33 +54,50 @@ def get_token_playwright():
         )
         page = ctx.new_page()
 
+        # Capturer uniquement les réponses du serveur IAM (source de vérité)
         def on_response(r):
-            if 'openid-connect/token' in r.url or 'cyclocity.fr' in r.url:
+            if 'openid-connect/token' in r.url:
                 try:
-                    # Pour les appels token IAM
-                    if 'openid-connect/token' in r.url:
-                        body = r.json()
-                        if 'access_token' in body:
-                            state['access_token'] = body['access_token']
-                            state['refresh_token'] = body.get('refresh_token')
-                            print(f"  Token IAM capturé", flush=True)
-                except: pass
-
-        def on_request(r):
-            auth = r.headers.get('authorization', '')
-            if auth and 'cyclocity.fr' in r.url:
-                # Extraire le token depuis le header Authorization
-                parts = auth.split(' ', 1)
-                if len(parts) == 2:
-                    state['access_token'] = parts[1]
-                    state['token_type'] = parts[0]
-                    print(f"  Token capturé depuis requête cyclocity", flush=True)
+                    body = r.json()
+                    if 'access_token' in body:
+                        state['access_token']  = body['access_token']
+                        state['refresh_token'] = body.get('refresh_token')
+                        print("  Token IAM capturé", flush=True)
+                except Exception:
+                    pass
 
         page.on('response', on_response)
-        page.on('request', on_request)
         print("  Chargement velov.grandlyon.com…", flush=True)
-        page.goto('https://velov.grandlyon.com', wait_until='networkidle', timeout=60000)
+        page.goto('https://velov.grandlyon.com/fr/mapping', wait_until='networkidle', timeout=60000)
         page.wait_for_timeout(8000)
+
+        # Source privilégiée : le localStorage de l'app
+        try:
+            ls_access  = page.evaluate("() => localStorage.getItem('cpr_access_token')")
+            ls_refresh = page.evaluate("() => localStorage.getItem('cpr_refresh_token')")
+            if ls_access:
+                state['access_token'] = ls_access
+                print("  Token lu depuis localStorage (cpr_access_token)", flush=True)
+            if ls_refresh:
+                state['refresh_token'] = ls_refresh
+        except Exception as e:
+            print(f"  localStorage inaccessible: {e}", flush=True)
+
+        # Vérifier que le token donne bien accès à /bikes
+        if state['access_token']:
+            try:
+                ok = page.evaluate("""async (tok) => {
+                    const r = await fetch('https://api.cyclocity.fr/contracts/lyon/bikes?stationNumber=3004', {
+                        headers: {'Accept':'application/vnd.bikes.v4+json','Authorization':'Taknv1 '+tok}
+                    });
+                    return r.status;
+                }""", state['access_token'])
+                print(f"  Test /bikes → HTTP {ok}", flush=True)
+                if ok != 200:
+                    print("  ATTENTION: le token ne donne pas accès à /bikes", flush=True)
+            except Exception as e:
+                print(f"  Test /bikes impossible: {e}", flush=True)
+
         browser.close()
 
     return state
