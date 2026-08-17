@@ -164,10 +164,17 @@ main{max-width:1500px;margin:auto;padding:20px}
     <div class="tab" data-tab="stats" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:rgba(255,255,255,.55);font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Stats</div>
   </div>
   <div style="display:flex;align-items:center;gap:8px">
-    <div id="live-status" style="font-size:10px"></div>
+    <div id="live-status" style="font-size:10px;cursor:pointer;user-select:none" onclick="toggleSourcePanel()"></div>
     <div id="clock" style="font-size:12px;color:rgba(255,255,255,.55)"></div>
   </div>
 </header>
+
+<!-- Panneau source de données -->
+<div id="source-panel" style="display:none;position:absolute;top:52px;right:10px;z-index:400;width:min(320px,calc(100% - 20px));background:rgba(30,30,38,.92);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border:0.5px solid rgba(255,255,255,.15);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.5);padding:12px 14px;font-size:11px;color:rgba(255,255,255,.85)">
+  <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.4);margin-bottom:8px">Source des données</div>
+  <div id="source-content"></div>
+</div>
+
 
 
 
@@ -428,6 +435,79 @@ function updateLiveStatus(){
   if(minAgo<=1) el.innerHTML='<span style="color:#30d158;font-size:10px">● Live</span>';
   else el.innerHTML=`<span style="color:#f59e0b;font-size:10px">● Màj il y a ${minAgo} min</span>`;
 }
+
+/* ═══ PANNEAU SOURCE ══════════════════════════════════ */
+const SOURCES = {
+  grandlyon: {
+    label: 'Métropole de Lyon',
+    url: 'download.data.grandlyon.com',
+    detail: 'API temps réel JCDecaux via Grand Lyon Open Data'
+  },
+  local: {
+    label: 'Cache GitHub Pages',
+    url: 'data/latest.json',
+    detail: 'Collecte automatique toutes les 2 min via API JCDecaux v3'
+  }
+};
+
+function toggleSourcePanel(){
+  const p = document.getElementById('source-panel');
+  if(!p) return;
+  if(p.style.display === 'none' || !p.style.display){
+    renderSourcePanel();
+    p.style.display = 'block';
+  } else {
+    p.style.display = 'none';
+  }
+}
+
+function renderSourcePanel(){
+  const el = document.getElementById('source-content');
+  if(!el) return;
+
+  const src = SOURCES[window._dataSource] || SOURCES.local;
+  const ts  = window._dataTimestamp;
+  const fetchedAt = window._lastStationUpdate ? new Date(window._lastStationUpdate) : null;
+  const n = allStations?.length || 0;
+
+  const fmtT = d => d ? d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '—';
+  const fmtD = d => d ? d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'}) : '';
+
+  const dataDate = ts ? new Date(ts) : null;
+  const ageMin = dataDate ? Math.round((Date.now()-dataDate.getTime())/60000) : null;
+  const ageStr = ageMin===null ? '—' : ageMin < 1 ? "à l'instant" : ageMin < 60 ? `il y a ${ageMin} min` : `il y a ${Math.round(ageMin/60)} h`;
+  const ageCol = ageMin===null ? 'rgba(255,255,255,.5)' : ageMin <= 5 ? '#30d158' : ageMin <= 60 ? '#f59e0b' : '#ff453a';
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:2px">
+      <span style="font-weight:600;color:#fff">${src.label}</span>
+    </div>
+    <div style="font-size:10px;color:rgba(255,255,255,.4);font-family:ui-monospace,monospace;margin-bottom:10px">${src.url}</div>
+
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:11px">
+      <span style="color:rgba(255,255,255,.45)">Données du</span>
+      <span style="color:${ageCol}">${dataDate ? fmtT(dataDate) : '—'} <span style="color:rgba(255,255,255,.35)">${ageStr}</span></span>
+
+      <span style="color:rgba(255,255,255,.45)">Récupéré à</span>
+      <span>${fmtT(fetchedAt)}</span>
+
+      <span style="color:rgba(255,255,255,.45)">Stations</span>
+      <span>${n}</span>
+    </div>
+
+    <div style="margin-top:10px;padding-top:8px;border-top:0.5px solid rgba(255,255,255,.08);font-size:10px;color:rgba(255,255,255,.4);line-height:1.5">
+      ${src.detail}
+    </div>`;
+}
+
+// Fermer le panneau en cliquant ailleurs
+document.addEventListener('click', e => {
+  const p = document.getElementById('source-panel');
+  const btn = document.getElementById('live-status');
+  if(p && p.style.display === 'block' && !p.contains(e.target) && !btn?.contains(e.target)){
+    p.style.display = 'none';
+  }
+});
 setInterval(()=>{ document.getElementById('clock').textContent=new Date().toLocaleTimeString('fr-FR'); updateLiveStatus(); },1000);
 
 document.querySelectorAll('.tab').forEach(tab=>{
@@ -512,15 +592,24 @@ async function loadLatest(){
   try{
     // Source primaire : API Grand Lyon directe
     const r=await fetch('https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov/all.json?maxfeatures=-1&start=1',{signal:AbortSignal.timeout(8000),cache:'no-store'});
-    if(r.ok) return (await r.json()).values?.map(parseStation)||[];
+    if(r.ok){
+      const j = await r.json();
+      const rows = j.values || [];
+      window._dataSource = 'grandlyon';
+      // last_update de la première station = fraîcheur réelle des données
+      window._dataTimestamp = rows[0]?.last_update || null;
+      return rows.map(parseStation);
+    }
   }catch{}
   try{
     // Fallback : fichier local data/latest.json
     const r=await fetch(`data/latest.json?t=${Date.now()}`,{cache:'no-store',signal:AbortSignal.timeout(8000)});
     if(!r.ok) throw new Error('no local');
     const d=await r.json();
+    window._dataSource = 'local';
+    window._dataTimestamp = d.timestamp || null;
     return (d.stations||[]).map(s=>({...s,number:parseInt(s.number)||s.number}));
-  }catch{ return []; }
+  }catch{ window._dataSource=null; window._dataTimestamp=null; return []; }
 }
 
 /* ═══ INDEXEDDB CACHE ════════════════════════════════ */
