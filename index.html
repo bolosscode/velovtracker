@@ -1285,10 +1285,8 @@ async function computePlan(){
     return;
   }
 
-  // Afficher loader + ouvrir volet
-  // Expansion du flottant
+  // Ouvrir/étendre le flottant
   document.getElementById('plan-float')?.style.setProperty('max-height','80vh');
-  results.innerHTML='<div class="loader">Analyse de l\'historique…</div>';
 
   // Météo
   const meteo=await fetchCurrentMeteo();
@@ -1317,16 +1315,35 @@ async function computePlan(){
 
 
 
-  // Charger l'historique (500 jours, même jour de semaine)
-  results.innerHTML='<div class="loader">Calcul historique…</div>';
+  // Charger l'historique — fenêtre adaptée au mode :
+  //  · Live ("Maintenant")  : 13 dernières semaines (même jour) → rapide, wRec les rend dominantes de toute façon
+  //  · Planifier            : tout l'historique + bonus saisonnier (même semaine l'an dernier)
+  results.innerHTML=`<div class="loader">${isNowMode?'Calcul en cours…':'Analyse de l\'historique…'}</div>`;
   const allDays=[];
   const today2=new Date();
   const targetDates=[];
   const dataStart=new Date('2025-01-29');
+  const maxWeeksLive=13; // ~90 jours, largement suffisant vu wRec=exp(-dayIdx/45)
+  let weeksCollected=0;
   for(let i=0;;i++){
     const d=new Date(today2); d.setDate(d.getDate()-i);
     if(d<dataStart) break;
-    if(d.getDay()===targetDow) targetDates.push(d.toISOString().slice(0,10));
+    if(d.getDay()===targetDow){
+      targetDates.push(d.toISOString().slice(0,10));
+      weeksCollected++;
+      if(isNowMode&&weeksCollected>=maxWeeksLive) break;
+    }
+  }
+  // Bonus saisonnier (mode Planifier uniquement) : même semaine ±7j l'an dernier
+  if(!isNowMode){
+    const lastYear=new Date(today2); lastYear.setFullYear(lastYear.getFullYear()-1);
+    for(let off=-7; off<=7; off++){
+      const d=new Date(lastYear); d.setDate(d.getDate()+off);
+      if(d>=dataStart && d.getDay()===targetDow){
+        const ds=d.toISOString().slice(0,10);
+        if(!targetDates.includes(ds)) targetDates.push(ds);
+      }
+    }
   }
   for(let i=0;i<targetDates.length;i+=16){
     const batch=targetDates.slice(i,i+16);
