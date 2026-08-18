@@ -2219,7 +2219,7 @@ function toggleBikeDetailLive(idx){
   const detail=document.createElement('div');
   detail.id='bike-detail-live';
   detail.dataset.idx=idx;
-  detail.style.cssText='margin:4px 0 6px;padding:8px 10px;background:rgba(255,255,255,.04);border:0.5px solid rgba(255,255,255,.08);border-radius:10px;max-height:150px;overflow-y:auto;columns:2;column-gap:10px';
+  detail.style.cssText='margin:4px 0 6px;padding:8px 10px;background:rgba(255,255,255,.04);border:0.5px solid rgba(255,255,255,.08);border-radius:10px;max-height:150px;overflow-x:auto;overflow-y:hidden;columns:2;column-gap:10px;column-fill:auto';
   detail.innerHTML=rows+ratingHtml;
   row.insertAdjacentElement('afterend', detail);
 }
