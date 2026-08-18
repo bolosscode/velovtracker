@@ -1,2814 +1,536 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
-<meta name="apple-mobile-web-app-title" content="Vélo'v"/>
-<meta name="theme-color" content="#ffffff"/>
-<title>Vélo'v Lyon Analytics</title>
-<link rel="preconnect" href="https://api.cyclocity.fr" crossorigin>
-<link rel="dns-prefetch" href="https://api.cyclocity.fr">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-@media(max-width:640px){
-  #stats-layout{grid-template-columns:1fr !important}
-  #stats-detail{display:block !important}
-  header{height:48px;padding:0 14px}
-  .brand{font-size:15px}
-  #top-nav{display:none !important}
-  #top-nav{display:none !important}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vélo'v — OBS</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg:#090d12;--surface:#111820;--surface2:#18232e;
+      --border:#1e2d3d;--border2:#2a3f52;
+      --accent:#f0a500;--accent-d:rgba(240,165,0,.12);
+      --text:#cdd9e5;--muted:#4e6478;
+      --green:#3fb97a;--red:#e04f4f;--yellow:#d4a035;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;font-size:14px;line-height:1.5;min-height:100vh}
 
-  .card{padding:14px;border:0.5px solid rgba(255,255,255,.1)}
-  .loc-row{grid-template-columns:1fr}
-  #map{height:100%}
+    header{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+    .hd-left{display:flex;align-items:center;gap:16px}
+    .logo{font-family:'DM Mono',monospace;font-size:17px;letter-spacing:.1em;color:var(--accent)}
+    .logo em{color:var(--muted);font-style:normal}
+    .dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:blink 2.5s infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+    .live-label{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px}
+    .clock{font-family:'DM Mono',monospace;font-size:13px;color:var(--muted)}
 
-  .params-row{gap:8px}
-  .params-row select,.params-row input{font-size:12px;padding:6px 8px}
-  #stats-detail{display:none}
-  #lb-content{max-height:60vh}
-  .combo-card{padding:10px 12px}
-  .combo-rank{font-size:18px;min-width:24px}
-  .combo-pct{font-size:18px}
-}
-@media(min-width:641px){
-  #bottom-nav{display:none}
-  #plan-float{width:calc(100vw / 3 - 20px) !important;right:auto !important}
-}
-#bottom-nav{
-  position:fixed;bottom:0;left:0;right:0;z-index:300;
-  background:rgba(8,8,12,.5);backdrop-filter:blur(14px);
-  border-top:0.5px solid #38383a;
-  display:flex;padding:0;height:60px;
-}
-#bottom-nav .tab{
-  flex:1;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;gap:2px;padding:6px 0;
-  font-size:18px;font-weight:600;color:#bbb;
-  border-bottom:none;border-top:2px solid transparent;
-}
-#bottom-nav .tab span{font-size:11px;display:block;color:rgba(255,255,255,.55)}
-#bottom-nav .tab.on{color:#fff;border-top-color:rgba(255,255,255,.5)}
-:root{
-  --bg:#0a0a0e;--paper:rgba(12,12,16,.45);--ink:#fff;--sub:rgba(255,255,255,.55);--dim:rgba(255,255,255,.4);
-  --border:#38383a;--blue:#f5f5f7;--green:#30d158;--orange:#ff9f0a;--red:#ff453a;
-  --radius:14px;--shadow:0 2px 8px rgba(0,0,0,.4);
-}
-body{background:rgba(8,8,12,.5);color:#fff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Arial,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased;letter-spacing:-0.01em;color-scheme:dark}
+    nav{display:flex;padding:0 28px;background:var(--surface);border-bottom:1px solid var(--border)}
+    .tab-btn{padding:11px 18px;font-size:12px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:color .18s,border-color .18s;user-select:none}
+    .tab-btn:hover{color:var(--text)}
+    .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
 
-header{position:sticky;top:0;z-index:300;height:56px;background:rgba(8,8,12,.5);backdrop-filter:blur(14px);border-bottom:none;display:flex;align-items:center;justify-content:space-between;padding:0 22px}
-.brand{font-weight:700;font-size:20px;color:#fff}.brand em{color:#fff;font-style:normal}
-.clock{font-size:12px;color:rgba(255,255,255,.4)}
+    main{padding:24px 28px;max-width:1280px;margin:0 auto}
+    .tab-panel{display:none}
+    .tab-panel.active{display:block;animation:fadein .2s}
+    @keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 
-nav{position:sticky;top:56px;z-index:250;background:rgba(8,8,12,.5);border-bottom:0.5px solid #38383a;display:flex;padding:0 20px;overflow-x:auto}
-nav{position:sticky;top:56px;z-index:250;background:rgba(8,8,12,.5);border-bottom:0.5px solid #38383a;display:flex;padding:0 20px;overflow-x:auto}
-.tab.on{color:#fff;border-bottom-color:rgba(255,255,255,.5);background:transparent}
+    .summary{display:flex;align-items:center;gap:32px;flex-wrap:wrap;padding:14px 20px;background:var(--surface);border:1px solid var(--border);border-radius:3px;margin-bottom:20px}
+    .sum-item{display:flex;flex-direction:column}
+    .sum-val{font-family:'DM Mono',monospace;font-size:26px;font-weight:500;color:var(--accent);line-height:1}
+    .sum-lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+    .sum-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+    .ts{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
 
-main{max-width:1500px;margin:auto;padding:20px}
-.panel{display:none;overflow:hidden}.panel.on{display:block}
-.card{background:rgba(12,12,16,.45);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
-.card-title{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:14px}
+    button{background:var(--accent);border:none;border-radius:2px;color:#000;cursor:pointer;font-family:'Barlow',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:8px 16px;transition:opacity .15s}
+    button:hover{opacity:.82}
+    button.sec{background:transparent;border:1px solid var(--border2);color:var(--text)}
+    button.sec:hover{border-color:var(--accent);color:var(--accent)}
 
-#map{height:calc(100vh - 140px);border-radius:var(--radius);overflow:hidden;position:relative;z-index:1}
-.map-ctrl{position:absolute;top:10px;right:10px;z-index:500;display:flex;gap:6px}
-.map-btn{padding:6px 14px;border-radius:20px;border:none;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);box-shadow:var(--shadow);font-size:12px;font-weight:600;cursor:pointer;color:rgba(255,255,255,.55);transition:all .15s}
-.map-btn.on{background:var(--blue);color:#fff}
-.map-rel{position:relative;overflow:hidden}
+    select,input[type=date],input[type=text],input[type=time]{background:var(--surface);border:1px solid var(--border2);border-radius:2px;color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;padding:7px 11px;outline:none;transition:border-color .15s}
+    select:focus,input:focus{border-color:var(--accent)}
 
-/* search */
-.loc-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
-@media(max-width:640px){
-  #stats-layout{grid-template-columns:1fr !important}
-  #stats-detail{display:block !important}.loc-row{grid-template-columns:1fr}}
-.loc-box{position:relative}
-.loc-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:5px;display:flex;align-items:center;gap:6px}
-.loc-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.search{width:100%;padding:10px 12px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);font-size:13px;outline:none;transition:border-color .15s;color:#fff;}
-.search:focus{border-color:var(--blue)}
-.dropdown{position:fixed;z-index:9999;background:rgba(12,12,16,.45);border:1px solid rgba(255,255,255,.12);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.6);display:none;max-height:240px;overflow-y:auto;min-width:280px;background:rgba(12,12,16,.45);border:0.5px solid rgba(255,255,255,.12);border-radius:10px;box-shadow:var(--shadow);display:none;z-index:100;max-height:220px;overflow-y:auto}
-.dropdown.open{display:block}
-.opt{padding:9px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0f0}
-.opt:last-child{border-bottom:none}
-.opt:hover{background:#3a3a3c}
-.opt-type{font-size:10px;color:rgba(255,255,255,.4);float:right}
+    .station-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin-bottom:24px}
+    .scard{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:16px;cursor:pointer;position:relative;overflow:hidden;transition:border-color .18s,background .18s}
+    .scard::after{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--accent);transform:scaleY(0);transform-origin:bottom;transition:transform .2s}
+    .scard:hover{border-color:var(--border2);background:var(--surface2)}
+    .scard:hover::after{transform:scaleY(1)}
+    .scard-name{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .scard-big{display:flex;align-items:baseline;gap:5px;margin-bottom:6px}
+    .scard-num{font-family:'DM Mono',monospace;font-size:44px;font-weight:500;line-height:1;transition:color .3s}
+    .scard-num.ok{color:var(--green)}
+    .scard-num.low{color:var(--yellow)}
+    .scard-num.empty{color:var(--red)}
+    .scard-unit{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+    .scard-bar-bg{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:8px}
+    .scard-bar{height:100%;border-radius:2px;transition:width .5s ease}
+    .scard-bar.ok{background:var(--green)}
+    .scard-bar.low{background:var(--yellow)}
+    .scard-bar.empty{background:var(--red)}
+    .scard-foot{display:flex;justify-content:space-between;align-items:center}
+    .scard-stands{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted)}
+    .badge{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:2px 6px;border-radius:2px}
+    .badge.open{background:rgba(63,185,122,.12);color:var(--green)}
+    .badge.closed{background:rgba(224,79,79,.12);color:var(--red)}
 
-/* params row */
-.params-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
-.params-row label{font-size:11px;font-weight:600;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
-.params-row select,.params-row input{padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);font-size:13px;outline:none}
-.params-row select:focus,.params-row input:focus{border-color:var(--blue)}
+    .chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:20px;margin-bottom:16px}
+    .chart-title{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
 
-/* plan map */
+    .ctrl{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
 
+    .hmap-grid{display:grid;grid-template-columns:44px repeat(24,1fr);gap:2px}
+    .hmap-h{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);height:24px;display:flex;align-items:center;justify-content:center}
+    .hmap-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);height:24px;display:flex;align-items:center}
+    .hmap-cell{height:24px;border-radius:2px;cursor:default;transition:opacity .1s}
+    .hmap-cell:hover{outline:1px solid var(--accent);opacity:.85}
+    .hmap-legend{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:11px;color:var(--muted)}
+    .hmap-legend-bar{flex:1;max-width:200px;height:7px;border-radius:2px;background:linear-gradient(to right,rgb(224,79,79),rgb(63,185,122))}
 
-/* results */
-.combo-card{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:0.5px solid rgba(255,255,255,.08);cursor:pointer;transition:background .15s}
-.combo-card:hover{background:rgba(12,12,16,.45)}
-.combo-card.selected{background:rgba(12,12,16,.45);border-left:3px solid var(--blue)}
-.combo-card:last-child{border-bottom:none}
-.combo-rank{font-size:22px;font-weight:700;color:var(--blue);min-width:32px;text-align:center}
-.combo-info{flex:1}
-.combo-route{font-weight:600;font-size:13px;margin-bottom:3px}
-.combo-meta{font-size:11px;color:rgba(255,255,255,.55);line-height:1.7}
-.combo-score{text-align:right;flex-shrink:0}
-.combo-pct{font-size:22px;font-weight:700}
-.combo-detail{font-size:11px;color:rgba(255,255,255,.4)}
-.score-high{color:#30d158}
-.score-med{color:#ff9f0a}
-.score-low{color:#ff453a}
+    .track-form{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:22px;margin-bottom:16px}
+    .track-intro{font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6}
+    .form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;margin-bottom:18px}
+    .fg{display:flex;flex-direction:column;gap:5px}
+    .fg label{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+    .fg input,.fg select{width:100%}
+    .track-result{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:20px}
+    .res-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)}
+    .res-row:last-child{border-bottom:none}
+    .res-name{font-weight:500}
+    .res-delta{font-family:'DM Mono',monospace;font-size:13px;color:var(--green)}
+    .res-time{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
 
-/* courbes */
-.search-wrap{position:relative;margin-bottom:14px}
-.search-wrap .search{padding-left:12px}
+    .set-sec{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:22px;margin-bottom:14px}
+    .set-title{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
+    .set-f{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+    .set-f label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+    .set-f input{max-width:420px;width:100%}
+    .set-hint{font-size:11px;color:var(--muted);margin-top:3px}
+    code{color:var(--accent);font-family:'DM Mono',monospace;font-size:12px}
 
-/* table leaderboard */
-#lb-table{width:100%;border-collapse:collapse;font-size:13px}
-#lb-table th{text-align:left;padding:4px 7px;border-bottom:0.5px solid rgba(255,255,255,.08);font-size:10px;font-weight:600;text-transform:uppercase;color:rgba(255,255,255,.55);background:rgba(12,12,16,.45);white-space:nowrap}
-#lb-table td{padding:4px 7px;border-bottom:0.5px solid rgba(255,255,255,.08);font-variant-numeric:tabular-nums;font-size:12px}
-#lb-table tr:hover td{background:rgba(12,12,16,.45)}
-.rank-cell{font-weight:700;color:var(--blue);width:40px}
-.mv-bar{display:inline-block;height:6px;border-radius:3px;background:var(--blue);vertical-align:middle;margin-left:6px}
-.fill-pill{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
-.fill-high{background:rgba(52,199,89,.15);color:#34c759}
-.fill-med{background:rgba(255,159,10,.15);color:#ff9f0a}
-.fill-low{background:rgba(255,69,58,.15);color:#ff453a}
+    .loader{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--muted);font-family:'DM Mono',monospace;font-size:12px}
+    .no-data{text-align:center;padding:40px;color:var(--muted);font-size:13px}
+    .err{background:rgba(224,79,79,.08);border:1px solid rgba(224,79,79,.3);border-radius:3px;padding:14px 16px;color:var(--red);font-size:13px;line-height:1.6}
+    .ok-flash{color:var(--green);font-size:12px;font-family:'DM Mono',monospace}
 
-.loader,.no-data{padding:40px;text-align:center;color:rgba(255,255,255,.4);background:rgba(12,12,16,.45);border-radius:var(--radius)}
-.range{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:rgba(12,12,16,.45);padding:10px;border-radius:10px;margin-bottom:14px}
-.range select,.range input{padding:8px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);font-size:13px;outline:none}
-.btn{padding:8px 18px;border-radius:10px;border:none;background:#f5f5f7;color:#1c1c1e;font-size:13px;font-weight:600;cursor:pointer}
-.btn:hover{opacity:.85}
-.search::placeholder{color:rgba(255,255,255,.45)}
-
-@media(min-width:768px){
-  body{overflow:hidden}
-  #tab-map{height:100vh !important;width:100vw !important}
-  .map-rel{height:100% !important}
-  main{padding:0 !important;margin:0 !important;max-width:100vw !important}
-}
-.station-popup .leaflet-popup-content-wrapper{background:transparent!important;box-shadow:none!important;padding:0!important;border-radius:0!important}
-.station-popup .leaflet-popup-tip-container{display:none}
-.station-popup .leaflet-popup-content{margin:0!important;line-height:1.4}
-</style>
+    .source-tag{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);padding:3px 8px;border-radius:2px}
+  </style>
 </head>
 <body>
 
-<header style="display:flex;align-items:center;justify-content:space-between;padding:0 14px;height:38px;background:rgba(16,16,20,.55);backdrop-filter:blur(48px) saturate(200%) brightness(1.05);-webkit-backdrop-filter:blur(48px) saturate(200%) brightness(1.05);border:0.5px solid rgba(255,255,255,.14);border-radius:14px;position:absolute;top:10px;left:10px;right:10px;z-index:300;box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 4px 24px rgba(0,0,0,.4)">
-  <div style="font-size:15px;font-weight:700;color:#fff;letter-spacing:-.01em">Vélo'v</div>
-  <div style="display:flex;gap:2px">
-    <div class="tab on" data-tab="map" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:#fff;font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg> Carte</div>
-    <div class="tab" data-tab="velos" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:rgba(255,255,255,.55);font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2"/><path d="M12 17.5 10 7l-4.7 4.5 6.7 2"/><path d="m10 7 5 2.5"/></svg> Vélos</div>
-    <div class="tab" data-tab="stats" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:rgba(255,255,255,.55);font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Stats</div>
+<header>
+  <div class="hd-left">
+    <div class="logo">VÉLO<em>'</em>V<em style="color:var(--border2)">::</em>OBS</div>
+    <div class="live-label"><div class="dot"></div>LIVE</div>
+    <span class="source-tag">Grand Lyon Open Data</span>
   </div>
-  <div style="display:flex;align-items:center;gap:8px">
-    <div id="live-status" style="font-size:10px;cursor:pointer;user-select:none" onclick="toggleSourcePanel()"></div>
-    <div id="clock" style="font-size:12px;color:rgba(255,255,255,.55)"></div>
-  </div>
+  <div class="clock" id="clock">--:--:--</div>
 </header>
 
-<!-- Panneau source de données -->
-<div id="source-panel" style="display:none;position:absolute;top:52px;right:10px;z-index:400;width:min(320px,calc(100% - 20px));background:rgba(30,30,38,.92);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border:0.5px solid rgba(255,255,255,.15);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.5);padding:12px 14px;font-size:11px;color:rgba(255,255,255,.85)">
-  <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.4);margin-bottom:8px">Source des données</div>
-  <div id="source-content"></div>
-</div>
+<nav>
+  <div class="tab-btn active" data-tab="live">Live</div>
+  <div class="tab-btn" data-tab="history">Historique</div>
+  <div class="tab-btn" data-tab="heatmap">Heatmap</div>
+  <div class="tab-btn" data-tab="tracking">Tracking</div>
+  <div class="tab-btn" data-tab="settings">Config</div>
+</nav>
 
+<main>
 
-
-
-
-<main style="padding:0;overflow:hidden">
-
-
-
-<!-- ═══ CARTE ═══ -->
-<div class="panel on" id="tab-map" style="position:relative;display:flex;flex-direction:column;height:100vh;overflow:hidden">
-  <div class="map-rel" style="position:relative;flex:1;overflow:hidden">
-    <div id="map" style="height:100%;width:100%"></div>
-
-    <!-- Flottant glass -->
-    <div id="plan-float" style="position:absolute;top:58px;left:10px;right:10px;z-index:200;background:rgba(12,12,16,.52);backdrop-filter:blur(56px) saturate(220%) brightness(1.08);-webkit-backdrop-filter:blur(56px) saturate(220%) brightness(1.08);border-radius:16px;border:0.5px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),inset 1px 0 0 rgba(255,255,255,.1),0 8px 32px rgba(0,0,0,.35),0 2px 8px rgba(0,0,0,.2);overflow:visible;transition:max-height .3s cubic-bezier(.4,0,.2,1),opacity .2s;max-height:250px">
-      <div id="plan-close-btn" onclick="closePlanFloat()" style="position:absolute;top:-7px;right:-7px;width:16px;height:16px;border-radius:50%;background:rgba(12,12,16,.45);border:0.5px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:201"><svg width="8" height="8" viewBox="0 0 8 8" fill="none"><line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="rgba(255,255,255,.45)" stroke-width="1.5" stroke-linecap="round"/><line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="rgba(255,255,255,.45)" stroke-width="1.5" stroke-linecap="round"/></svg></div>
-      <div id="plan-float-expanded" style="padding:8px 10px">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
-          <div style="flex:1;background:rgba(255,255,255,.09);border-radius:10px;overflow:visible;border:0.5px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)">
-            <div style="position:relative">
-              <input id="plan-from" class="search" type="text" placeholder="Départ…" autocomplete="off" style="background:transparent;border-radius:0;border:none;border-bottom:0.5px solid rgba(255,255,255,.08)"/>
-              <div class="dropdown" id="plan-from-dd"></div>
-            </div>
-            <div style="position:relative">
-              <input id="plan-to" class="search" type="text" placeholder="Arrivée…" autocomplete="off" style="background:transparent;border-radius:0;border:none;color:#fff"/>
-              <div class="dropdown" id="plan-to-dd"></div>
-            </div>
-          </div>
-          <button onclick="swapPlanFromTo()" style="width:30px;height:30px;border-radius:8px;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);cursor:pointer;font-size:15px;color:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 16V4m0 0L3 8m4-4 4 4"/><path d="M17 8v12m0 0 4-4m-4 4-4-4"/></svg></button>
-        </div>
-        <!-- Ligne 1 : now/plan + élec/méca + calculer -->
-        <div style="display:flex;gap:6px;align-items:center">
-          <div style="display:flex;background:rgba(255,255,255,.06);border:0.5px solid rgba(255,255,255,.06);border-radius:20px;padding:2px;position:relative;flex-shrink:0">
-            <div id="toggle-slider" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:rgba(255,255,255,.18);border:0.5px solid rgba(255,255,255,.2);border-radius:18px;transition:transform .18s;pointer-events:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.2)"></div>
-            <button id="btn-now" onclick="setModeNow()" style="position:relative;z-index:1;padding:5px 12px;border:none;background:transparent;color:#fff;cursor:pointer;display:flex;align-items:center"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" opacity=".35"/></svg></button>
-            <button id="btn-plan" onclick="setModePlan()" style="position:relative;z-index:1;padding:5px 12px;border:none;background:transparent;color:rgba(255,255,255,.38);cursor:pointer;display:flex;align-items:center"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
-          </div>
-          <div style="display:flex;background:rgba(255,255,255,.06);border:0.5px solid rgba(255,255,255,.06);border-radius:20px;padding:2px;position:relative;flex-shrink:0">
-            <div id="type-slider-now" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:rgba(255,255,255,.18);border:0.5px solid rgba(255,255,255,.2);border-radius:18px;transition:transform .15s;pointer-events:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.2)"></div>
-            <button onclick="setBikeType('elec')" style="position:relative;z-index:1;padding:5px 12px;border:none;background:transparent;cursor:pointer;color:#fff;display:flex;align-items:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></button>
-            <button onclick="setBikeType('meca')" style="position:relative;z-index:1;padding:5px 12px;border:none;background:transparent;cursor:pointer;color:rgba(255,255,255,.38);display:flex;align-items:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></button>
-          </div>
-          <select id="plan-type" style="display:none"><option value="elec">elec</option><option value="meca">meca</option><option value="any" selected>any</option></select>
-          <button class="btn" onclick="computePlan()" style="margin-left:auto;padding:5px 14px;font-size:11px;border-radius:20px;background:rgba(255,255,255,.9);color:#111;border:none;font-weight:700;cursor:pointer;flex-shrink:0">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          </button>
-        </div>
-        <!-- Ligne 2 : params plan (masqués par défaut) -->
-        <div id="plan-params" style="display:none;gap:6px;align-items:center;margin-top:6px">
-          <select id="plan-dow" style="padding:4px 8px;border-radius:8px;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#fff;font-size:11px;flex:1"><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option><option value="6">Samedi</option><option value="0">Dimanche</option></select>
-          <input type="time" id="plan-hour-time" style="padding:4px 8px;border-radius:8px;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#fff;font-size:11px;outline:none;flex:1" oninput="syncHourSelect()"/>
-          <select id="plan-hour" style="display:none"></select>
-          <select id="plan-radius" style="padding:4px 8px;border-radius:8px;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#fff;font-size:11px"><option value="300">300m</option><option value="500" selected>500m</option><option value="800">800m</option><option value="1200">1.2km</option></select>
-        </div>
-      </div>
-
-      <!-- État compact -->
-      <div id="plan-float-compact" style="display:none;align-items:center;gap:10px;padding:9px 12px;cursor:pointer" onclick="expandPlanFloat()">
-        <div style="color:rgba(255,255,255,.6)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-        <div style="flex:1;min-width:0">
-          <div id="plan-compact-from" style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
-          <div id="plan-compact-to" style="font-size:11px;color:rgba(255,255,255,.6);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
-        </div>
-        <div style="width:26px;height:26px;border-radius:50%;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px">✎</div>
-      </div>
-
-      <!-- Résultats (liste compacte) -->
-      <div id="plan-results-divider" style="display:none;height:0.5px;background:rgba(255,255,255,.08)"></div>
-      <div id="plan-results-inner-header" style="display:none;padding:6px 12px 4px;display:none">
-        <div id="plan-results-title" style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.5)"></div>
-      </div>
-      <div id="plan-results" style="overflow-y:auto;max-height:calc(80vh - 220px);padding:0 10px 10px"></div>
-
-    </div>
-
-
-  </div>
-</div>
-
-<div class="panel" id="tab-stats" style="overflow-y:auto;max-height:100vh">
-
-  <div style="display:flex;gap:0;border-bottom:0.5px solid rgba(255,255,255,.08);background:rgba(12,12,16,.45);backdrop-filter:blur(40px);padding:0 10px;position:sticky;top:0;z-index:10">
-    <div class="stats-subtab on" id="stab-stations" onclick="setStatsSubTab('stations',this)" style="padding:10px 16px;font-size:12px;font-weight:600;color:#fff;cursor:pointer;border-bottom:2px solid rgba(255,255,255,.6)">Stations</div>
-    <div class="stats-subtab" id="stab-trajets" onclick="setStatsSubTab('trajets',this)" style="padding:10px 16px;font-size:12px;font-weight:600;color:rgba(255,255,255,.45);cursor:pointer;border-bottom:2px solid transparent">Trajets</div>
-  </div>
-
-  <div id="spanel-stations" style="padding:10px">
-    <div class="card" style="padding:12px;margin-bottom:8px">
-      <div class="card-title" style="margin-bottom:8px;font-size:10px">Période &amp; tri</div>
-      <div class="range" style="gap:5px;padding:8px">
-        <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px">
-          <button onclick="onLbViewChange('day')" id="lb-pill-day" style="padding:5px 14px;border:none;background:#3a3a3c;color:#fff;font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Jour</button>
-          <button onclick="onLbViewChange('month')" id="lb-pill-month" style="padding:5px 14px;border:none;background:transparent;color:rgba(255,255,255,.55);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Mois</button>
-          <button onclick="onLbViewChange('year')" id="lb-pill-year" style="padding:5px 14px;border:none;background:transparent;color:rgba(255,255,255,.55);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Année</button>
-        </div>
-        <input type="hidden" id="lb-view" value="day"/>
-        <input type="date" id="lb-date"/>
-        <input type="month" id="lb-month" style="display:none;padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);font-size:13px;background:rgba(12,12,16,.45);color:#fff"/>
-        <select id="lb-year" style="display:none;padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);font-size:13px"><option value="2025">2025</option><option value="2026" selected>2026</option></select>
-        <select id="lb-sort">
-          <option value="mv">Mouvements</option>
-          <option value="rotation">Rotation</option>
-          <option value="stands">Places libres</option>
-          <option value="fill">Remplissage</option>
-        </select>
-        <input id="lb-station-search" type="text" placeholder="Station…" oninput="filterLbTable(this.value)" style="padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);background:rgba(12,12,16,.45);color:#fff;font-size:13px;outline:none;min-width:0;flex:1"/>
-        <button class="btn" onclick="computeLeaderboard()">Calculer</button>
-        <span id="lb-meteo" style="font-size:12px;color:rgba(255,255,255,.55)"></span>
+  <!-- ══ LIVE ══ -->
+  <div class="tab-panel active" id="tab-live">
+    <div class="summary">
+      <div class="sum-item"><span class="sum-val" id="s-bikes">—</span><span class="sum-lbl">Vélos dispo</span></div>
+      <div class="sum-item"><span class="sum-val" id="s-stands">—</span><span class="sum-lbl">Places libres</span></div>
+      <div class="sum-item"><span class="sum-val" id="s-open">—</span><span class="sum-lbl">Stations ouvertes</span></div>
+      <div class="sum-right">
+        <span class="ts" id="last-update"></span>
+        <button class="sec" onclick="refreshLive()">↻ Actualiser</button>
       </div>
     </div>
-    <div class="card" style="padding:0;overflow:hidden">
-      <div id="lb-content" style="overflow-x:auto;max-height:70vh;overflow-y:auto">
-        <table id="lb-table" style="width:100%;border-collapse:collapse;font-size:13px">
-          <thead id="lb-head"></thead>
-          <tbody id="lb-body"></tbody>
-        </table>
-      </div>
+    <div class="station-grid" id="station-grid"><div class="loader">Chargement…</div></div>
+  </div>
+
+  <!-- ══ HISTORIQUE ══ -->
+  <div class="tab-panel" id="tab-history">
+    <div class="ctrl">
+      <select id="hist-station"><option value="">— Station —</option></select>
+      <input type="date" id="hist-date">
+      <button onclick="loadHistory()">Afficher</button>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Disponibilité — vélos / places libres</div>
+      <canvas id="chart-hist" height="90"></canvas>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Flux net estimé (Δ vélos / intervalle)</div>
+      <canvas id="chart-flux" height="60"></canvas>
     </div>
   </div>
 
-
-  <div id="spanel-trajets" style="padding:10px;display:none">
-    <div class="card" style="padding:12px;margin-bottom:8px">
-      <div class="card-title" style="margin-bottom:8px;font-size:10px">Flux entre stations</div>
-      <div class="range" style="gap:5px;padding:8px">
-        <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px">
-          <button onclick="onTrajetsView('today')" id="tr-pill-today" style="padding:5px 14px;border:none;background:#3a3a3c;color:#fff;font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Aujourd'hui</button>
-          <button onclick="onTrajetsView('history')" id="tr-pill-history" style="padding:5px 14px;border:none;background:transparent;color:rgba(255,255,255,.55);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Historique</button>
-        </div>
-        <select id="tr-type" onchange="renderTrajets()">
-          <option value="all">Tous</option>
-          <option value="E">Élec</option>
-          <option value="M">Méca</option>
-        </select>
-      </div>
+  <!-- ══ HEATMAP ══ -->
+  <div class="tab-panel" id="tab-heatmap">
+    <div class="ctrl">
+      <select id="heat-station"><option value="">— Station —</option></select>
+      <button onclick="loadHeatmap()">Calculer</button>
     </div>
-    <div class="card" style="padding:0;overflow:hidden">
-      <div id="tr-content" style="overflow-x:auto;max-height:40vh;overflow-y:auto">
-        <div class="loader">Calcul des trajets…</div>
-      </div>
+    <div class="chart-wrap">
+      <div class="chart-title">% vélos disponibles — heure × jour de semaine (30 derniers jours)</div>
+      <div id="heatmap-wrap"><div class="no-data">Sélectionnez une station et cliquez sur Calculer.</div></div>
     </div>
   </div>
 
-</div>
-
-<div class="panel" id="tab-velos" style="padding:10px;overflow-y:auto;max-height:100vh">
-  <div class="card" style="padding:12px;margin-bottom:8px">
-    <div class="card-title" style="margin-bottom:8px;font-size:10px">Tri & filtre</div>
-    <div class="range" style="gap:5px;padding:8px">
-      <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px">
-        <button onclick="onBikesSort('trips')" id="bk-pill-trips" style="padding:5px 14px;border:none;background:#3a3a3c;color:#fff;font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Trajets</button>
-        <button onclick="onBikesSort('rating')" id="bk-pill-rating" style="padding:5px 14px;border:none;background:transparent;color:rgba(255,255,255,.55);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Note</button>
-        <button onclick="onBikesSort('batt')" id="bk-pill-batt" style="padding:5px 14px;border:none;background:transparent;color:rgba(255,255,255,.55);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Batterie</button>
+  <!-- ══ TRACKING ══ -->
+  <div class="tab-panel" id="tab-tracking">
+    <div class="track-form">
+      <div class="set-title">Tracker un vélo</div>
+      <p class="track-intro">
+        Notez le numéro gravé sur le cadre au départ. L'algorithme détecte
+        les stations où le comptage a augmenté dans les 2h suivantes.
+      </p>
+      <div class="form-grid">
+        <div class="fg"><label>N° vélo (cadre)</label><input type="text" id="t-bike" placeholder="ex. 42183"></div>
+        <div class="fg"><label>Station de départ</label><select id="t-station"><option value="">— Station —</option></select></div>
+        <div class="fg"><label>Date</label><input type="date" id="t-date"></div>
+        <div class="fg"><label>Heure de départ</label><input type="time" id="t-time"></div>
       </div>
-      <select id="bk-type" onchange="renderBikesTable()">
-        <option value="all">Tous</option>
-        <option value="E">Élec</option>
-        <option value="M">Méca</option>
-      </select>
-      <input type="date" id="bk-date" style="padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);background:rgba(12,12,16,.45);color:#fff;font-size:13px;outline:none" onchange="initBikesTab()"/>
-      <input id="bk-search" type="text" placeholder="N° vélo…" oninput="renderBikesTable()" style="padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);background:rgba(12,12,16,.45);color:#fff;font-size:13px;outline:none;min-width:0;flex:1"/>
+      <button onclick="runTracking()">Analyser le trajet</button>
+    </div>
+    <div class="track-result" id="track-result" style="display:none">
+      <div class="chart-title">Stations d'arrivée probables</div>
+      <div id="track-content"></div>
     </div>
   </div>
-  <div class="card" style="padding:0;overflow:hidden">
-    <div id="bk-content" style="overflow-x:auto;max-height:70vh;overflow-y:auto">
-      <div class="loader">Charge les données vélos…</div>
+
+  <!-- ══ CONFIG ══ -->
+  <div class="tab-panel" id="tab-settings">
+    <div class="set-sec">
+      <div class="set-title">Source de données</div>
+      <p style="font-size:13px;color:var(--muted);line-height:1.75;margin-bottom:12px">
+        L'app utilise le <strong style="color:var(--text)">WFS Open Data Grand Lyon</strong> — aucune clé API nécessaire.<br>
+        En Live, les données sont appelées directement depuis le navigateur (rafraîchissement en temps réel).<br>
+        Pour l'historique et la heatmap, le fichier <code>data/latest.json</code> collecté par GitHub Actions est utilisé.
+      </p>
+      <a href="https://data.grandlyon.com/portail/fr/jeux-de-donnees/stations-velo-v-metropole-lyon-disponibilites-temps-reel/info"
+         target="_blank"
+         style="font-size:12px;color:var(--accent);font-family:'DM Mono',monospace">
+        → data.grandlyon.com — jeu de données Vélo'v ↗
+      </a>
+    </div>
+
+    <div class="set-sec">
+      <div class="set-title">Stations à afficher</div>
+      <div class="set-f">
+        <label>IDs de stations (virgule-séparés)</label>
+        <input type="text" id="cfg-ids" placeholder="10002, 10007, 10015, ... (vide = toutes)">
+        <span class="set-hint">
+          Laissez vide pour afficher <strong>toutes les stations Lyon</strong>.
+          Pour ne suivre que certaines, entrez leurs numéros séparés par des virgules.<br>
+          Trouvez les IDs en appelant directement l'API :
+          <a href="https://data.grandlyon.com/geoserver/wfs?SERVICE=WFS&REQUEST=GetFeature&VERSION=1.1.0&TYPENAME=jcd_jcdecaux.jcdvelov&outputformat=geojson"
+             target="_blank" style="color:var(--accent)">URL WFS complète ↗</a>
+        </span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
+        <button onclick="saveSettings()">Sauvegarder</button>
+        <span class="ok-flash" id="cfg-saved" style="display:none">✓ Sauvegardé</span>
+      </div>
+    </div>
+
+    <div class="set-sec">
+      <div class="set-title">Architecture</div>
+      <p style="font-size:13px;color:var(--muted);line-height:1.75">
+        Collecte : <code>collect.py</code> via GitHub Actions toutes les 10 min → appel WFS Grand Lyon.<br>
+        Stockage : <code>data/latest.json</code> (snapshot courant) + <code>data/history/YYYY-MM-DD.json</code> (tableau de snapshots par jour).<br>
+        Hébergement : GitHub Pages depuis la racine de la branche <code>main</code>.
+      </p>
     </div>
   </div>
-</div>
+
 </main>
+
 <script>
-'use strict';
-function positionDropdown(inputId,ddId){
-  const input=document.getElementById(inputId);
-  const dd=document.getElementById(ddId);
-  if(!input||!dd) return;
-  const rect=input.getBoundingClientRect();
-  dd.style.left=rect.left+'px';
-  dd.style.top=(rect.bottom+4)+'px';
-  dd.style.width=rect.width+'px';
-}
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+const WFS_URL = 'https://data.grandlyon.com/geoserver/wfs?SERVICE=WFS&REQUEST=GetFeature&VERSION=1.1.0&TYPENAME=jcd_jcdecaux.jcdvelov&outputformat=geojson';
 
-function compactPlanFloat(){
-  const idx=window._openComboIdx??0;
-  const combo=window._planCombos?.[idx];
-  const el=document.getElementById('plan-float-compact');
-  if(!el) return;
-  if(window.innerWidth>640){
-    document.getElementById('plan-float-expanded').style.display='block';
-    el.style.display='none'; return;
-  }
-  if(combo){
-    const sc=Math.round(combo.score??0);
-    const scCol=sc>=60?'#34c759':sc>=35?'#ff9f0a':'#ff453a';
-    const scBg=sc>=60?'#0d2b1a':sc>=35?'#2b1a00':'#2b0a0a';
-    const isNow=(window._planMode||'now')==='now';
-    const livePlacesDisp=(!isNow&&combo.arrN!=null)?'~'+Math.round(combo.arrN):(combo.arr.live?.available_bike_stands??'?');
-    const liveElec=(!isNow&&combo.depElecN!=null)?'~'+Math.round(combo.depElecN):(combo.dep.live?.electrical_bikes??0);
-    const liveMeca=(!isNow&&combo.depMecaN!=null)?'~'+Math.round(combo.depMecaN):(combo.dep.live?.mechanical_bikes??0);
-    const top=window._planCombos||[];
-    const dotsHtml=top.slice(0,Math.min(top.length,5)).map((_,i)=>
-      `<div class="cdot${i===idx?' on':''}" style="width:${i===idx?'14':'5'}px"></div>`).join('');
-    el.innerHTML=`
-      <div style="flex:1;min-width:0;cursor:pointer" onclick="expandPlanFloat()">
-        <div style="display:flex;align-items:center;gap:7px;overflow:hidden">
-          <div style="width:18px;height:18px;border-radius:5px;flex-shrink:0;background:rgba(255,255,255,.08);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center">${idx+1}</div>
-          <div style="font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">${cleanName(combo.dep.name)} → ${cleanName(combo.arr.name)}</div>
-          <div style="display:flex;align-items:center;gap:3px;flex-shrink:0"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg><span style="font-size:16px;font-weight:800;color:#fff">${livePlacesDisp}</span></div>
-          <div style="background:${scBg};border-radius:6px;padding:2px 6px;flex-shrink:0"><span style="font-size:11px;font-weight:700;color:${scCol}">${sc}%</span></div>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
-          <div style="font-size:10px;color:rgba(255,255,255,.5)">${Math.round(combo.dist/1000*10)/10}km · ~${combo.rideMin}min</div>
-          <div style="display:flex;align-items:center;gap:4px;margin-left:auto">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span style="font-size:11px;font-weight:700;color:#fff">${liveElec}</span>
-            <span style="color:#38383a;font-size:10px">/</span>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg><span style="font-size:11px;font-weight:700;color:#fff">${liveMeca}</span>
-          </div>
-          <div style="display:flex;gap:3px">${dotsHtml}</div>
-        </div>
-      </div>`;
-  } else {
-    el.innerHTML=`<div style="font-size:12px;color:rgba(255,255,255,.6);cursor:pointer;flex:1" onclick="expandPlanFloat()">Tap pour voir les itinéraires</div>`;
-  }
-  document.getElementById('plan-float-expanded').style.display='none';
-  document.getElementById('plan-results').style.display='none';
-  el.style.display='flex';
-  const pf=document.getElementById('plan-float');
-  if(pf) pf.style.maxHeight='100px';
-  initPillSwipe();
-}
-function expandPlanFloat(){
-  document.getElementById('plan-float-expanded').style.display='block';
-  document.getElementById('plan-results').style.display='';
-  document.getElementById('plan-float-compact').style.display='none';
-  // Re-init slider (track may have been re-rendered)
-  setTimeout(initSliderSwipe, 50);
-  const pf=document.getElementById('plan-float');
-  if(pf) pf.style.maxHeight=window.innerWidth<=640?'58vh':'80vh';
-}
-function updateLiveStatus2(){}
-
-
-/* ═══ STATE ═══════════════════════════════════════════ */
-let allStations=[], map=null, markers=null, heatLayer=null, heatOn=false;
-let selectedStation=null, chartElec=null, chartMeca=null, chartFlux=null;
-let todayMv={}, lbMvCache={}, courbesSliderDays=1;
-let planMap=null, planRoutes=[], planFromPos=null, planToPos=null;
-let planFromFixed=null, planToFixed=null; // station fixée si l'user en a choisi une
-
-const fmt = d => d.toISOString().slice(0,16);
-const DOW_NAMES = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
-
-/* ═══ CLOCK & TABS ════════════════════════════════════ */
-function updateLiveStatus(){
-  const el=document.getElementById('live-status');
-  if(!el) return;
-  const minAgo=Math.round((Date.now()-(window._lastStationUpdate||Date.now()))/60000);
-  if(minAgo<=1) el.innerHTML='<span style="color:#30d158;font-size:10px">● Live</span>';
-  else el.innerHTML=`<span style="color:#f59e0b;font-size:10px">● Màj il y a ${minAgo} min</span>`;
-}
-
-/* ═══ PANNEAU SOURCE ══════════════════════════════════ */
-const SOURCES = {
-  grandlyon: {
-    label: 'Métropole de Lyon',
-    url: 'download.data.grandlyon.com',
-    detail: 'API temps réel JCDecaux via Grand Lyon Open Data'
-  },
-  local: {
-    label: 'Cache GitHub Pages',
-    url: 'data/latest.json',
-    detail: 'Collecte automatique toutes les 2 min via API JCDecaux v3'
-  }
+let cfg = {
+  ids: JSON.parse(localStorage.getItem('vv_ids') || 'null') || [],
 };
 
-function toggleSourcePanel(){
-  const p = document.getElementById('source-panel');
-  if(!p) return;
-  if(p.style.display === 'none' || !p.style.display){
-    renderSourcePanel();
-    p.style.display = 'block';
-  } else {
-    p.style.display = 'none';
-  }
-}
+let liveStations = [];
+let chartHist = null, chartFlux = null;
 
-function renderSourcePanel(){
-  const el = document.getElementById('source-content');
-  if(!el) return;
+// ─── CLOCK ────────────────────────────────────────────────────────────────────
+setInterval(() => { document.getElementById('clock').textContent = new Date().toLocaleTimeString('fr-FR'); }, 1000);
 
-  const src = SOURCES[window._dataSource] || SOURCES.local;
-  const ts  = window._dataTimestamp;
-  const fetchedAt = window._lastStationUpdate ? new Date(window._lastStationUpdate) : null;
-  const n = allStations?.length || 0;
-
-  const fmtT = d => d ? d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '—';
-  const fmtD = d => d ? d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'}) : '';
-
-  const dataDate = ts ? new Date(ts) : null;
-  const ageMin = dataDate ? Math.round((Date.now()-dataDate.getTime())/60000) : null;
-  const ageStr = ageMin===null ? '—' : ageMin < 1 ? "à l'instant" : ageMin < 60 ? `il y a ${ageMin} min` : `il y a ${Math.round(ageMin/60)} h`;
-  const ageCol = ageMin===null ? 'rgba(255,255,255,.5)' : ageMin <= 5 ? '#30d158' : ageMin <= 60 ? '#f59e0b' : '#ff453a';
-
-  el.innerHTML = `
-    <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:2px">
-      <span style="font-weight:600;color:#fff">${src.label}</span>
-    </div>
-    <div style="font-size:10px;color:rgba(255,255,255,.4);font-family:ui-monospace,monospace;margin-bottom:10px">${src.url}</div>
-
-    <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:11px">
-      <span style="color:rgba(255,255,255,.45)">Données du</span>
-      <span style="color:${ageCol}">${dataDate ? fmtT(dataDate) : '—'} <span style="color:rgba(255,255,255,.35)">${ageStr}</span></span>
-
-      <span style="color:rgba(255,255,255,.45)">Récupéré à</span>
-      <span>${fmtT(fetchedAt)}</span>
-
-      <span style="color:rgba(255,255,255,.45)">Stations</span>
-      <span>${n}</span>
-    </div>
-
-    <div style="margin-top:10px;padding-top:8px;border-top:0.5px solid rgba(255,255,255,.08);font-size:10px;color:rgba(255,255,255,.4);line-height:1.5">
-      ${src.detail}
-    </div>`;
-}
-
-// Fermer le panneau en cliquant ailleurs
-document.addEventListener('click', e => {
-  const p = document.getElementById('source-panel');
-  const btn = document.getElementById('live-status');
-  if(p && p.style.display === 'block' && !p.contains(e.target) && !btn?.contains(e.target)){
-    p.style.display = 'none';
-  }
-});
-setInterval(()=>{ document.getElementById('clock').textContent=new Date().toLocaleTimeString('fr-FR'); updateLiveStatus(); },1000);
-
-document.querySelectorAll('.tab').forEach(tab=>{
-  tab.onclick=()=>{
-    const isMap = tab.dataset.tab==='map';
-    document.querySelectorAll('.tab').forEach(t=>{ t.classList.remove('on'); t.style.color='rgba(255,255,255,.55)'; });
-    document.querySelectorAll('.panel').forEach(p=>{ p.classList.remove('on'); p.style.display='none'; });
-    document.querySelectorAll(`.tab[data-tab="${tab.dataset.tab}"]`).forEach(t=>{ t.classList.add('on'); t.style.color='#fff'; });
-    const activePanel=document.getElementById('tab-'+tab.dataset.tab);
-    if(activePanel){ activePanel.classList.add('on'); activePanel.style.display=isMap?'flex':'block'; }
-    // Header : absolu sur carte, sticky sur stats
-    const hdr=document.querySelector('header');
-    if(hdr){
-      if(isMap){
-        hdr.style.position='absolute'; hdr.style.top='10px';
-        hdr.style.left='10px'; hdr.style.right='10px';
-        hdr.style.borderRadius='14px'; hdr.style.borderBottom='0.5px solid rgba(255,255,255,.12)';
-      } else {
-        hdr.style.position='sticky'; hdr.style.top='0';
-        hdr.style.left=''; hdr.style.right='';
-        hdr.style.borderRadius='0'; hdr.style.borderBottom='0.5px solid rgba(255,255,255,.08)';
-      }
-    }
-    document.body.style.overflow = isMap ? 'hidden' : 'auto';
-    setTimeout(()=>{ map?.invalidateSize(); planMap?.invalidateSize(); },150);
-    if(tab.dataset.tab==='map') setTimeout(()=>{ if(!map)initMap(); map?.invalidateSize(); renderStations(); },150);
-    if(tab.dataset.tab==='stats'){
-      quickLeaderboard();
-    }
-    
-    if(tab.dataset.tab==='plan') initPlanMap();
-  };
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const t = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(`tab-${t}`).classList.add('active');
+    if (t === 'settings') loadSettings();
+  });
 });
 
-/* ═══ UTILS ═══════════════════════════════════════════ */
-const cleanName = n => n.replace(/^\d+\s*[-–]\s*/,'').trim();
-function stationColor(st){
-  if(!st.bike_stands||st.available_bikes===0) return '#ff3b30';
-  return st.available_bikes/st.bike_stands<=.25 ? '#ff9f0a' : '#1a7a3e';
-}
-function chartOpts(){
-  return { responsive:true,
-    plugins:{legend:{labels:{color:'#6e6e73',font:{family:'-apple-system,sans-serif',size:11}}}},
-    scales:{ x:{ticks:{color:'#aeaeb2',font:{size:10},maxTicksLimit:16},grid:{color:'#f0f0f5'}},
-             y:{beginAtZero:true,ticks:{color:'#6e6e73'},grid:{color:'#f0f0f5'}} }};
-}
-function haversine(lat1,lng1,lat2,lng2){
-  const R=6371000,dl=(lat2-lat1)*Math.PI/180,dg=(lng2-lng1)*Math.PI/180;
-  const a=Math.sin(dl/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dg/2)**2;
-  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-}
-function decodePolyline(encoded,precision=6){
-  let i=0,lat=0,lng=0; const coords=[],f=Math.pow(10,precision);
-  while(i<encoded.length){
-    let b,s=0,r=0;
-    do{b=encoded.charCodeAt(i++)-63;r|=(b&0x1f)<<s;s+=5;}while(b>=0x20);
-    lat+=(r&1)?~(r>>1):(r>>1); s=0;r=0;
-    do{b=encoded.charCodeAt(i++)-63;r|=(b&0x1f)<<s;s+=5;}while(b>=0x20);
-    lng+=(r&1)?~(r>>1):(r>>1);
-    coords.push([lat/f,lng/f]);
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+const cls      = (v, total) => !total ? 'empty' : v === 0 ? 'empty' : v / total <= .25 ? 'low' : 'ok';
+const cleanName = n => n.replace(/^\d+\s*[-–]\s*/, '').trim();
+const todayStr  = () => new Date().toISOString().slice(0, 10);
+const chartDefs = () => ({
+  responsive: true,
+  plugins: { legend: { labels: { color: '#4e6478', font: { family: 'DM Mono', size: 11 } } } },
+  scales: {
+    x: { ticks: { color: '#4e6478', font: { family: 'DM Mono', size: 10 }, maxTicksLimit: 14 }, grid: { color: '#1e2d3d' } },
+    y: { ticks: { color: '#4e6478', font: { family: 'DM Mono', size: 11 } }, grid: { color: '#1e2d3d' }, min: 0 },
+  },
+});
+
+// ─── DATA LAYER ───────────────────────────────────────────────────────────────
+async function fetchLive() {
+  let url = WFS_URL;
+  if (cfg.ids.length) {
+    const filter = encodeURIComponent(`number IN (${cfg.ids.join(', ')})`);
+    url += `&CQL_FILTER=${filter}`;
   }
-  return coords;
-}
-function scoreColor(pct){ return pct>=60?'score-high':pct>=30?'score-med':'score-low'; }
-
-/* ═══ DATA ════════════════════════════════════════════ */
-function parseStation(r){
-  let elec=0,meca=0;
-  try{
-    const raw=r.main_stands||r.overflow_stands||'';
-    if(raw){
-      const s=(typeof raw==='string'?raw:JSON.stringify(raw)).replace(/'/g,'"').replace(/\bTrue\b/g,'true').replace(/\bFalse\b/g,'false');
-      const d=JSON.parse(s); elec=d?.availabilities?.electricalBikes??0; meca=d?.availabilities?.mechanicalBikes??(r.available_bikes||0);
-    }
-  }catch{}
-  return { number:r.number,name:r.name||'',
-    available_bikes:r.available_bikes||0, available_bike_stands:r.available_bike_stands||0,
-    bike_stands:r.bike_stands||0, electrical_bikes:elec, mechanical_bikes:meca,
-    lat:r.lat, lng:r.lng };
-}
-async function loadLatest(){
-  try{
-    // Source primaire : API Grand Lyon directe
-    const r=await fetch('https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov/all.json?maxfeatures=-1&start=1',{signal:AbortSignal.timeout(8000),cache:'no-store'});
-    if(r.ok){
-      const j = await r.json();
-      const rows = j.values || [];
-      window._dataSource = 'grandlyon';
-      // last_update de la première station = fraîcheur réelle des données
-      window._dataTimestamp = rows[0]?.last_update || null;
-      return rows.map(parseStation);
-    }
-  }catch{}
-  try{
-    // Fallback : fichier local data/latest.json
-    const r=await fetch(`data/latest.json?t=${Date.now()}`,{cache:'no-store',signal:AbortSignal.timeout(8000)});
-    if(!r.ok) throw new Error('no local');
-    const d=await r.json();
-    window._dataSource = 'local';
-    window._dataTimestamp = d.timestamp || null;
-    return (d.stations||[]).map(s=>({...s,number:parseInt(s.number)||s.number}));
-  }catch{ window._dataSource=null; window._dataTimestamp=null; return []; }
-}
-
-/* ═══ INDEXEDDB CACHE ════════════════════════════════ */
-const _idbName='velov-cache', _idbStore='days', _idbVer=1;
-let _idb=null;
-function openIDB(){
-  if(_idb) return Promise.resolve(_idb);
-  return new Promise((res,rej)=>{
-    const req=indexedDB.open(_idbName,_idbVer);
-    req.onupgradeneeded=e=>e.target.result.createObjectStore(_idbStore);
-    req.onsuccess=e=>{ _idb=e.target.result; res(_idb); };
-    req.onerror=()=>rej(req.error);
-  });
-}
-async function idbGet(key){
-  try{
-    const db=await openIDB();
-    return new Promise((res,rej)=>{
-      const tx=db.transaction(_idbStore,'readonly');
-      const req=tx.objectStore(_idbStore).get(key);
-      req.onsuccess=()=>res(req.result??null);
-      req.onerror=()=>res(null);
-    });
-  }catch{ return null; }
-}
-async function idbSet(key,val){
-  try{
-    const db=await openIDB();
-    return new Promise((res,rej)=>{
-      const tx=db.transaction(_idbStore,'readwrite');
-      tx.objectStore(_idbStore).put(val,key);
-      tx.oncomplete=()=>res();
-      tx.onerror=()=>res();
-    });
-  }catch{}
-}
-
-const _fetchDayCache={};
-async function fetchDay(date){
-  if(_fetchDayCache[date]) return _fetchDayCache[date];
-  const today=localDateStr();
-  // Vérifier IDB pour les dates passées
-  if(date!==today){
-    const cached=await idbGet(date);
-    if(cached){ _fetchDayCache[date]=cached; return cached; }
-  }
-  try{
-    if(date===today){
-      const r=await fetch(`data/today.json?t=${Date.now()}`,{cache:'no-store'});
-      if(!r.ok) return null;
-      const data=await r.json();
-      return data.base&&data.deltas ? expandDeltas(data) : Array.isArray(data)?data:null;
-    }
-    // Essayer .json.gz d'abord, puis .json en fallback
-    for(const ext of ['.json.gz','.json']){
-      const r=await fetch(`data/history/${date}${ext}`,{signal:AbortSignal.timeout(3000)});
-      if(!r.ok) continue;
-      let data;
-      if(ext==='.json.gz'){
-        const blob=await r.blob();
-        const ds=new DecompressionStream('gzip');
-        const stream=blob.stream().pipeThrough(ds);
-        const text=await new Response(stream).text();
-        data=JSON.parse(text);
-      } else {
-        data=await r.json();
-      }
-      const result=data.base&&data.deltas?expandDeltas(data):Array.isArray(data)?data:null;
-      if(result && date!==today){
-        _fetchDayCache[date]=result;
-        idbSet(date,result); // persist IDB
-      }
-      return result;
-    }
-    return null;
-  }catch{ return null; }
-}
-
-function expandDeltas(data){
-  const base = data.base;
-  const snapshots = [];
-  const baseState = {};
-  (base.s||[]).forEach(st=>{ baseState[st.n]={...st}; });
-  const baseSnap = {t: base.t, s: Object.values(baseState)};
-  if(base.meteo) baseSnap.meteo = base.meteo;
-  snapshots.push(baseSnap);
-  let lastMeteo = base.meteo || null;
-  for(const delta of (data.deltas||[])){
-    for(const d of (delta.d||[])){
-      const n=d.n;
-      if(!baseState[n]) baseState[n]={n};
-      Object.assign(baseState[n], d);
-    }
-    const snap = {t: delta.t, s: Object.values(baseState).map(st=>({...st}))};
-    // Propager la dernière météo connue si le delta n'en a pas
-    if(delta.meteo){ lastMeteo=delta.meteo; snap.meteo=delta.meteo; }
-    else if(lastMeteo){ snap.meteo=lastMeteo; }
-    snapshots.push(snap);
-  }
-  return snapshots;
-}
-function getTs(snap){ return snap.timestamp||snap.t||''; }
-function getSts(snap){
-  let a=[];
-  if(Array.isArray(snap)) a=snap;
-  else if(Array.isArray(snap?.stations)) a=snap.stations;
-  else if(Array.isArray(snap?.s)) a=snap.s;
-  return a.map(st=>{
-    if(!st.n) return st;
-    return {number:st.n,available_bikes:st.b??0,available_bike_stands:st.s??0,
-      bike_stands:st.c??0,electrical_bikes:st.e??0,mechanical_bikes:st.m??0,lat:st.la,lng:st.ln};
-  });
-}
-async function fetchRange(startMs,endMs){
-  const days=Math.ceil((endMs-startMs)/86400e3);
-  const step=days<=14?1:days<=30?1:days<=90?3:days<=180?5:10;
-  const dates=new Set();
-  for(let i=0;i<=days;i+=step){ const d=new Date(startMs);d.setDate(d.getDate()+i);dates.add(d.toISOString().slice(0,10)); }
-  dates.add(new Date(endMs).toISOString().slice(0,10));
-  const results=await Promise.all([...dates].map(fetchDay));
-  const all=[];
-  results.forEach(s=>{if(s?.length)all.push(...s);});
-  return all.filter(s=>{const t=new Date(getTs(s)).getTime();return t>=startMs&&t<=endMs;})
-    .sort((a,b)=>new Date(getTs(a))-new Date(getTs(b)));
-}
-function calcMvFromSnaps(snaps){
-  const mv={};
-  for(let i=1;i<snaps.length;i++){
-    const prev=getSts(snaps[i-1]),curr=getSts(snaps[i]);
-    curr.forEach(c=>{
-      const p=prev.find(s=>s.number===c.number); if(!p) return;
-      const d=Math.abs(c.available_bikes-p.available_bikes);
-      if(d>0) mv[c.number]=(mv[c.number]||0)+d;
-    });
-  }
-  return mv;
-}
-
-/* ═══ MOVEMENTS ═══════════════════════════════════════ */
-async function computeMovements(){
-  todayMv={};
-  const snaps=await fetchDay(new Date().toISOString().slice(0,10));
-  if(!snaps||snaps.length<2) return;
-  todayMv=calcMvFromSnaps(snaps);
-}
-
-/* ═══ MAP ═════════════════════════════════════════════ */
-function initMap(){
-  if(map) return;
-  map=L.map('map',{zoomControl:false}).setView([45.757,4.832],13); L.control.zoom({position:'bottomright'}).addTo(map);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    {attribution:'© OpenStreetMap © CARTO',maxZoom:20}).addTo(map);
-  map.on('zoomend', renderStations);
-}
-function renderStations(){
-  if(markers) markers.clearLayers();
-  markers=L.layerGroup();
-  if(!window._stationsHidden) markers.addTo(map);
-  const zoom=map?map.getZoom():13;
-
-  // Clustering au zoom faible
-  if(zoom < 13){
-    const cellSize=zoom>=11?0.015:0.03;
-    const cells={};
-    allStations.filter(s=>s.lat&&s.lng).forEach(st=>{
-      const cx=Math.round(st.lat/cellSize), cy=Math.round(st.lng/cellSize);
-      const key=cx+'_'+cy;
-      if(!cells[key]) cells[key]={lat:0,lng:0,count:0,bikes:0,stands:0};
-      cells[key].lat+=st.lat; cells[key].lng+=st.lng;
-      cells[key].count++; cells[key].bikes+=st.available_bikes||0; cells[key].stands+=st.bike_stands||1;
-    });
-    Object.values(cells).forEach(cell=>{
-      const lat=cell.lat/cell.count, lng=cell.lng/cell.count;
-      const ratio=cell.bikes/cell.stands;
-      const color=ratio>=0.4?'#1a7a3e':ratio>=0.15?'#f59e0b':'#b52a2a';
-      const r=Math.max(14,Math.min(26,10+cell.count*1.5));
-      const icon=L.divIcon({html:`<div style="width:${r*2}px;height:${r*2}px;border-radius:50%;background:${color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:2px solid rgba(255,255,255,.2);box-shadow:0 2px 6px rgba(0,0,0,.4)">${cell.count}</div>`,iconSize:[r*2,r*2],iconAnchor:[r,r],className:''});
-      markers.addLayer(L.marker([lat,lng],{icon}));
-    });
-    return;
-  }
-
-  // Stations individuelles avec taille variable
-  allStations.forEach(st=>{
-    if(!st.lat||!st.lng) return;
-    const mv=todayMv[st.number]||0;
-    const m=L.circleMarker([st.lat,st.lng],{radius:8,fillColor:stationColor(st),color:'#fff',weight:1.5,fillOpacity:.9});
-    m.on('click',(e)=>{ L.DomEvent.stopPropagation(e);
-      if(window._waitingForArr){
-        const pos={lat:st.lat,lng:st.lng};
-        const arrSt=allStations.find(x=>x.number===st.number)||st;
-        planToFixed=arrSt; planToPos=pos; window._planToPos=pos;
-        document.getElementById('plan-to').value=cleanName(st.name);
-        window._waitingForArr=false;
-        expandPlanFloat();
-        setTimeout(()=>computePlan(),200);
-      } else {
-        showStationPopup(st, st.lat, st.lng);
-      }
-    });
-    markers.addLayer(m);
-  });
-  buildHeatLayer();
-}
-function buildHeatLayer(){
-  if(heatLayer) map.removeLayer(heatLayer);
-  const vals=Object.values(todayMv).filter(v=>v>0);
-  if(!vals.length) return;
-  const maxMv=Math.max(...vals);
-  // Seuil : seulement les stations ayant eu au moins 1 mouvement
-  const pts=allStations
-    .filter(s=>s.lat&&s.lng&&todayMv[s.number]>0)
-    .map(s=>[s.lat, s.lng, todayMv[s.number]/maxMv]);
-  heatLayer=L.heatLayer(pts,{
-    radius:35,        // aura lisible au zoom 13
-    blur:20,
-    maxZoom:18,
-    minOpacity:.1,    // faible pour que les différences soient visibles
-    max:1.0,
-    gradient:{
-      0.0: '#313695',  // bleu foncé = peu de mouvements
-      0.3: '#4575b4',
-      0.5: '#74add1',
-      0.7: '#fdae61',
-      0.85:'#f46d43',
-      1.0: '#d73027',  // rouge vif = beaucoup de mouvements
-    }
-  });
-  if(heatOn) heatLayer.addTo(map);
-}
-
-
-/* ═══ DROPDOWN GÉNÉRIQUE ═══════════════════════════════ */
-let _nominatimDebounce={};
-
-// Lieux lyonnais connus — suggestions instantanées
-const LIEUX_LYON = [
-  {name:'Gare Part-Dieu', lat:45.7603, lng:4.8597, type:'🚆'},
-  {name:'Gare Perrache', lat:45.7491, lng:4.8271, type:'🚆'},
-  {name:'Gare Saint-Paul', lat:45.7647, lng:4.8272, type:'🚆'},
-  {name:'Aéroport Lyon-Saint Exupéry', lat:45.7256, lng:5.0811, type:'✈️'},
-  {name:'Hôtel de Ville', lat:45.7676, lng:4.8338, type:'🏛️'},
-  {name:'Place Bellecour', lat:45.7579, lng:4.8320, type:'📍'},
-  {name:'Vieux-Lyon', lat:45.7627, lng:4.8272, type:'🏘️'},
-  {name:"Presqu\u00eele", lat:45.7640, lng:4.8340, type:"📍"},
-  {name:'Confluence', lat:45.7432, lng:4.8188, type:'🛍️'},
-  {name:'Croix-Rousse', lat:45.7762, lng:4.8285, type:'📍'},
-  {name:'Fourvière', lat:45.7623, lng:4.8222, type:'⛪'},
-  {name:'Université Lyon 1', lat:45.7825, lng:4.8675, type:'🎓'},
-  {name:'Université Lyon 2', lat:45.7491, lng:4.8316, type:'🎓'},
-  {name:'Université Lyon 3', lat:45.7628, lng:4.8368, type:'🎓'},
-  {name:'INSA Lyon', lat:45.7816, lng:4.8766, type:'🎓'},
-  {name:'École Centrale Lyon', lat:45.7250, lng:4.9160, type:'🎓'},
-  {name:'Hospices Civils de Lyon', lat:45.7628, lng:4.8312, type:'🏥'},
-  {name:'Hôpital Édouard Herriot', lat:45.7528, lng:4.8643, type:'🏥'},
-  {name:'Hôpital de la Croix-Rousse', lat:45.7783, lng:4.8290, type:'🏥'},
-  {name:'Stade de Gerland', lat:45.7325, lng:4.8285, type:'⚽'},
-  {name:"Parc de la T\u00eate d'Or", lat:45.7780, lng:4.8555, type:"🌳"},
-  {name:'Musée des Confluences', lat:45.7334, lng:4.8183, type:'🏛️'},
-  {name:'Opéra de Lyon', lat:45.7680, lng:4.8348, type:'🎭'},
-  {name:'Centre Commercial La Part-Dieu', lat:45.7606, lng:4.8614, type:'🛍️'},
-  {name:"March\u00e9 Saint-Antoine", lat:45.7618, lng:4.8310, type:"🛒"},
-  {name:'Villeurbanne', lat:45.7670, lng:4.8882, type:'📍'},
-  {name:'Vénissieux', lat:45.6967, lng:4.8877, type:'📍'},
-  {name:'Bron', lat:45.7369, lng:4.9098, type:'📍'},
-  {name:'Caluire-et-Cuire', lat:45.7967, lng:4.8483, type:'📍'},
-  {name:'Saint-Priest', lat:45.6966, lng:4.9428, type:'📍'},
-];
-
-function buildDropdown(inputId, ddId, opts){
-  const input=document.getElementById(inputId), dd=document.getElementById(ddId);
-
-  input.addEventListener('input',()=>{
-    const q=input.value.trim();
-    dd.innerHTML='';
-    if(!q){ dd.classList.remove('open'); return; }
-
-    // Stations locales (instantané)
-    const stMatches=allStations
-      .filter(s=>cleanName(s.name).toLowerCase().includes(q.toLowerCase()))
-      .slice(0,5);
-
-    // Lieux lyonnais connus (instantané)
-    const lieuMatches=LIEUX_LYON
-      .filter(l=>l.name.toLowerCase().includes(q.toLowerCase()))
-      .slice(0,3);
-
-    const render=(geoResults=[])=>{
-      dd.innerHTML='';
-      stMatches.forEach(st=>{
-        const el=document.createElement('div'); el.className='opt';
-        el.innerHTML=`${cleanName(st.name)} <span class="opt-type">🚲 station</span>`;
-        el.onclick=()=>{ input.value=cleanName(st.name); dd.classList.remove('open'); opts.onStation?.(st); };
-        dd.appendChild(el);
-      });
-      geoResults.forEach(geo=>{
-        const el=document.createElement('div'); el.className='opt';
-        const geoType=geo.type||geo.class||'';
-        const isShop=geoType==='shop'||geoType==='office'||geoType==='company'||geoType==='commercial'||(geo.extratags?.office)||(geo.extratags?.company);
-        const icon=isShop?'🏢':'📍';
-        const typeLabel=isShop?'entreprise':'adresse';
-        const shortName=geo.display_name.split(',').slice(0,2).join(',').trim();
-        el.innerHTML=`${shortName} <span class="opt-type">${icon} ${typeLabel}</span>`;
-        el.onclick=()=>{
-          input.value=geo.display_name.split(',').slice(0,2).join(',');
-          dd.classList.remove('open');
-          const pos={lat:parseFloat(geo.lat),lng:parseFloat(geo.lon)};
-          opts.onGeoPos?.(pos);
-        };
-        dd.appendChild(el);
-      });
-      // Lieux locaux
-      lieuMatches.forEach(l=>{
-        if(geoResults.some(g=>g.display_name?.includes(l.name))) return; // dédoublonner
-        const el=document.createElement('div'); el.className='opt';
-        el.innerHTML=`<span style="font-size:14px">${l.type}</span><div><div style="font-weight:500">${l.name}</div><div style="font-size:11px;color:rgba(255,255,255,.4)">Lyon</div></div>`;
-        el.onclick=()=>{ input.value=l.name; dd.classList.remove('open'); opts.onGeoPos?.({lat:l.lat,lng:l.lng}); };
-        dd.appendChild(el);
-      });
-      if(stMatches.length||geoResults.length||lieuMatches.length){
-        positionDropdown(inputId, ddId);
-        dd.classList.add('open');
-      } else dd.classList.remove('open');
-    };
-
-    render(); // afficher les stations tout de suite
-
-    // Géocodage Nominatim avec debounce 400ms
-    clearTimeout(_nominatimDebounce[inputId]);
-    if(q.length>=3){
-      _nominatimDebounce[inputId]=setTimeout(async()=>{
-        try{
-          const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q+', Lyon, France')}&limit=6&addressdetails=1&extratags=1`);
-          const data=await r.json();
-          render(data);
-        }catch{}
-      },200);
-    }
-  });
-
-  document.addEventListener('click',e=>{
-    if(!input.contains(e.target)&&!dd.contains(e.target)) dd.classList.remove('open');
-  });
-}
-
-/* ═══ COURBES ═════════════════════════════════════════ */
-function buildStationSearch(){
-  const input=document.getElementById('station-search'), dd=document.getElementById('station-dd');
-  input.addEventListener('input',()=>{
-    const q=input.value.toLowerCase().trim(); dd.innerHTML='';
-    if(!q){ dd.classList.remove('open'); return; }
-    allStations.filter(s=>cleanName(s.name).toLowerCase().includes(q)).slice(0,12).forEach(st=>{
-      const el=document.createElement('div'); el.className='opt'; el.textContent=cleanName(st.name);
-      el.onclick=()=>{ input.value=cleanName(st.name); dd.classList.remove('open'); selectedStation=st; };
-      dd.appendChild(el);
-    });
-    positionDropdown(inputId, ddId);
-    dd.classList.add('open');
-  });
-  document.addEventListener('click',e=>{
-    if(!input.contains(e.target)&&!dd.contains(e.target)) dd.classList.remove('open');
-  });
-}
-function onCourbesSlider(){
-  const v=parseInt(document.getElementById('courbes-slider').value);
-  courbesSliderDays=v;
-  const lbl=document.getElementById('courbes-slider-label');
-  if(v===1) lbl.textContent="Aujourd'hui";
-  else if(v<=7) lbl.textContent=`${v} jours`;
-  else if(v<=30) lbl.textContent=`${Math.round(v/7)} sem.`;
-  else lbl.textContent=`${Math.round(v/30)} mois`;
-}
-async function renderCourbes(){
-  const content=document.getElementById('courbes-content');
-  if(!selectedStation) return;
-  content.innerHTML='<div class="loader">Chargement…</div>';
-  const days=courbesSliderDays, endMs=Date.now(), startMs=endMs-days*86400e3;
-  const snaps=await fetchRange(startMs,endMs);
-  if(!snaps.length){ content.innerHTML='<div class="no-data">Aucune donnée.</div>'; return; }
-  const id=selectedStation.number;
-  const labels=[],dataElec=[],dataMeca=[],dataFluxH=[];
-  const rawDeltas=[];
-  snaps.forEach((snap,i)=>{
-    if(i===0) return;
-    const prev=getSts(snaps[i-1]),curr=getSts(snap);
-    const st=curr.find(s=>s.number===id),pst=prev.find(s=>s.number===id);
-    if(st&&pst){ const d=pst.available_bikes-st.available_bikes; rawDeltas.push({ms:new Date(getTs(snap)).getTime(),delta:d>0?d:0}); }
-  });
-  snaps.forEach(snap=>{
-    const st=getSts(snap).find(s=>s.number===id); if(!st) return;
-    const t=new Date(getTs(snap)), ms=t.getTime();
-    labels.push(days<=1?t.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):t.toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}));
-    dataElec.push(st.electrical_bikes||0); dataMeca.push(st.mechanical_bikes||0);
-    dataFluxH.push(rawDeltas.filter(d=>d.ms>ms-3600e3&&d.ms<=ms).reduce((a,d)=>a+d.delta,0));
-  });
-  content.innerHTML=`
-    <div class="card"><div class="card-title">⚡ Électriques</div><canvas id="elec-chart" height="80"></canvas></div>
-    <div class="card"><div class="card-title">🔧 Mécaniques</div><canvas id="meca-chart" height="80"></canvas></div>
-    <div class="card"><div class="card-title">↕ Départs/heure glissante</div><canvas id="flux-chart" height="60"></canvas></div>`;
-  chartElec?.destroy(); chartMeca?.destroy(); chartFlux?.destroy();
-  const pr=days<=1?0:2;
-  const mk=(cid,data,color,label)=>new Chart(document.getElementById(cid),{type:'line',
-    data:{labels,datasets:[{label,data,borderColor:color,backgroundColor:color+'18',borderWidth:1.8,tension:0,pointRadius:pr,spanGaps:true,fill:true}]},
-    options:chartOpts()});
-  chartElec=mk('elec-chart',dataElec,'#0a84ff','Électriques');
-  chartMeca=mk('meca-chart',dataMeca,'#ff9f0a','Mécaniques');
-  chartFlux=new Chart(document.getElementById('flux-chart'),{type:'bar',
-    data:{labels,datasets:[{label:'Départs/h',data:dataFluxH,
-      backgroundColor:dataFluxH.map(v=>v>5?'rgba(255,59,48,.65)':v>2?'rgba(255,159,10,.6)':'rgba(0,113,227,.5)'),borderWidth:0}]},
-    options:chartOpts()});
-}
-
-/* ═══ LEADERBOARD ═════════════════════════════════════ */
-function quickLeaderboard(){ renderLbTable(todayMv); }
-function onLbViewChange(v){
-  if(v) document.getElementById('lb-view').value=v;
-  else v=document.getElementById('lb-view').value||'day';
-  document.getElementById('lb-date').style.display  = v==='day'   ? '' : 'none';
-  document.getElementById('lb-month').style.display = v==='month' ? '' : 'none';
-  document.getElementById('lb-year').style.display  = v==='year'  ? '' : 'none';
-  ['day','month','year'].forEach(x=>{
-    const btn=document.getElementById('lb-pill-'+x);
-    if(!btn) return;
-    btn.style.background=x===v?'#3a3a3c':'transparent';
-    btn.style.color=x===v?'#fff':'var(--sub)';
-  });
-}
-
-async function computeLeaderboard(){
-  const content=document.getElementById('lb-content');
-  content.innerHTML='<div class="loader">Calcul…</div>';
-  const view=document.getElementById('lb-view').value;
-
-  if(view==='day'){
-    const d=document.getElementById('lb-date').value;
-    if(!d){ content.innerHTML='<div class="no-data">Sélectionnez une date.</div>'; return; }
-    const today=localDateStr();
-    let snaps=[];
-    if(d===today){
-      // Jour J : utiliser latest.json (données live JCDecaux)
-      try{
-        const r=await fetch(`data/latest.json?t=${Date.now()}`,{cache:'no-store'});
-        if(r.ok){
-          const data=await r.json();
-          // Construire un snapshot unique depuis latest
-          const stations=(data.stations||[]).map(s=>({...s,t:data.timestamp}));
-          snaps=[{t:data.timestamp,stations}];
-        }
-      }catch(e){ console.warn('latest.json fetch error',e); }
-    } else {
-      snaps=await fetchDay(d)||[];
-    }
-    showDayMeteo(d);
-    if(!snaps.length){ content.innerHTML='<div class="no-data">Aucune donnée.</div>'; return; }
-    lbMvCache=calcMvFromSnaps(snaps);
-  } else {
-    // Mois ou Année — agréger plusieurs jours
-    let dates=[];
-    if(view==='month'){
-      const m=document.getElementById('lb-month').value;
-      if(!m){ content.innerHTML='<div class="no-data">Sélectionnez un mois.</div>'; return; }
-      const [y,mo]=m.split('-').map(Number);
-      const days=new Date(y,mo,0).getDate();
-      for(let d=1;d<=days;d++) dates.push(`${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
-    } else {
-      const y=document.getElementById('lb-year').value;
-      for(let mo=1;mo<=12;mo++) for(let d=1;d<=new Date(y,mo,0).getDate();d++)
-        dates.push(`${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
-    }
-    // Limiter aux dates passées
-    const today=localDateStr();
-    dates=dates.filter(d=>d<=today);
-    content.innerHTML=`<div class="loader">Calcul sur ${dates.length} jours…</div>`;
-    // Agréger les mouvements
-    const cumul={};
-    let loaded=0;
-    for(const d of dates){
-      const snaps=await fetchDay(d)||[];
-      const mv=calcMvFromSnaps(snaps);
-      for(const [num,v] of Object.entries(mv)) cumul[num]=(cumul[num]||0)+v;
-      loaded++;
-      if(loaded%10===0) content.innerHTML=`<div class="loader">${loaded}/${dates.length} jours…</div>`;
-    }
-    lbMvCache=cumul;
-  }
-  content.innerHTML='<div style="overflow-x:auto"><table id="lb-table"><thead id="lb-head"></thead><tbody id="lb-body"></tbody></table></div>';
-  renderLbTable(lbMvCache);
-  if(view==='day') showDayMeteo(document.getElementById('lb-date').value);
-  const srch=document.getElementById('lb-station-search'); if(srch) srch.value='';
-}
-function renderLbTable(mvData){
-  const head=document.getElementById('lb-head'), body=document.getElementById('lb-body');
-  if(!head||!body) return;
-  const view=document.getElementById('lb-view')?.value||'day';
-  const isDay=view==='day';
-  const sortKey=document.getElementById('lb-sort')?.value||'mv';
-  const sortLabels={
-    mv:'Mvts', rotation:'Rotation', stands:'Places libres',
-    fill:'Remplissage', elec:'Élec', meca:'Méca', bikes:'Vélos'
-  };
-  const ctxLabel=isDay?'Stock':'Rotation';
-  head.innerHTML=`<tr><th>#</th><th>Station</th><th>${sortLabels[sortKey]||'Valeur'}</th><th>${ctxLabel}</th></tr>`;
-  const maxMv=Math.max(1,...Object.values(mvData));
-  const rows=allStations.map(st=>{
-    const mv=mvData[st.number]||0, fill=st.bike_stands?st.available_bikes/st.bike_stands:0, rot=st.bike_stands?mv/st.bike_stands:0;
-    return {...st,mv,fill,rot};
-  });
-  const sorters={mv:(a,b)=>b.mv-a.mv,rotation:(a,b)=>b.rot-a.rot,bikes:(a,b)=>b.available_bikes-a.available_bikes,
-    elec:(a,b)=>b.electrical_bikes-a.electrical_bikes,meca:(a,b)=>b.mechanical_bikes-a.mechanical_bikes,
-    stands:(a,b)=>b.available_bike_stands-a.available_bike_stands,fill:(a,b)=>b.fill-a.fill};
-  rows.sort(sorters[sortKey]||sorters.mv);
-  const sortVal=(st)=>{
-    switch(sortKey){
-      case 'mv': return st.mv;
-      case 'rotation': return (Math.round(st.rot*100)/100).toFixed(2);
-      case 'stands': return st.available_bike_stands;
-      case 'fill': return Math.round(st.fill*100)+'%';
-      case 'elec': return st.electrical_bikes;
-      case 'meca': return st.mechanical_bikes;
-      case 'bikes': return st.available_bikes;
-      default: return st.mv;
-    }
-  };
-  // Métrique contextuelle
-  const ctxVal=(st)=>{
-    if(isDay){
-      // Stock actuel : élec + méca
-      const e=st.electrical_bikes, m=st.mechanical_bikes;
-      return `<span style="font-size:10px;color:#0a84ff;font-weight:600">${e}</span><span style="color:rgba(255,255,255,.45);margin:0 2px">/</span><span style="font-size:10px;color:#ff9f0a;font-weight:600">${m}</span>`;
-    } else {
-      // Rotation = mvts / capacité
-      const rot=st.bike_stands>0?(st.mv/st.bike_stands).toFixed(1):'—';
-      const rotNum=parseFloat(rot);
-      const rotCol=rotNum>=2?'#34c759':rotNum>=1?'#ff9f0a':'#8e8e93';
-      return `<span style="font-size:11px;font-weight:600;color:${rotCol}">${rot}x</span>`;
-    }
-  };
-  body.innerHTML=rows.map((st,i)=>{
-    return `<tr onclick="toggleStationDetail(${st.number},this)" style="cursor:pointer" id="lb-row-${st.number}">
-      <td class="rank-cell">${i+1}</td>
-      <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500">${cleanName(st.name)}</td>
-      <td style="font-weight:600;color:#fff">${sortVal(st)}</td>
-      <td style="text-align:right">${ctxVal(st)}</td></tr>
-      <tr class="detail-row" id="lb-detail-${st.number}" style="display:none">
-        <td colspan="4" style="padding:0">
-          <div id="stats-detail-${st.number}" style="padding:14px;background:rgba(12,12,16,.35);border-bottom:0.5px solid rgba(255,255,255,.08)"></div>
-        </td>
-      </tr>`;
-  }).join('');
-}
-document.getElementById('lb-sort').addEventListener('change',()=>renderLbTable(Object.keys(lbMvCache).length?lbMvCache:todayMv));
-
-async function showDayMeteo(date){
-  const snaps=await fetchDay(date);
-  if(!snaps||!snaps.length) return;
-  let totalPrecip=0,totalTemp=0,nMeteo=0,rainySnaps=0;
-  snaps.forEach(s=>{
-    const m=s.meteo; if(!m) return;
-    totalPrecip+=m.precipitation||0;
-    if(m.temp!==undefined) totalTemp+=m.temp;
-    if(m.rain) rainySnaps++;
-    nMeteo++;
-  });
-  if(!nMeteo) return;
-  const avgTemp=Math.round(totalTemp/nMeteo*10)/10;
-  const rainyPct=Math.round(rainySnaps/nMeteo*100);
-  const icon=rainyPct>50?'🌧️':rainyPct>20?'⛅':'☀️';
-  const el=document.getElementById('lb-meteo');
-  if(el) el.textContent=`${icon} ${avgTemp}°C · ${(totalPrecip/nMeteo).toFixed(1)} mm/h moy · ${rainyPct}% pluvieux`;
-}
-
-/* ═══ PLANIFIER ════════════════════════════════════════ */
-let planHeatMvCache={};
-
-
-let _planDropdownsInit=false;
-function initPlanMap(){
-  if(!planMap && map){
-    planMap=map;
-    map.on('click',(e)=>{
-      closeStationPopup();
-      // Ne rien faire d'autre : laisser le panel tel quel
-    });
-  }
-  if(_planDropdownsInit) return;
-  _planDropdownsInit=true;
-
-
-  function resetPlan(){
-    planFromPos=null; planFromFixed=null;
-    planToPos=null; planToFixed=null;
-    if(planLayerGroup) planLayerGroup.clearLayers();
-    document.getElementById('plan-results').innerHTML='';
-    const pf=document.getElementById('plan-float'); if(pf) pf.style.maxHeight='38px';
-  }
-  buildDropdown('plan-from','plan-from-dd',{
-    onStation: st=>{ planFromFixed=st; planFromPos={lat:st.lat,lng:st.lng}; },
-    onGeoPos:  pos=>{ planFromPos=pos; planFromFixed=null; },
-  });
-  buildDropdown('plan-to','plan-to-dd',{
-    onStation: st=>{ planToFixed=st; planToPos={lat:st.lat,lng:st.lng}; },
-    onGeoPos:  pos=>{ planToPos=pos; planToFixed=null; },
-  });
-  document.getElementById('plan-from').addEventListener('input', ()=>{ planFromPos=null; planFromFixed=null; });
-  document.getElementById('plan-to').addEventListener('input', ()=>{ planToPos=null; planToFixed=null; });
-
-  // Init heure et jour
-  const now=new Date();
-  const dowEl=document.getElementById('plan-dow');
-  const hourEl=document.getElementById('plan-hour');
-  if(dowEl) dowEl.value=String(now.getDay());
-  setModeNow(); // mode par défaut
-  if(hourEl) hourEl.value=String(now.getHours());
-  const timeEl=document.getElementById('plan-hour-time');
-  if(timeEl) timeEl.value=String(now.getHours()).padStart(2,'0')+':00';
-  // Afficher la météo actuelle dès l'ouverture
-  fetchCurrentMeteo().then(meteo=>{
-    if(!meteo) return;
-    const m=meteoFromCode(meteo.weathercode, meteo.rain);
-    // Afficher dans le flottant
-    const meteoEl=document.getElementById('plan-meteo');
-    if(meteoEl){
-      const parts=[];
-      if(m.icon) parts.push(m.icon);
-      if(meteo.temp!==undefined) parts.push(meteo.temp+'°C');
-      if(meteo.wind!==undefined) parts.push(meteo.wind+' km/h');
-      meteoEl.textContent=parts.join(' · ');
-    }
-    // Afficher aussi près des touches de zoom
-    if(!document.getElementById('meteo-ctrl')){
-      const ctrl=L.control({position:'bottomright'});
-      ctrl.onAdd=()=>{
-        const div=L.DomUtil.create('div');
-        div.id='meteo-ctrl';
-        div.style.cssText='background:rgba(12,12,16,.52);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);border:0.5px solid rgba(255,255,255,.08);border-radius:10px;padding:5px 10px;font-size:11px;color:rgba(255,255,255,.7);margin-bottom:4px;pointer-events:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)';
-        const parts=[];
-        if(m.icon) parts.push(m.icon);
-        if(meteo.temp!==undefined) parts.push(meteo.temp+'°C');
-        if(meteo.wind!==undefined) parts.push(meteo.wind+' km/h');
-        div.textContent=parts.join(' · ');
-        return div;
-      };
-      ctrl.addTo(planMap);
-    }
-  });
-}
-
-
-
-
-
-// WMO weather codes → emoji + label
-function meteoFromCode(code, rain){
-  if(rain || code>=51) return {icon:'🌧️', label:'Pluvieux', rainy:true};
-  if(code>=45)         return {icon:'🌫️', label:'Brouillard', rainy:false};
-  if(code>=3)          return {icon:'☁️',  label:'Nuageux', rainy:false};
-  if(code>=1)          return {icon:'⛅',  label:'Peu nuageux', rainy:false};
-  return                      {icon:'☀️',  label:'Ensoleillé', rainy:false};
-}
-
-async function fetchCurrentMeteo(){
-  try{
-    const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude=45.75&longitude=4.83&current=precipitation,rain,weathercode,temperature_2m,windspeed_10m,winddirection_10m&timezone=Europe%2FParis');
-    if(!r.ok) return null;
-    const d=await r.json();
-    const cur=d.current||{};
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`WFS Grand Lyon : HTTP ${r.status}`);
+  const gj = await r.json();
+  return (gj.features || []).map(f => {
+    const p = f.properties || {};
+    const coords = f.geometry?.coordinates || [];
+    const total = p.bike_stands || ((p.available_bikes || 0) + (p.available_bike_stands || 0));
     return {
-      precipitation: cur.precipitation||0,
-      rain: (cur.precipitation||0)>0.1,
-      weathercode: cur.weathercode||0,
-      temp: cur.temperature_2m !== undefined ? Math.round(cur.temperature_2m*10)/10 : null,
-      wind: cur.windspeed_10m !== undefined ? Math.round(cur.windspeed_10m) : null,
-      winddir: cur.winddirection_10m !== undefined ? Math.round(cur.winddirection_10m) : null,
-    };
-  }catch{ return null; }
-}
-
-async function computePlan(){
-  // Résultats dans le flottant
-  const results=document.getElementById('plan-results');
-  const resultsCard=results; // alias pour compatibilité
-  _openComboIdx=null;
-  window._planCombos=null;
-  if(planLayerGroup) planLayerGroup.clearLayers();
-
-  // Vérifier les champs AVANT tout chargement
-  if(!planFromPos && !planFromFixed){
-    resultsCard.style.display='block';
-    results.innerHTML='<div class="no-data">Sélectionnez un point de départ.</div>';
-    return;
-  }
-  if(!planToPos && !planToFixed){
-    resultsCard.style.display='block';
-    results.innerHTML='<div class="no-data">Destination manquante.</div>';
-    return;
-  }
-
-  // Afficher loader + ouvrir volet
-  // Expansion du flottant
-  document.getElementById('plan-float')?.style.setProperty('max-height','80vh');
-  results.innerHTML='<div class="loader">Analyse de l\'historique…</div>';
-
-  // Météo
-  const meteo=await fetchCurrentMeteo();
-  const meteoEl=document.getElementById('plan-meteo');
-  if(meteo&&meteoEl){
-    const m=meteoFromCode(meteo.weathercode,meteo.rain);
-    const parts=[];
-    if(meteo.temp!==undefined) parts.push((m.icon||'')+' '+meteo.temp+'°C');
-    if(meteo.wind!==undefined) parts.push(meteo.wind+' km/h');
-    meteoEl.textContent=parts.join(' · ');
-  }
-  const isRainy=(meteo?.precipitation??0)>0.1;
-  const currentlyRainy=isRainy;
-  const currentPrecip=meteo?.precipitation??0;
-
-  const bikeType=document.getElementById('plan-type').value;
-  const radius=parseInt(document.getElementById('plan-radius').value);
-  const topN=10;
-  const isNowMode=(window._planMode||'now')==='now';
-  const now2=new Date();
-  const targetDow=isNowMode?now2.getDay():parseInt(document.getElementById('plan-dow')?.value)||now2.getDay();
-  const planHourEl=document.getElementById('plan-hour-time');
-  const planHourVal=planHourEl?.value?parseInt(planHourEl.value.split(':')[0]):now2.getHours();
-  const targetH=isNowMode?now2.getHours():planHourVal;
-  const bikeSpeedKmh=bikeType==='meca'?16:22;
-
-
-
-  // Charger l'historique (500 jours, même jour de semaine)
-  results.innerHTML='<div class="loader">Calcul historique…</div>';
-  const allDays=[];
-  const today2=new Date();
-  const targetDates=[];
-  const dataStart=new Date('2025-01-29');
-  for(let i=0;;i++){
-    const d=new Date(today2); d.setDate(d.getDate()-i);
-    if(d<dataStart) break;
-    if(d.getDay()===targetDow) targetDates.push(d.toISOString().slice(0,10));
-  }
-  for(let i=0;i<targetDates.length;i+=16){
-    const batch=targetDates.slice(i,i+16);
-    const res=await Promise.all(batch.map(dt=>fetchDay(dt).catch(()=>null)));
-    res.filter(Boolean).forEach(d=>allDays.push(d));
-  }
-
-  // Stations proches
-  // Si station fixée → station prioritaire + voisines si vide/pleine (mode now uniquement)
-  const depKey=bikeType==='elec'?'electrical_bikes':bikeType==='meca'?'mechanical_bikes':'available_bikes';
-  let depStations, arrStations;
-  if(planFromFixed){
-    const depLive=isNowMode?allStations.find(s=>s.number===planFromFixed.number):null;
-    const depEmpty=depLive&&(depLive[depKey]||0)===0;
-    if(depEmpty){
-      // Station vide → proposer aussi les voisines
-      depStations=allStations.filter(s=>s.lat&&s.lng)
-        .map(s=>({...s,dist:haversine(planFromFixed.lat,planFromFixed.lng,s.lat,s.lng)}))
-        .filter(s=>s.dist<=radius).sort((a,b)=>a.dist-b.dist).slice(0,6);
-      // Garder la station fixée en premier quand même
-      if(!depStations.find(s=>s.number===planFromFixed.number))
-        depStations=[{...planFromFixed,dist:0},...depStations].slice(0,6);
-    } else {
-      depStations=[{...planFromFixed, dist:0}];
-    }
-  } else {
-    depStations=allStations.filter(s=>s.lat&&s.lng)
-      .map(s=>({...s,dist:haversine(planFromPos.lat,planFromPos.lng,s.lat,s.lng)}))
-      .filter(s=>s.dist<=radius).sort((a,b)=>a.dist-b.dist).slice(0,6);
-  }
-  if(planToFixed){
-    const arrLive=isNowMode?allStations.find(s=>s.number===planToFixed.number):null;
-    const arrFull=arrLive&&(arrLive.available_bike_stands||0)===0;
-    if(arrFull){
-      // Station pleine → proposer aussi les voisines
-      arrStations=allStations.filter(s=>s.lat&&s.lng)
-        .map(s=>({...s,dist:haversine(planToFixed.lat,planToFixed.lng,s.lat,s.lng)}))
-        .filter(s=>s.dist<=radius).sort((a,b)=>a.dist-b.dist).slice(0,6);
-      if(!arrStations.find(s=>s.number===planToFixed.number))
-        arrStations=[{...planToFixed,dist:0},...arrStations].slice(0,6);
-    } else {
-      arrStations=[{...planToFixed, dist:0}];
-    }
-  } else {
-    arrStations=allStations.filter(s=>s.lat&&s.lng)
-      .map(s=>({...s,dist:haversine(planToPos.lat,planToPos.lng,s.lat,s.lng)}))
-      .filter(s=>s.dist<=radius).sort((a,b)=>a.dist-b.dist).slice(0,6);
-  }
-
-  if(!depStations.length||!arrStations.length){
-    results.innerHTML='<div class="no-data">Aucune station dans ce rayon. Augmentez le rayon.</div>';
-    return;
-  }
-
-  // Matrice météo
-  const RAIN_R={1:[-0.019,-0.132,-0.133,-0.018,-0.132,-0.016,0.104,0.071,0.071,0.066,-0.021,-0.508,-0.224,-0.286,-0.224,-0.511,-0.443,-0.268,-0.129,-0.218,-0.278,-0.274,-0.25,-0.264],2:[0.001,0.026,0.006,0.067,-0.103,0.057,0.057,0.037,0.077,0.154,0.055,-0.294,-0.246,-0.149,-0.34,-0.379,-0.394,-0.34,-0.248,-0.26,-0.187,-0.309,-0.237,-0.084],3:[-0.003,-0.061,0.095,-0.027,0.045,-0.137,-0.22,-0.188,-0.223,-0.113,0.056,0.077,-0.064,-0.082,-0.23,-0.063,-0.21,-0.114,-0.175,-0.412,-0.359,-0.417,-0.135,-0.276],4:[-0.024,-0.207,-0.155,-0.137,-0.147,-0.229,-0.263,-0.111,-0.118,-0.176,-0.368,-0.434,-0.332,-0.514,-0.494,-0.495,-0.543,-0.284,-0.31,-0.46,-0.349,-0.215,-0.483,-0.209],5:[-0.046,-0.26,-0.268,-0.179,-0.282,-0.173,-0.087,-0.04,-0.042,-0.194,-0.363,-0.396,-0.327,-0.363,-0.184,-0.13,-0.196,-0.325,-0.45,-0.523,-0.26,-0.281,-0.352,-0.431],6:[0.026,-0.056,0.026,-0.189,-0.121,0,0,-0.189,-0.208,0.013,-0.162,-0.49,-0.595,-0.563,-0.422,0.032,-0.228,0.096,-0.108,-0.188,-0.104,-0.327,-0.466,-0.11],7:[-0.023,-0.04,-0.26,0.069,0.116,-0.048,-0.043,0.019,0.09,-0.013,0.161,-0.361,-0.51,-0.299,-0.096,-0.045,-0.039,-0.287,-0.316,-0.438,-0.47,-0.022,-0.533,-0.406],8:[-0.018,-0.046,-0.092,-0.205,-0.197,-0.225,-0.047,0.07,0.186,0.181,-0.214,0.017,0.043,0.233,0.125,0.031,-0.125,0.148,0.128,-0.214,-0.248,0.175,-0.084,-0.183],9:[-0.025,-0.337,-0.28,-0.203,-0.274,-0.084,-0.084,-0.014,-0.088,-0.089,-0.143,-0.633,-0.187,-0.681,-0.659,-0.802,-0.842,-0.379,-0.114,-0.024,-0.482,-0.417,-0.062,-0.16],10:[-0.029,-0.147,-0.104,-0.116,-0.161,-0.136,-0.098,-0.118,-0.077,-0.154,-0.562,-0.526,-0.627,-0.579,-0.356,-0.289,-0.432,-0.646,-0.543,-0.459,-0.515,-0.314,-0.158,0.031],11:[-0.006,0.027,0.043,-0.009,0.048,0.116,-0.265,0.032,-0.105,-0.441,-0.623,-0.601,-0.484,-0.424,-0.356,-0.27,-0.424,-0.425,-0.336,-0.525,-0.268,-0.245,-0.358,-0.505],12:[0.007,-0.137,-0.209,0.042,-0.168,-0.087,-0.019,-0.071,0.063,-0.04,-0.09,-0.11,-0.127,-0.055,0.015,0.112,0.123,-0.032,0.135,-0.029,-0.109,-0.132,-0.35,-0.087]};
-  function meteoW(snapMeteo,rainy){
-    if(!snapMeteo) return 0.8;
-    if(snapMeteo.rain===rainy) return 1.0;
-    try{ const mo=new Date(snapMeteo._ts||0).getMonth()+1||new Date().getMonth()+1; const r=(RAIN_R[mo]||RAIN_R[1])[targetH]||-0.15; return Math.max(0.3,1.0-Math.abs(r)*2); }catch{ return 0.5; }
-  }
-
-  // Calcul probas depuis l'historique
-  const allIds=new Set([...depStations.map(s=>s.number),...arrStations.map(s=>s.number)]);
-  const stationProba={};
-  const _depNAcc={},_arrNAcc={},_depElecAcc={},_depMecaAcc={};
-  const nowMinutes=targetH*60;
-
-  allIds.forEach(num=>{
-    let depSum=0,arrSum=0,wSum=0,depHit=0,arrHit=0,samples=0;
-    allDays.forEach((snaps,dayIdx)=>{
-      const wRec=Math.exp(-dayIdx/45);
-      snaps.forEach(snap=>{
-        const snapDate=new Date(getTs(snap));
-        const snapMinutes=snapDate.getHours()*60+snapDate.getMinutes();
-        if(Math.abs(snapMinutes-nowMinutes)>90) return;
-        const sts=getSts(snap),st=sts.find(s=>s.number===num);
-        if(!st||!st.bike_stands) return;
-        const snapM=snap.meteo;
-        const snapRainy=(snapM?.precipitation??0)>0.1||snapM?.rain===true;
-        const wP=snapRainy===isRainy?1.0:0.35;
-        const diff=snapMinutes-nowMinutes;
-        const wH=Math.exp(-(diff*diff)/450);
-        const w=wRec*wP*wH;
-        if(w<0.01) return;
-        const depVal=st[depKey]||0,arrVal=st.available_bike_stands||0;
-        const elecVal=st.electrical_bikes||0,mecaVal=st.mechanical_bikes||0;
-        depSum+=depVal/st.bike_stands*100*w; arrSum+=arrVal/st.bike_stands*100*w; wSum+=w;
-        if(depVal>=1) depHit+=w; if(arrVal>=1) arrHit+=w; samples++;
-        _depNAcc[num]=(_depNAcc[num]||0)+depVal*w;
-        _arrNAcc[num]=(_arrNAcc[num]||0)+arrVal*w;
-        _depElecAcc[num]=(_depElecAcc[num]||0)+elecVal*w;
-        _depMecaAcc[num]=(_depMecaAcc[num]||0)+mecaVal*w;
-      });
-    });
-    if(wSum>0) stationProba[num]={
-      dep:Math.round(depSum/wSum), arr:Math.round(arrSum/wSum),
-      depN:Math.round((_depNAcc[num]||0)/wSum*10)/10,
-      depElecN:Math.round((_depElecAcc[num]||0)/wSum*10)/10,
-      depMecaN:Math.round((_depMecaAcc[num]||0)/wSum*10)/10,
-      arrN:Math.round((_arrNAcc[num]||0)/wSum*10)/10,
-      depProb:Math.round(depHit/wSum*100),
-      arrProb:Math.round(arrHit/wSum*100),
-      samples
+      number:                p.number,
+      name:                  p.name || '',
+      available_bikes:       p.available_bikes || 0,
+      available_bike_stands: p.available_bike_stands || 0,
+      bike_stands:           total,
+      status:                p.availabilitycode === 4 ? 'CLOSED' : 'OPEN',
     };
   });
+}
 
-  // Générer combinaisons
-  const combos=[];
-  for(const dep of depStations){
-    for(const arr of arrStations){
-      if(dep.number===arr.number) continue;
-      const pd=stationProba[dep.number],pa=stationProba[arr.number];
-      const depPct=pd?.dep??null,arrPct=pa?.arr??null;
-      const depProb=pd?.depProb??null,arrProb=pa?.arrProb??null;
-      if(depPct===null||arrPct===null) continue;
-      const dist=haversine(dep.lat,dep.lng,arr.lat,arr.lng);
-      const rideMin=Math.round(dist/1000/bikeSpeedKmh*60);
-      const scoreBase=(depProb!==null&&arrProb!==null)?Math.round(depProb*0.6+arrProb*0.4):Math.round((depPct||0)*0.6+(arrPct||0)*0.4);
-      let score=scoreBase;
-      if(isNowMode){
-        const liveDep=allStations.find(s=>s.number===dep.number);
-        const liveArr=allStations.find(s=>s.number===arr.number);
-        if(isNowMode&&liveDep&&liveDep.bike_stands>0){
-          const liveDepCount=bikeType==='elec'?(liveDep.electrical_bikes||0):bikeType==='meca'?(liveDep.mechanical_bikes||0):(liveDep.available_bikes||0);
-          if(liveDepCount===0){
-            score=0; // Aucun vélo disponible maintenant → score 0
-          } else {
-            const liveDepPct=liveDepCount/liveDep.bike_stands*100;
-            const liveArrPct=liveArr&&liveArr.bike_stands>0?liveArr.available_bike_stands/liveArr.bike_stands*100:50;
-            score=Math.round(liveDepPct*0.5+liveArrPct*0.2+scoreBase*0.3);
-          }
-        }
-        // Mode plan : score = pur historique pondéré
-        // scoreBase déjà calculé ci-dessus
-      }
-      const liveDep2=allStations.find(s=>s.number===dep.number);
-      const liveArr2=allStations.find(s=>s.number===arr.number);
+async function fetchDay(date) {
+  const r = await fetch(`data/history/${date}.json?_=` + Date.now());
+  if (!r.ok) return null;
+  return r.json();
+}
 
-      // Batterie : pénalisation si aucun élec viable
-      let battPenalty=false;
-      const stBikes=(_bikesData?.bikes||[]).filter(b=>b.st===dep.number&&b.status==='A'&&b.type==='E');
-      if(bikeType==='elec'&&stBikes.length>0){
-        const distKm=dist/1000;
-        const minBatt=Math.ceil(distKm/40*100*1.10);
-        const hasViable=stBikes.some(b=>b.batt!=null&&b.batt>=minBatt);
-        if(!hasViable){ score=0; battPenalty=true; }
-      }
-
-      // Prix : surcoût si trajet > limite gratuite
-      const priceLimit=bikeType==='meca'?45:30;
-      const overMin=Math.max(0,rideMin-priceLimit);
-      const overPrice=overMin>0?Math.round(overMin*0.10*100)/100:0;
-
-      // Segmentation : suggérer station relai si trajet trop long
-      let relaiStation=null;
-      if(overMin>2){
-        const midLat=(dep.lat+arr.lat)/2, midLng=(dep.lng+arr.lng)/2;
-        relaiStation=allStations
-          .filter(s=>s.number!==dep.number&&s.number!==arr.number&&s.available_bike_stands>0)
-          .map(s=>({...s,d:haversine(s.lat,s.lng,midLat,midLng)}))
-          .sort((a,b)=>a.d-b.d)[0]||null;
-      }
-
-      combos.push({
-        dep:Object.assign({},dep,{live:liveDep2||null}),
-        arr:Object.assign({},arr,{live:liveArr2||null}),
-        depPct,arrPct,depProb,arrProb,
-        depN:pd?.depN??null,depElecN:pd?.depElecN??null,depMecaN:pd?.depMecaN??null,arrN:pa?.arrN??null,
-        score,dist,rideMin,samples:pd?.samples??0,battPenalty,overPrice,relaiStation
-      });
-    }
+// ─── LIVE ─────────────────────────────────────────────────────────────────────
+async function refreshLive() {
+  const grid = document.getElementById('station-grid');
+  grid.innerHTML = '<div class="loader">Chargement…</div>';
+  try {
+    liveStations = await fetchLive();
+    renderLive(liveStations);
+  } catch (e) {
+    grid.innerHTML = `<div class="err">⚠ ${e.message}<br><small>Vérifiez votre connexion. Le WFS Grand Lyon est parfois lent (~2-3s).</small></div>`;
   }
-  combos.sort((a,b)=>b.score-a.score);
-  const top=combos.slice(0,topN);
+}
 
-  if(!top.length){
-    results.innerHTML='<div class="no-data">Pas assez de données historiques pour ces stations.</div>';
-    return;
-  }
+function renderLive(stations) {
+  document.getElementById('s-bikes').textContent  = stations.reduce((s, x) => s + (x.available_bikes || 0), 0);
+  document.getElementById('s-stands').textContent = stations.reduce((s, x) => s + (x.available_bike_stands || 0), 0);
+  document.getElementById('s-open').textContent   = `${stations.filter(x => x.status === 'OPEN').length}/${stations.length}`;
+  document.getElementById('last-update').textContent = 'MàJ ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
-  const meteoNote=isRainy?' 🌧️':'';
-  document.getElementById('plan-results-title').textContent=
-    `Top ${top.length} combinaisons · ${DOW_NAMES[targetDow]} ${String(targetH).padStart(2,'0')}h · ${bikeType==='elec'?'Élec':bikeType==='meca'?'Méca':'Tous'} · ${allDays.length} jours${meteoNote}`;
+  const grid = document.getElementById('station-grid');
+  grid.innerHTML = '';
+  if (!stations.length) { grid.innerHTML = '<div class="no-data">Aucune station. Vérifiez les IDs dans Config.</div>'; return; }
 
-  // Warning si station fixée vide/pleine
-  const depLiveWarn=planFromFixed&&allStations.find(s=>s.number===planFromFixed.number);
-  const depEmptyWarn=depLiveWarn&&(depLiveWarn[depKey]||0)===0;
-  const arrLiveWarn=planToFixed&&allStations.find(s=>s.number===planToFixed.number);
-  const arrFullWarn=arrLiveWarn&&(arrLiveWarn.available_bike_stands||0)===0;
-
-  const renderComboList=(limit)=>{
-    const shown=top.slice(0,limit);
-    const html=shown.map((combo,i)=>{
-      const sc=Math.round(combo.score??0);
-      const bt=document.getElementById('plan-type')?.value||'elec';
-      const rColors=bt==='meca'?['#7a1a1a','#a82a2a','#d04444']:['#1a6b36','#2a8a4a','#3eaa62'];
-      const rColor=i<3?rColors[i]:'transparent';
-      const depCol=(combo.depProb??0)>=60?'#34c759':(combo.depProb??0)>=35?'#ff9f0a':'#ff453a';
-      const arrCol=(combo.arrProb??0)>=60?'#34c759':(combo.arrProb??0)>=35?'#ff9f0a':'#ff453a';
-      const scCol=sc>=60?'#34c759':sc>=35?'#ff9f0a':'#ff453a';
-      const scBg=sc>=60?'#0d2b1a':sc>=35?'#2b1a00':'#2b0a0a';
-      const liveElec=combo.dep.live?.electrical_bikes??0;
-      const liveMeca=combo.dep.live?.mechanical_bikes??0;
-      const livePlaces=combo.arr.live?.available_bike_stands??'?';
-      const depDist=planFromFixed?'':` · ${Math.round(combo.dep.dist||0)}m`;
-
-      // Chiffres communs aux deux modes
-      const avgElec=combo.depElecN!=null?'~'+Math.round(combo.depElecN):(isNowMode?liveElec:'?');
-      const avgMeca=combo.depMecaN!=null?'~'+Math.round(combo.depMecaN):(isNowMode?liveMeca:'?');
-      const avgPlaces=combo.arrN!=null?'~'+Math.round(combo.arrN):(isNowMode?livePlaces:'?');
-      const dispElec=isNowMode?liveElec:avgElec;
-      const dispMeca=isNowMode?liveMeca:avgMeca;
-      const dispPlaces=isNowMode?livePlaces:avgPlaces;
-      const cardBody=`
-        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0">
-          <div style="display:flex;gap:5px;align-items:center">
-            <div style="display:flex;align-items:center;gap:2px">
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span style="font-size:13px;font-weight:700;color:#fff">${dispElec}</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:2px">
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg><span style="font-size:13px;font-weight:700;color:#fff">${dispMeca}</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:2px">
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg><span style="font-size:13px;font-weight:700;color:#fff">${dispPlaces}</span>
-            </div>
-          </div>
-          ${sc?`<div style="background:${scBg};border-radius:5px;padding:2px 6px;align-self:flex-end"><span style="font-size:11px;font-weight:700;color:${scCol}">${sc}%</span></div>`:''}
-        </div>`;
-      // Walk times
-      const walkDepMin=planFromPos&&!planFromFixed?walkMinutes(haversine(planFromPos.lat,planFromPos.lng,combo.dep.lat,combo.dep.lng)):null;
-      const walkArrMin=planToPos&&!planToFixed?walkMinutes(haversine(combo.arr.lat,combo.arr.lng,planToPos.lat,planToPos.lng)):null;
-      const walkDepHtml=walkDepMin!=null?`<div style="display:flex;align-items:center;gap:3px;margin-bottom:3px">
-        <span style="color:#0a84ff;display:flex;align-items:center">${WALK_SVG}</span>
-        <span style="font-size:9px;color:#0a84ff;font-weight:600">${walkDepMin} min</span>
-        <div style="flex:1;border-top:1.5px dashed rgba(10,132,255,.35);height:0;margin:0 3px"></div>
-        <span style="color:rgba(255,255,255,.4);display:flex;align-items:center">${BIKE_SVG}</span>
-      </div>`:'';
-      const walkArrHtml=walkArrMin!=null?`<div style="display:flex;align-items:center;gap:3px;margin-top:3px">
-        <span style="color:rgba(255,255,255,.4);display:flex;align-items:center">${BIKE_SVG}</span>
-        <div style="flex:1;border-top:1.5px dashed rgba(10,132,255,.35);height:0;margin:0 3px"></div>
-        <span style="font-size:9px;color:#0a84ff;font-weight:600">${walkArrMin} min</span>
-        <span style="color:#0a84ff;display:flex;align-items:center">${WALK_SVG}</span>
-      </div>`:'';
-      return `<div class="combo-card${i===0?' selected':''}" onclick="toggleComboDetail(${i},this);loadComboBikes(${i})" data-idx="${i}" style="padding:6px 9px;border-radius:8px;margin-bottom:4px;background:rgba(12,12,16,.42);border:0.5px solid rgba(255,255,255,.12);cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)">
-        ${walkDepHtml}
-        <div style="display:flex;align-items:center;gap:8px;padding:${walkDepMin||walkArrMin?'4px 0':0}">
-          <div style="width:3px;height:28px;border-radius:2px;background:${rColor};flex-shrink:0"></div>
-          <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.5);min-width:14px;flex-shrink:0">${i+1}</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:11px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cleanName(combo.dep.name)} → ${cleanName(combo.arr.name)}</div>
-            <div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:1px;display:flex;align-items:center;gap:4px">
-              <span>${Math.round(combo.dist/1000*10)/10}km · ~${combo.rideMin}min</span>
-              ${combo.overPrice>0?`<span style="background:rgba(255,159,10,.1);border:0.5px solid rgba(255,159,10,.25);border-radius:4px;padding:1px 4px;font-size:9px;color:#ff9f0a;font-weight:600">+${combo.overPrice.toFixed(2)}€</span>`:''}
-              ${combo.battPenalty?`<span style="color:#ff453a;font-size:9px;display:flex;align-items:center;gap:2px"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>batt. insuf.</span>`:''}
-            </div>
-            ${combo.relaiStation?`<div style="background:rgba(255,159,10,.08);border:0.5px solid rgba(255,159,10,.2);border-radius:5px;padding:2px 6px;margin-top:3px;font-size:9px;color:#ff9f0a;display:flex;align-items:center;gap:3px"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Relai suggéré : ${cleanName(combo.relaiStation.name)}</div>`:''}
-          </div>
-          ${cardBody}
-        </div>
-        ${walkArrHtml}
+  stations.forEach(st => {
+    const c   = cls(st.available_bikes, st.bike_stands);
+    const pct = st.bike_stands ? Math.round(st.available_bikes / st.bike_stands * 100) : 0;
+    const el  = document.createElement('div');
+    el.className = 'scard';
+    el.innerHTML = `
+      <div class="scard-name">${cleanName(st.name)}</div>
+      <div class="scard-big"><span class="scard-num ${c}">${st.available_bikes}</span><span class="scard-unit">vélos</span></div>
+      <div class="scard-bar-bg"><div class="scard-bar ${c}" style="width:${pct}%"></div></div>
+      <div class="scard-foot">
+        <span class="scard-stands">${st.available_bike_stands} pl.</span>
+        <span class="badge ${st.status === 'OPEN' ? 'open' : 'closed'}">${st.status === 'OPEN' ? 'Ouverte' : 'Fermée'}</span>
       </div>`;
-    }).join('');
-    // Desktop : liste + bouton voir plus
-    if(window.innerWidth>640){
-      const more=top.length>limit
-        ?`<div style="text-align:center;padding:8px"><button onclick="window._showMoreCombos()" style="padding:5px 16px;border-radius:20px;border:0.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);font-size:12px;cursor:pointer;color:rgba(255,255,255,.55)">Voir les ${top.length-limit} autres</button></div>`:'';
-      return html+more;
-    }
-    // Mobile : slider swipeable avec dots
-    const dots=shown.map((_,i)=>`<div class="cdot${i===0?' on':''}" style="width:${i===0?'14':'5'}px" data-cidx="${i}"></div>`).join('');
-    return `<div style="overflow:hidden;padding:0 0px">
-      <div id="combo-slider-track" style="display:flex;gap:8px;transition:transform .3s cubic-bezier(.4,0,.2,1);will-change:transform">${html.replace(/margin-bottom:4px/g,'min-width:calc(100% - 18px);flex-shrink:0;margin-bottom:0;margin-left:0px')}</div>
-    </div>
-    <div class="combo-dots" id="combo-dots" style="display:flex;justify-content:center;gap:5px;padding:6px 0 2px">${dots}</div>`;
-  };
-
-  const topScore=top[0]?.score??0;
-  const autoLimit=topScore<30?top.length:topScore<50?Math.min(5,top.length):3;
-  let _warnHtml='';
-  if(isNowMode&&depEmptyWarn) _warnHtml+=`<div style="display:flex;align-items:center;gap:6px;padding:6px 10px 4px;font-size:10px;color:#ff9f0a;background:rgba(255,159,10,.08);border-radius:8px;margin-bottom:4px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Station vide · stations voisines proposées</div>`;
-  if(isNowMode&&arrFullWarn) _warnHtml+=`<div style="display:flex;align-items:center;gap:6px;padding:6px 10px 4px;font-size:10px;color:#ff9f0a;background:rgba(255,159,10,.08);border-radius:8px;margin-bottom:4px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Station pleine · stations voisines proposées</div>`;
-  // Input feedback
-  const _fromInput=document.getElementById('plan-from');
-  const _toInput=document.getElementById('plan-to');
-  if(_fromInput) _fromInput.style.color=depEmptyWarn?'#ff9f0a':'';
-  if(_toInput) _toInput.style.color=arrFullWarn?'#ff9f0a':'';
-  results.innerHTML=_warnHtml+renderComboList(autoLimit);
-  if(window.innerWidth<=640) setTimeout(initSliderSwipe,50);
-  window._showMoreCombos=()=>{ results.innerHTML=renderComboList(top.length); drawTop3Routes(); setTimeout(initSliderSwipe,50); };
-  window._planCombos=top;
-  _openComboIdx=null;
-  drawTop3Routes();
-  if(typeof hideBackgroundStations==='function') hideBackgroundStations();
-  if(window.innerWidth<=640) compactPlanFloat();
-}
-
-let planLayerGroup=null;
-
-let _openComboIdx = null;
-
-async function toggleComboDetail(idx, el){
-  // Si déjà sélectionné → désélectionner
-  if(_openComboIdx === idx){
-    document.querySelectorAll('.combo-card').forEach(c=>c.classList.remove('selected'));
-    _openComboIdx=null;
-    return;
-  }
-  selectComboIdx(idx);
-}
-
-async function selectComboIdx(idx){
-  _openComboIdx=idx;
-  document.querySelectorAll('.combo-card').forEach((c,i)=>c.classList.toggle('selected',i===idx));
-  await showRoute(idx);
-  // Compact seulement si le float est encore étendu
-  const expanded=document.getElementById('plan-float-expanded');
-  if(expanded && expanded.style.display!=='none') compactPlanFloat();
-}
-
-
-
-async function drawTop3Routes(){
-  const top=window._planCombos; if(!top||!top.length) return;
-
-  const bikeType=document.getElementById('plan-type')?.value||'elec';
-  const colorsElec=['#1a6b36','#2a8a4a','#3eaa62'];
-  const colorsMeca=['#7a1a1a','#a82a2a','#d04444'];
-  const colors=bikeType==='meca'?colorsMeca:colorsElec;
-  const weights=[4,3,2.5];
-  const opacities=[0.95,0.75,0.55];
-  if(planLayerGroup) planLayerGroup.clearLayers();
-  planLayerGroup=L.layerGroup().addTo(planMap);
-  const radius=parseInt(document.getElementById('plan-radius').value)||500;
-  // Marqueurs départ/arrivée
-  // Points départ/arrivée + cercles de rayon
-  if(planFromPos&&!planFromFixed){
-    L.circleMarker([planFromPos.lat,planFromPos.lng],{radius:7,fillColor:'#fff',color:'#1a9e3f',weight:3,fillOpacity:.9}).bindTooltip('Départ',{direction:'top'}).addTo(planLayerGroup);
-    L.circle([planFromPos.lat,planFromPos.lng],{radius,color:'#1a9e3f',fillColor:'#1a9e3f',fillOpacity:.05,weight:1.5,dashArray:'6,4'}).addTo(planLayerGroup);
-  }
-  if(planToPos&&!planToFixed){
-    L.circleMarker([planToPos.lat,planToPos.lng],{radius:7,fillColor:'#fff',color:'#c0001a',weight:3,fillOpacity:.9}).bindTooltip('Arrivée',{direction:'top'}).addTo(planLayerGroup);
-    L.circle([planToPos.lat,planToPos.lng],{radius,color:'#c0001a',fillColor:'#c0001a',fillOpacity:.05,weight:1.5,dashArray:'6,4'}).addTo(planLayerGroup);
-  }
-  // Tracer les 3 premiers en parallèle
-  const routePromises=top.slice(0,3).map(async(combo,i)=>{
-    let coords=null;
-    const bikeT=window._planBikeType||'elec';
-    const [vr3,br3]=await Promise.allSettled([
-      (async()=>{
-        const b3={locations:[{lon:combo.dep.lng,lat:combo.dep.lat},{lon:combo.arr.lng,lat:combo.arr.lat}],costing:'bicycle',
-          costing_options:{bicycle:{bicycle_type:bikeT==='meca'?'Hybrid':'Road',cycling_speed:bikeT==='meca'?15:22,use_roads:0.1,use_hills:bikeT==='meca'?0:0.7}},directions_type:'none'};
-        const r=await fetch(`https://valhalla1.openstreetmap.de/route?json=${encodeURIComponent(JSON.stringify(b3))}`,{signal:AbortSignal.timeout(10000)});
-        if(!r.ok) throw 0;
-        const d=await r.json(); const leg=d.trip?.legs?.[0]; if(!leg) throw 0;
-        return {coords:decodePolyline(leg.shape),dist:(d.trip.summary?.length||0)*1000};
-      })(),
-      (async()=>{
-        const r=await fetch(`https://brouter.de/brouter?lonlats=${combo.dep.lng},${combo.dep.lat}|${combo.arr.lng},${combo.arr.lat}&profile=trekking&alternativeidx=0&format=geojson`,{signal:AbortSignal.timeout(10000)});
-        if(!r.ok) throw 0;
-        const d=await r.json(); const geom=d.features?.[0]?.geometry; if(!geom) throw 0;
-        return {coords:geom.coordinates.map(([ln,la])=>[la,ln]),dist:parseInt(d.features[0].properties?.['track-length'])||0};
-      })()
-    ]);
-    const cands=[];
-    if(vr3.status==='fulfilled') cands.push(vr3.value);
-    if(br3.status==='fulfilled') cands.push(br3.value);
-    if(cands.length){ cands.sort((a,b)=>a.dist-b.dist); coords=cands[0].coords; }
-    return {coords,i,combo};
-  });
-  const routes=await Promise.all(routePromises);
-  // Tracer en ordre inverse (le 1er par-dessus)
-  [...routes].reverse().forEach(({coords,i,combo})=>{
-    if(coords){
-      L.polyline(coords,{color:'#fff',weight:weights[i]+3,opacity:.6,lineCap:'round',lineJoin:'round'}).addTo(planLayerGroup);
-      const pl=L.polyline(coords,{color:colors[i],weight:weights[i],opacity:opacities[i],lineCap:'round',lineJoin:'round'}).addTo(planLayerGroup);
-      const _i=i; pl.on('click',()=>selectComboIdx(_i));
-      // Zone de clic élargie invisible
-      L.polyline(coords,{color:'transparent',weight:20,opacity:0}).on('click',()=>selectComboIdx(_i)).addTo(planLayerGroup);
-    }
-    // Marqueurs stations
-    const depM=L.circleMarker([combo.dep.lat,combo.dep.lng],{radius:i===0?9:6,fillColor:colors[i],color:'#fff',weight:i===0?2:1,fillOpacity:.9});
-    depM.bindTooltip(cleanName(combo.dep.name),{direction:'top',permanent:false});
-    depM.on('click',()=>selectComboIdx(_i));
-    depM.addTo(planLayerGroup);
-    const arrM=L.circleMarker([combo.arr.lat,combo.arr.lng],{radius:i===0?9:6,fillColor:colors[i],color:'#fff',weight:i===0?2:1,fillOpacity:.9});
-    arrM.bindTooltip(cleanName(combo.arr.name),{direction:'top',permanent:false});
-    arrM.on('click',()=>selectComboIdx(_i));
-    arrM.addTo(planLayerGroup);
-  });
-  // Zoom sur le premier
-  if(routes[0]?.coords) planMap.fitBounds(L.polyline(routes[0].coords).getBounds().pad(.25));
-}
-
-async function showRoute(idx){
-  // Highlight carte
-  document.querySelectorAll('.combo-card').forEach((el,i)=>{
-    el.classList.toggle('selected',i===idx);
+    grid.appendChild(el);
   });
 
-  const combo=window._planCombos?.[idx]; if(!combo) return;
-  if(planLayerGroup) planLayerGroup.clearLayers();
-  planLayerGroup=L.layerGroup().addTo(planMap);
-
-  // Marqueurs départ/arrivée réels
-  const radius=parseInt(document.getElementById('plan-radius').value);
-
-  // Points départ/arrivée épurés
-  if(planFromPos&&!planFromFixed)
-    L.circleMarker([planFromPos.lat,planFromPos.lng],{radius:8,fillColor:'#fff',color:'#1a9e3f',weight:3,fillOpacity:.9}).bindTooltip('Départ',{direction:'top'}).addTo(planLayerGroup);
-  if(planToPos&&!planToFixed)
-    L.circleMarker([planToPos.lat,planToPos.lng],{radius:8,fillColor:'#fff',color:'#c0001a',weight:3,fillOpacity:.9}).bindTooltip('Arrivée',{direction:'top'}).addTo(planLayerGroup);
-
-  // Stations départ/arrivée
-  L.circleMarker([combo.dep.lat,combo.dep.lng],{radius:10,fillColor:'#1a7a3e',color:'#fff',weight:2,fillOpacity:.95})
-    .bindTooltip(cleanName(combo.dep.name),{permanent:false,direction:'top'}).addTo(planLayerGroup);
-  L.circleMarker([combo.arr.lat,combo.arr.lng],{radius:10,fillColor:'#ff3b30',color:'#fff',weight:2,fillOpacity:.95})
-    .bindTooltip(cleanName(combo.arr.name),{permanent:false,direction:'top'}).addTo(planLayerGroup);
-
-  // Routing Valhalla entre les deux stations
-  const bikeType=document.getElementById('plan-type').value;
-  const speed=bikeType==='meca'?16:21;
-  const routeColor=bikeType==='meca'?'#e8001c':'#1a7a3e';
-  try{
-    const body={
-      locations:[{lon:combo.dep.lng,lat:combo.dep.lat},{lon:combo.arr.lng,lat:combo.arr.lat}],
-      costing:'bicycle',
-      costing_options:{bicycle:{bicycle_type:bikeType==='meca'?'Hybrid':'Road',cycling_speed:bikeType==='meca'?15:22,use_roads:0.1,use_hills:bikeType==='meca'?0:0.7}},
-      directions_type:'none'
-    };
-    let coords = null;
-
-    // 1. Brouter — direct, pas de Valhalla (down)
-    try {
-      const brProfile='trekking';
-      const brUrl = `https://brouter.de/brouter?lonlats=${combo.dep.lng},${combo.dep.lat}|${combo.arr.lng},${combo.arr.lat}&profile=${brProfile}&alternativeidx=0&format=geojson`;
-      const rb = await fetch(brUrl, {signal: AbortSignal.timeout(12000)});
-      if(rb.ok){
-        const db = await rb.json();
-        const geom = db.features?.[0]?.geometry;
-        if(geom?.type==='LineString') coords = geom.coordinates.map(([lng,lat])=>[lat,lng]);
-      }
-    } catch(e){ console.warn('Brouter:', e.message); }
-
-    // 2. Fallback OSRM bike
-    if(!coords){
-      try {
-        console.log('Fallback OSRM…');
-        const osrmUrl = `https://router.project-osrm.org/route/v1/bike/${combo.dep.lng},${combo.dep.lat};${combo.arr.lng},${combo.arr.lat}?overview=full&geometries=polyline6`;
-        const ro = await fetch(osrmUrl, {signal: AbortSignal.timeout(12000)});
-        if(ro.ok){
-          const dor = await ro.json();
-          const geom = dor.routes?.[0]?.geometry;
-          if(geom) coords = decodePolyline(geom);
-        }
-      } catch(e){ console.warn('OSRM:', e.message); }
-    }
-
-    // 3. Fallback Valhalla si de retour
-    if(!coords){
-      try {
-        const rv0 = await fetch(`https://valhalla1.openstreetmap.de/route?json=${encodeURIComponent(JSON.stringify(body))}`, {signal: AbortSignal.timeout(8000)});
-        if(rv0.ok){
-          const dv0 = await rv0.json();
-          const leg0 = dv0.trip?.legs?.[0];
-          if(leg0) coords = decodePolyline(leg0.shape);
-        }
-      } catch {}
-    }
-
-    if(coords){
-      L.polyline(coords,{color:'#fff',weight:8,opacity:.6,lineCap:'round',lineJoin:'round'}).addTo(planLayerGroup);
-      L.polyline(coords,{color:routeColor,weight:5,opacity:.9,lineCap:'round',lineJoin:'round'}).addTo(planLayerGroup);
-      setTimeout(()=>{
-        planMap.invalidateSize();
-        planMap.fitBounds(L.polyline(coords).getBounds().pad(.2));
-      }, 100);
-    }
-  }catch{}
-
-  // Routing piéton via OSRM foot (bleu pointillé)
-  const walkRoutes=[];
-  if(planFromPos&&!planFromFixed) walkRoutes.push({from:planFromPos,to:{lat:combo.dep.lat,lng:combo.dep.lng}});
-  if(planToPos&&!planToFixed) walkRoutes.push({from:{lat:combo.arr.lat,lng:combo.arr.lng},to:planToPos});
-  for(const wr of walkRoutes){
-    try{
-      const wo=await fetch(`https://router.project-osrm.org/route/v1/foot/${wr.from.lng},${wr.from.lat};${wr.to.lng},${wr.to.lat}?overview=full&geometries=polyline6`,{signal:AbortSignal.timeout(6000)});
-      if(wo.ok){
-        const wd=await wo.json();
-        const wgeom=wd.routes?.[0]?.geometry;
-        if(wgeom){
-          const wcoords=decodePolyline(wgeom);
-          L.polyline(wcoords,{color:'#fff',weight:5,opacity:.3,lineCap:'round',lineJoin:'round'}).addTo(planLayerGroup);
-          L.polyline(wcoords,{color:'#0a84ff',weight:2.5,dashArray:'5,6',opacity:.8,lineCap:'round',lineJoin:'round'}).addTo(planLayerGroup);
-        }
-      }
-    }catch{
-      // Fallback ligne droite
-      L.polyline([[wr.from.lat,wr.from.lng],[wr.to.lat,wr.to.lng]],{color:'#0a84ff',weight:2,dashArray:'5,5',opacity:.6}).addTo(planLayerGroup);
-    }
-  }
-
+  fillSelects(stations);
 }
 
-let _chartComboA=null, _chartComboB=null;
-
-async function showComboCourbes(combo, targetEl=null){
-  let zone=targetEl||document.getElementById('plan-courbes-zone');
-  if(!zone){
-    zone=document.createElement('div');
-    zone.id='plan-courbes-zone';
-    const card=document.getElementById('plan-results');
-    card.appendChild(zone);
-  }
-  zone.innerHTML='<div class="loader">Chargement des courbes…</div>';
-
-  const nowDate=new Date();
-  const dowEl=document.getElementById('plan-dow');
-  const hourEl=document.getElementById('plan-hour');
-  const targetDow=dowEl&&dowEl.value?parseInt(dowEl.value):nowDate.getDay();
-  const targetH2=hourEl&&hourEl.value?parseInt(hourEl.value):nowDate.getHours();
-  const today=new Date();
-  const promises=[];
-  for(let i=0;i<365;i++){
-    const d=new Date(today); d.setDate(d.getDate()-i);
-    if(d.getDay()===targetDow) promises.push(fetchDay(d.toISOString().slice(0,10)));
-  }
-  const allDays=(await Promise.all(promises)).filter(Boolean);
-
-  const bikeType=document.getElementById('plan-type').value;
-  const depKey=bikeType==='elec'?'electrical_bikes':bikeType==='meca'?'mechanical_bikes':'available_bikes';
-
-  const labels=[], depData=[], arrData=[];
-  for(let h=0;h<24;h++){
-    labels.push(String(h).padStart(2,'0')+'h');
-    const dv=[],av=[];
-    allDays.forEach(snaps=>{
-      snaps.forEach(snap=>{
-        const sh=(new Date(getTs(snap)).getUTCHours()+2)%24;
-        if(sh!==h) return;
-        const sts=getSts(snap);
-        const dep=sts.find(s=>s.number===combo.dep.number);
-        const arr=sts.find(s=>s.number===combo.arr.number);
-        if(dep?.bike_stands) dv.push((dep[depKey]||0)/dep.bike_stands*100);
-        if(arr?.bike_stands) av.push(arr.available_bike_stands/arr.bike_stands*100);
-      });
+function fillSelects(stations) {
+  ['hist-station', 'heat-station', 't-station'].forEach(id => {
+    const sel = document.getElementById(id);
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">— Station —</option>';
+    stations.forEach(s => {
+      const o = document.createElement('option');
+      o.value = s.number; o.textContent = cleanName(s.name);
+      sel.appendChild(o);
     });
-    const avg=a=>a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length):null;
-    depData.push(avg(dv));
-    arrData.push(avg(av));
-  }
+    if (cur) sel.value = cur;
+  });
+}
 
-  const bikeLabel=bikeType==='elec'?'⚡ Élec':bikeType==='meca'?'🔧 Méca':'🚲 Vélos';
-  zone.innerHTML=`
-    <div class="card" style="backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);margin-top:0;border-top:none;border-radius:0 0 var(--radius) var(--radius)">
-      <div class="card-title">Probabilité sur 24h · ${DOW_NAMES[targetDow]} · ${cleanName(combo.dep.name)} → ${cleanName(combo.arr.name)}</div>
-      <canvas id="chart-combo" height="80"></canvas>
-    </div>`;
+// ─── HISTORIQUE ───────────────────────────────────────────────────────────────
+document.getElementById('hist-date').value = todayStr();
+document.getElementById('t-date').value    = todayStr();
 
-  _chartComboA?.destroy();
-  _chartComboA=new Chart(document.getElementById('chart-combo'),{type:'line',
-    data:{labels,datasets:[
-      {label:`${bikeLabel} dispo au départ`,data:depData,borderColor:'#0a84ff',backgroundColor:'rgba(10,132,255,.08)',borderWidth:2,tension:0,pointRadius:3,spanGaps:true,fill:true},
-      {label:'🅿️ Place dispo à l\'arrivée',data:arrData,borderColor:'#ff3b30',backgroundColor:'rgba(255,59,48,.06)',borderWidth:2,tension:0,pointRadius:3,spanGaps:true,fill:true},
+async function loadHistory() {
+  const id   = parseInt(document.getElementById('hist-station').value);
+  const date = document.getElementById('hist-date').value;
+  if (!id || !date) return;
+  const snaps = await fetchDay(date);
+  if (!snaps?.length) { alert('Aucune donnée pour cette date.'); return; }
+
+  const labels = [], bikes = [], stands = [], flux = [];
+  snaps.forEach((snap, i) => {
+    const st = snap.stations?.find(s => s.number === id);
+    if (!st) return;
+    const t = new Date(snap.timestamp);
+    labels.push(t.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
+    bikes.push(st.available_bikes);
+    stands.push(st.available_bike_stands);
+    if (i > 0) { const prev = snaps[i-1].stations?.find(s => s.number === id); flux.push(prev ? st.available_bikes - prev.available_bikes : 0); }
+    else flux.push(0);
+  });
+
+  if (chartHist) chartHist.destroy();
+  chartHist = new Chart(document.getElementById('chart-hist'), {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: 'Vélos dispo',   data: bikes,  borderColor: '#3fb97a', backgroundColor: 'rgba(63,185,122,.08)',  tension: .35, borderWidth: 2, pointRadius: 0 },
+      { label: 'Places libres', data: stands, borderColor: '#f0a500', backgroundColor: 'rgba(240,165,0,.08)',   tension: .35, borderWidth: 2, pointRadius: 0 },
     ]},
-    options:{...chartOpts(),scales:{...chartOpts().scales,y:{...chartOpts().scales.y,max:100,ticks:{...chartOpts().scales.y.ticks,callback:v=>v+'%'}}}}
+    options: chartDefs(),
+  });
+
+  if (chartFlux) chartFlux.destroy();
+  chartFlux = new Chart(document.getElementById('chart-flux'), {
+    type: 'bar',
+    data: { labels, datasets: [{
+      label: 'Δ vélos', data: flux,
+      backgroundColor: flux.map(v => v > 0 ? 'rgba(63,185,122,.55)' : v < 0 ? 'rgba(224,79,79,.55)' : 'rgba(78,100,120,.3)'),
+      borderColor:     flux.map(v => v > 0 ? '#3fb97a' : v < 0 ? '#e04f4f' : '#4e6478'),
+      borderWidth: 1,
+    }]},
+    options: chartDefs(),
   });
 }
 
-/* ═══ INIT ════════════════════════════════════════════ */
-function initRanges(){
-  const lbDate=document.getElementById('lb-date'); if(lbDate&&!lbDate.value) lbDate.value=new Date().toISOString().slice(0,10);
-  const lbMonth=document.getElementById('lb-month'); if(lbMonth&&!lbMonth.value) lbMonth.value=new Date().toISOString().slice(0,7);
-  onLbViewChange();
-  const now=new Date();
-  document.getElementById('lb-date').value=now.toISOString().slice(0,10);
-}
+// ─── HEATMAP ──────────────────────────────────────────────────────────────────
+async function loadHeatmap() {
+  const id   = parseInt(document.getElementById('heat-station').value);
+  const wrap = document.getElementById('heatmap-wrap');
+  if (!id) return;
+  wrap.innerHTML = '<div class="loader">Analyse des 30 derniers jours…</div>';
 
-
-/* ═══ STATS DETAIL ════════════════════════════════════ */
-let _chartSD_elec=null, _chartSD_meca=null, _chartSD_hmap=null;
-
-let _openDetailNum = null;
-async function toggleStationDetail(number, row){
-  const detailRow = document.getElementById(`lb-detail-${number}`);
-  const detailDiv = document.getElementById(`stats-detail-${number}`);
-  if(_openDetailNum === number){
-    detailRow.style.display='none';
-    row.classList.remove('selected');
-    _openDetailNum=null;
-    return;
+  const allSnaps = [];
+  const today    = new Date();
+  for (let i = 0; i < 30; i++) {
+    const d  = new Date(today); d.setDate(d.getDate() - i);
+    const ds = d.toISOString().slice(0, 10);
+    try { const snaps = await fetchDay(ds); if (snaps) allSnaps.push(...snaps); } catch {}
   }
-  if(_openDetailNum){
-    const old=document.getElementById(`lb-detail-${_openDetailNum}`);
-    const oldRow=document.getElementById(`lb-row-${_openDetailNum}`);
-    if(old) old.style.display='none';
-    if(oldRow) oldRow.classList.remove('selected');
-  }
-  detailRow.style.display='';
-  row.classList.add('selected');
-  _openDetailNum=number;
-  detailDiv.innerHTML='<div class="loader">Chargement…</div>';
-  await showStationDetail(number, detailDiv);
-  detailRow.scrollIntoView({behavior:'smooth',block:'nearest'});
-}
+  if (!allSnaps.length) { wrap.innerHTML = '<div class="no-data">Aucune donnée historique.</div>'; return; }
 
-async function showStationDetail(number, targetEl=null){
-  const st=allStations.find(s=>s.number===number);
-  if(!st) return;
-  document.querySelectorAll('#lb-body tr').forEach(r=>r.style.background='');
-  const row=document.getElementById('lb-row-'+number);
-  if(row) row.style.background='rgba(255,255,255,.06)';
-  const detail=targetEl || document.getElementById('stats-detail');
-  const view=document.getElementById('lb-view')?.value||'day';
-  const isMob=window.innerWidth<=640;
-  if(window._chartSD_elec){ try{window._chartSD_elec.destroy();}catch{} window._chartSD_elec=null; }
-  const oldCvs=document.getElementById('sd-combined-'+number);
-  if(oldCvs){ const ex=Chart.getChart(oldCvs); if(ex) ex.destroy(); }
-  detail.innerHTML=
-    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'+
-    '<div style="min-width:0"><div style="font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+cleanName(st.name)+'</div>'+
-    '<div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:2px">⚡'+st.electrical_bikes+' · 🔧'+st.mechanical_bikes+' · 🅿️'+st.available_bike_stands+'</div></div></div>'+
-    '<div id="sd-tabs-'+number+'" style="display:flex;background:rgba(255,255,255,.06);border:0.5px solid rgba(255,255,255,.06);border-radius:20px;padding:2px;position:relative;margin-bottom:8px">'+
-    '<div id="sd-thumb-'+number+'" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:33.33%;background:rgba(255,255,255,.18);border:0.5px solid rgba(255,255,255,.2);border-radius:18px;transition:transform .18s;pointer-events:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.2)"></div>'+
-    '<div class="sd-tab on" onclick="renderSDSlide(0,'+number+')" style="flex:1;text-align:center;padding:5px 4px;font-size:10px;font-weight:600;color:#fff;cursor:pointer;position:relative;z-index:1">Vélos</div>'+
-    '<div class="sd-tab" onclick="renderSDSlide(1,'+number+')" style="flex:1;text-align:center;padding:5px 4px;font-size:10px;font-weight:600;color:rgba(255,255,255,.55);cursor:pointer;position:relative;z-index:1">Mvts</div>'+
-    '<div class="sd-tab" onclick="renderSDSlide(2,'+number+')" style="flex:1;text-align:center;padding:5px 4px;font-size:10px;font-weight:600;color:rgba(255,255,255,.55);cursor:pointer;position:relative;z-index:1">Solde</div>'+
-    '</div>'+
-    '<div id="sd-legend-'+number+'" style="display:flex;gap:10px;font-size:10px;color:rgba(255,255,255,.55);margin-bottom:4px"></div>'+
-    '<div style="position:relative;height:'+(isMob?130:160)+'px;margin:0 -14px;width:calc(100% + 28px)"><canvas id="sd-combined-'+number+'" style="position:absolute;inset:0;width:100%!important;height:100%!important"></canvas></div>'+
-    '<div id="sd-dots-'+number+'" style="display:flex;justify-content:center;gap:4px;padding:6px 0 2px">'+
-    '<div style="height:3px;width:14px;border-radius:2px;background:#34c759;display:inline-block;transition:all .2s"></div>'+
-    '<div style="height:3px;width:5px;border-radius:2px;background:#38383a;display:inline-block;transition:all .2s"></div>'+
-    '<div style="height:3px;width:5px;border-radius:2px;background:#38383a;display:inline-block;transition:all .2s"></div>'+
-    '</div>'+
-    '<div id="sd-stats-row" style="display:flex;gap:8px;margin-top:6px"></div>';
+  const buckets = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => []));
+  allSnaps.forEach(snap => {
+    const st = snap.stations?.find(s => s.number === id);
+    if (!st || !st.bike_stands) return;
+    const t    = new Date(snap.timestamp);
+    const hour = (t.getUTCHours() + 2) % 24;
+    buckets[t.getDay()][hour].push(st.available_bikes / st.bike_stands * 100);
+  });
 
-  const d=document.getElementById('lb-date').value;
-  const mth=document.getElementById('lb-month')?.value;
-  const yr=document.getElementById('lb-year')?.value;
-
-  async function loadSnapsByDate(dates){
-    const BATCH=16,result=[];
-    for(let i=0;i<dates.length;i+=BATCH){
-      const batch=dates.slice(i,i+BATCH);
-      const res=await Promise.all(batch.map(dt=>fetchDay(dt).catch(()=>null)));
-      res.forEach((snaps,j)=>{ if(snaps) result.push({date:batch[j],snaps}); });
-    }
-    return result;
-  }
-
-  let labels=[],dataElec=[],dataMeca=[],dataMvts=[],dataSolde=[];
-
-  if(view==='day'){
-    if(!d) return;
-    const snaps=await fetchDay(d)||[];
-    let prevT=null;
-    snaps.forEach(snap=>{
-      const sts=getSts(snap),st2=sts.find(x=>x.number===number); if(!st2) return;
-      const t=new Date(getTs(snap));
-      labels.push(t.getMinutes()===0?t.getHours()+'h':'');
-      dataElec.push(st2.electrical_bikes||0);
-      dataMeca.push(st2.mechanical_bikes||0);
-      const tot=(st2.electrical_bikes||0)+(st2.mechanical_bikes||0);
-      if(prevT!==null){ dataMvts.push(Math.abs(tot-prevT)); dataSolde.push(tot-prevT); }
-      else { dataMvts.push(0); dataSolde.push(0); }
-      prevT=tot;
-    });
-  } else if(view==='month'){
-    if(!mth) return;
-    const [y,mo]=mth.split('-').map(Number);
-    const daysInMonth=new Date(y,mo,0).getDate();
-    const today=localDateStr();
-    const dates=[];
-    for(let day=1;day<=daysInMonth;day++){
-      const ds=y+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
-      if(ds<=today) dates.push(ds);
-    }
-    const loaded=await loadSnapsByDate(dates);
-    for(let day=1;day<=daysInMonth;day++){
-      const ds=y+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
-      labels.push(day+'');
-      const entry=loaded.find(x=>x.date===ds);
-      if(!entry){ dataElec.push(null);dataMeca.push(null);dataMvts.push(null);dataSolde.push(null);continue; }
-      let eSum=0,mSum=0,cnt=0,mvtsSum=0,ent=0,sor=0,prevS=null;
-      entry.snaps.forEach(snap=>{
-        const st2=getSts(snap).find(x=>x.number===number); if(!st2) return;
-        eSum+=st2.electrical_bikes||0; mSum+=st2.mechanical_bikes||0; cnt++;
-        const tot=(st2.electrical_bikes||0)+(st2.mechanical_bikes||0);
-        if(prevS!==null){ const dd=tot-prevS; mvtsSum+=Math.abs(dd); if(dd>0)ent+=dd; else sor+=dd; }
-        prevS=tot;
-      });
-      dataElec.push(cnt?Math.round(eSum/cnt):null);
-      dataMeca.push(cnt?Math.round(mSum/cnt):null);
-      dataMvts.push(Math.round(mvtsSum));
-      dataSolde.push(ent+sor);
-    }
-  } else {
-    if(!yr) return;
-    const today=localDateStr();
-    const MONTHS=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
-    const allDatesYear=[];
-    for(let mo=1;mo<=12;mo++) for(let day=1;day<=new Date(yr,mo,0).getDate();day++){
-      const ds=yr+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
-      if(ds<=today) allDatesYear.push(ds);
-    }
-    const allLoadedYear=await loadSnapsByDate(allDatesYear);
-    const byDate={};
-    allLoadedYear.forEach(({date,snaps})=>{ byDate[date]={snaps}; });
-    for(let mo=1;mo<=12;mo++){
-      labels.push(MONTHS[mo-1]);
-      const daysInM=new Date(yr,mo,0).getDate();
-      const mDates=[];
-      for(let day=1;day<=daysInM;day++){
-        const ds=yr+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
-        if(ds<=today) mDates.push(ds);
+  const DAYS  = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+  const ORDER = [1, 2, 3, 4, 5, 6, 0];
+  let html = '<div class="hmap-grid"><div class="hmap-h"></div>';
+  for (let h = 0; h < 24; h++) html += `<div class="hmap-h">${String(h).padStart(2,'0')}</div>`;
+  ORDER.forEach(d => {
+    html += `<div class="hmap-label">${DAYS[d]}</div>`;
+    for (let h = 0; h < 24; h++) {
+      const vals = buckets[d][h];
+      if (!vals.length) { html += `<div class="hmap-cell" style="background:#111820" title="${DAYS[d]} ${h}h — pas de données"></div>`; }
+      else {
+        const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+        const t   = avg / 100;
+        const r   = Math.round(224 - t * (224 - 63));
+        const g   = Math.round(79  + t * (185 - 79));
+        const bv  = Math.round(79  + t * (122 - 79));
+        html += `<div class="hmap-cell" style="background:rgba(${r},${g},${bv},.75)" title="${DAYS[d]} ${h}h — ${Math.round(avg)}%"></div>`;
       }
-      if(!mDates.length){ dataElec.push(null);dataMeca.push(null);dataMvts.push(null);dataSolde.push(null);continue; }
-      const loaded=mDates.map(ds=>byDate[ds]).filter(Boolean);
-      let eSum=0,mSum=0,cnt=0,mvtsT=0,soldeT=0;
-      loaded.forEach(({snaps})=>{
-        let prevS=null;
-        snaps.forEach(snap=>{
-          const st2=getSts(snap).find(x=>x.number===number); if(!st2) return;
-          eSum+=st2.electrical_bikes||0; mSum+=st2.mechanical_bikes||0; cnt++;
-          const tot=(st2.electrical_bikes||0)+(st2.mechanical_bikes||0);
-          if(prevS!==null){ const dd=tot-prevS; mvtsT+=Math.abs(dd); soldeT+=dd; }
-          prevS=tot;
-        });
-      });
-      dataElec.push(cnt?Math.round(eSum/cnt):null);
-      dataMeca.push(cnt?Math.round(mSum/cnt):null);
-      dataMvts.push(Math.round(mvtsT/Math.max(1,loaded.length)));
-      dataSolde.push(Math.round(soldeT/Math.max(1,loaded.length)));
-    }
-  }
-
-  window._sdData={labels,dataElec,dataMeca,dataMvts,dataSolde,number,view};
-  window._sdSlide=0;
-  renderSDSlide(0,number);
-} // fin showStationDetail
-
-function renderSDSlide(slideIdx,number){
-  window._sdSlide=slideIdx;
-  const {labels,dataElec,dataMeca,dataMvts,dataSolde,view}=window._sdData||{};
-  if(!labels) return;
-  const isLine=view==='day';
-  if(window._chartSD_elec){ try{window._chartSD_elec.destroy();}catch{} window._chartSD_elec=null; }
-  const cvs=document.getElementById('sd-combined-'+number);
-  if(cvs){ const ex=Chart.getChart(cvs); if(ex) ex.destroy(); }
-  const tabsCont=document.getElementById('sd-tabs-'+number);
-  if(tabsCont){
-    [...tabsCont.children].forEach((t,i)=>{ if(t.id&&t.id.startsWith('sd-thumb')) return; t.classList.toggle('on',i-1===slideIdx); t.style.color=i-1===slideIdx?'#f5f5f7':'var(--sub)'; });
-    const thumb=document.getElementById('sd-thumb-'+number);
-    if(thumb) thumb.style.transform=`translateX(${slideIdx*100}%)`;
-  }
-  const dotsCont=document.getElementById('sd-dots-'+number);
-  if(dotsCont) [...dotsCont.children].forEach((d,i)=>{ d.style.width=i===slideIdx?'14px':'5px'; d.style.background=i===slideIdx?'#34c759':'#38383a'; });
-  let datasets=[],legendHtml='',statsHtml='';
-  if(slideIdx===0){
-    datasets=[
-      {label:'Élec',data:dataElec,borderColor:'#0a84ff',backgroundColor:isLine?'#0a84ff18':'#0a84ff88',borderWidth:isLine?1.8:0,borderRadius:2,tension:0,pointRadius:0,spanGaps:true,fill:isLine},
-      {label:'Méca',data:dataMeca,borderColor:'#ff9f0a',backgroundColor:isLine?'#ff9f0a18':'#ff9f0a88',borderWidth:isLine?1.8:0,borderRadius:2,tension:0,pointRadius:0,spanGaps:true,fill:isLine}
-    ];
-    legendHtml='<span style="color:#0a84ff;font-size:10px">⚡ Élec</span><span style="color:#ff9f0a;font-size:10px;margin-left:10px">🔧 Méca</span>';
-    const avgE=Math.round((dataElec.filter(Boolean).reduce((a,b)=>a+b,0)||0)/Math.max(1,dataElec.filter(Boolean).length));
-    const avgM=Math.round((dataMeca.filter(Boolean).reduce((a,b)=>a+b,0)||0)/Math.max(1,dataMeca.filter(Boolean).length));
-    statsHtml=`<div style="flex:1;background:rgba(12,12,16,.45);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#0a84ff">${avgE}</div><div style="font-size:10px;color:rgba(255,255,255,.55)">⚡ moy.</div></div><div style="flex:1;background:rgba(12,12,16,.45);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#ff9f0a">${avgM}</div><div style="font-size:10px;color:rgba(255,255,255,.55)">🔧 moy.</div></div>`;
-  } else if(slideIdx===1){
-    datasets=[{label:'Mvts',data:dataMvts,backgroundColor:'#f5f5f755',borderColor:'#f5f5f7',borderWidth:1,borderRadius:3,spanGaps:true}];
-    legendHtml='<span style="font-size:10px;color:rgba(255,255,255,.55)">↕ Mouvements</span>';
-    const total=(dataMvts.filter(Boolean).reduce((a,b)=>a+b,0)||0);
-    const maxMvt=Math.max(...(dataMvts.filter(Boolean)||[0]));
-    statsHtml=`<div style="flex:1;background:rgba(12,12,16,.45);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#fff">${Math.round(total)}</div><div style="font-size:10px;color:rgba(255,255,255,.55)">total</div></div><div style="flex:1;background:rgba(12,12,16,.45);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700">${maxMvt}</div><div style="font-size:10px;color:rgba(255,255,255,.55)">max</div></div>`;
-  } else {
-    datasets=[{label:'Solde',data:dataSolde,backgroundColor:dataSolde.map(v=>(v||0)>=0?'#34c75988':'#ff453a88'),borderColor:dataSolde.map(v=>(v||0)>=0?'#34c759':'#ff453a'),borderWidth:1,borderRadius:2,spanGaps:true}];
-    legendHtml='<span style="color:#34c759;font-size:10px">▲ Entrées</span><span style="color:#ff453a;font-size:10px;margin-left:8px">▼ Sorties</span>';
-    const bilan=(dataSolde.filter(Boolean).reduce((a,b)=>a+b,0)||0);
-    statsHtml=`<div style="flex:1;background:rgba(12,12,16,.45);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:${bilan>=0?'#34c759':'#ff453a'}">${bilan>=0?'+':''}${Math.round(bilan)}</div><div style="font-size:10px;color:rgba(255,255,255,.55)">bilan</div></div>`;
-  }
-  const legendEl=document.getElementById('sd-legend-'+number);
-  const statsEl=document.getElementById('sd-stats-row');
-  if(legendEl) legendEl.innerHTML=legendHtml;
-  if(statsEl) statsEl.innerHTML=statsHtml;
-  if(!cvs) return;
-  const chartType=slideIdx===0?(isLine?'line':'bar'):'bar';
-  window._chartSD_elec=new Chart(cvs,{type:chartType,data:{labels,datasets},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(28,28,30,.92)',titleColor:'#f5f5f7',bodyColor:'#8e8e93',padding:8,cornerRadius:8}},
-      scales:{x:{ticks:{color:'#636366',font:{size:9},maxTicksLimit:view==='day'?8:12},grid:{display:false},border:{display:false}},
-              y:{ticks:{color:'#636366',font:{size:9},maxTicksLimit:4},grid:{color:'rgba(255,255,255,.05)'},border:{display:false}}}}});
-}
-
-
-let _stationPopup=null;
-let _stationPopupEl=null;
-async function showStationPopup(s, lat, lon){
-  closeStationPopup();
-  window._popupStation={s,lat,lon};
-  const hasDep=!!(window._planFromPos||planFromPos||planFromFixed);
-  const pct=s.bike_stands?Math.round(s.available_bikes/s.bike_stands*100):0;
-  const cls='rgba(255,255,255,.7)';
-
-  // Convertir lat/lng en coordonnées pixel sur la carte
-  const pt=map.latLngToContainerPoint([lat,lon]);
-  const mapEl=document.getElementById('map');
-  const mapRect=mapEl.getBoundingClientRect();
-
-  const div=document.createElement('div');
-  div.id='stn-custom-popup';
-  div.style.cssText=`position:absolute;z-index:500;transform:translate(-50%,-100%);
-    left:${pt.x}px;top:${pt.y-10}px;
-    background:rgba(12,12,16,.52);backdrop-filter:blur(56px) saturate(220%) brightness(1.08);-webkit-backdrop-filter:blur(56px) saturate(220%) brightness(1.08);
-    border:0.5px solid rgba(255,255,255,.18);border-radius:14px;
-    padding:10px 12px;min-width:160px;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 24px rgba(0,0,0,.4);
-    pointer-events:auto;`;
-
-  // Vélos live JCDecaux (chargement asynchrone)
-  const bikesHtml = `<div id="stn-bikes-slot" style="margin-bottom:${hasDep?'5':'8'}px;font-size:10px;color:rgba(255,255,255,.35);text-align:center;padding:6px 0">Chargement…</div>`;
-
-  div.innerHTML=`
-    <div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:5px">${cleanName(s.name)}</div>
-    <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(255,255,255,.6);margin-bottom:6px">
-      <span style="display:flex;align-items:center;gap:3px">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="#f5f5f7"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>${s.electrical_bikes}
-      </span>
-      <span style="display:flex;align-items:center;gap:3px">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#f5f5f7" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>${s.mechanical_bikes}
-      </span>
-      <span style="margin-left:auto;color:${cls};font-weight:700">${pct}%</span>
-    </div>
-    ${bikesHtml}
-    ${!hasDep?`<button id="stn-dep-btn" style="width:100%;padding:5px 8px;border-radius:8px;border:0.5px solid rgba(52,199,89,.3);background:rgba(52,199,89,.1);color:#34c759;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px">
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Partir d'ici</button>`
-    :`<button id="stn-arr-btn" style="width:100%;padding:5px 8px;border-radius:8px;border:0.5px solid rgba(255,69,58,.3);background:rgba(255,69,58,.1);color:#ff453a;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px">
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Arriver ici</button>`}`;
-
-  mapEl.appendChild(div);
-  _stationPopupEl=div;
-
-  // Fetch live des vélos de cette station (asynchrone, remplit le slot)
-  fetchStationBikesLive(s.number).then(bikes=>{
-    const slot=document.getElementById('stn-bikes-slot');
-    if(!slot) return; // popup fermée entre-temps
-    if(!bikes){
-      slot.innerHTML='<span style="opacity:.6">Détail vélos indisponible</span>';
-      return;
-    }
-    const list=bikes.filter(b=>b.status!=='REMOVED').sort((a,b)=>{
-      if(a.type!==b.type) return a.type==='ELECTRICAL'?-1:1;
-      return (b.bikeBatteryMv||0)-(a.bikeBatteryMv||0);
-    });
-    if(!list.length){ slot.innerHTML=''; return; }
-    slot.style.textAlign='left'; slot.style.padding='0';
-    slot.innerHTML=list.map(b=>{
-      const isElec=b.type==='ELECTRICAL';
-      const reserved=b.isReserved;
-      const avail=b.status==='AVAILABLE';
-      const icon=isElec
-        ?'<svg width="9" height="9" viewBox="0 0 24 24" fill="rgba(255,255,255,.8)"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'
-        :'<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
-      let battEl='<span style="font-size:9px;color:rgba(255,255,255,.2);min-width:24px">·</span>';
-      if(isElec&&b.bikeBatteryMv!=null){
-        // bikeBatteryMv ~ tension pack (mV) → estimation grossière % (plage usuelle ~1250-1550mV)
-        const pct=Math.max(0,Math.min(100,Math.round((b.bikeBatteryMv-1250)/(1550-1250)*100)));
-        battEl=`<span style="font-size:9px;font-weight:600;color:#fff;min-width:34px">${pct}%</span>`;
-      }
-      const ratingVal=b.rating?.value;
-      const ratingCount=b.rating?.count;
-      const ratingEl=ratingVal?`<span style="font-size:8px;color:rgba(255,255,255,.7)">${Math.round(ratingVal)}%<span style="color:rgba(255,255,255,.28)">${ratingCount?'('+ratingCount+')':''}</span></span>`:'';
-      const reservedEl=reserved?'<span style="font-size:8px;color:rgba(255,255,255,.5)">rés.</span>':(!avail?`<span style="font-size:8px;color:rgba(255,255,255,.4)">${b.statusLabel||b.status}</span>`:'');
-      return `<div style="display:flex;align-items:center;gap:4px;padding:2.5px 0;border-bottom:0.5px solid rgba(255,255,255,.05);opacity:${reserved||!avail?'.5':'1'}">
-        <span style="display:flex;align-items:center">${icon}</span>
-        <span style="font-size:9px;color:rgba(255,255,255,.4);min-width:16px">${b.standNumber??'?'}</span>
-        ${battEl}
-        ${ratingEl}
-        <span style="font-size:9px;color:rgba(255,255,255,.28);flex:1;text-align:right">#${b.number}</span>
-        ${reservedEl}
-      </div>`;
-    }).join('');
-  });
-
-  div.querySelector('#stn-dep-btn')?.addEventListener('click',()=>{
-    const {s,lat,lon}=window._popupStation;
-    closeStationPopup();
-    const depSt=allStations.find(x=>x.number===s.number)||s;
-    planFromFixed=depSt; planFromPos={lat,lng:lon};
-    window._planFromPos={lat,lng:lon};
-    document.getElementById('plan-from').value=cleanName(s.name);
-    document.getElementById('plan-from').style.color='';
-    expandPlanFloat();
-    window._waitingForArr=true;
-  });
-  div.querySelector('#stn-arr-btn')?.addEventListener('click',()=>{
-    const {s,lat,lon}=window._popupStation;
-    closeStationPopup();
-    const arrSt=allStations.find(x=>x.number===s.number)||s;
-    planToFixed=arrSt; planToPos={lat,lng:lon};
-    window._planToPos={lat,lng:lon};
-    document.getElementById('plan-to').value=cleanName(s.name);
-    document.getElementById('plan-to').style.color='';
-    window._waitingForArr=false;
-    expandPlanFloat();
-    setTimeout(()=>computePlan(),200);
-  });
-
-
-}
-function closeStationPopup(){
-  if(_stationPopupEl){ _stationPopupEl.remove(); _stationPopupEl=null; }
-  if(_stationPopup){ _stationPopup.remove(); _stationPopup=null; }
-}
-
-function initSliderSwipe(){
-  const track=document.getElementById('combo-slider-track');
-  if(!track) return;
-  if(track._swipeInit) return; // already attached
-  track._swipeInit=true;
-  let sx=null,dragged=false;
-  const go=(dir)=>{
-    const cur=window._openComboIdx??0;
-    const n=Math.max(0,Math.min((window._planCombos?.length||1)-1,cur+dir));
-    if(n!==cur) selectComboIdx(n);
-  };
-  track.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;dragged=false;},{passive:true});
-  track.addEventListener('touchmove',e=>{if(sx!==null&&Math.abs(e.touches[0].clientX-sx)>8)dragged=true;},{passive:true});
-  track.addEventListener('touchend',e=>{
-    if(sx===null)return;
-    const dx=e.changedTouches[0].clientX-sx;
-    if(dragged&&Math.abs(dx)>30)go(dx<0?1:-1);
-    sx=null;dragged=false;
-  });
-}
-
-function filterLbTable(q){
-  q=(q||'').toLowerCase().trim();
-  const rows=document.querySelectorAll('#lb-body tr');
-  rows.forEach(row=>{
-    const name=(row.querySelector('td:nth-child(2)')?.textContent||'').toLowerCase();
-    row.style.display=(!q||name.includes(q))?'':'none';
-  });
-}
-
-function setModeNow(){
-  const sl=document.getElementById('toggle-slider');
-  if(sl) sl.style.transform='translateX(0)';
-  document.getElementById('btn-now').style.color='var(--blue)';
-  document.getElementById('btn-plan').style.color='var(--sub)';
-  document.getElementById('plan-params').style.display='none';
-  window._planMode='now';
-}
-function setModePlan(){
-  const sl=document.getElementById('toggle-slider');
-  if(sl){
-    const w=document.getElementById('btn-now').offsetWidth;
-    sl.style.transform=`translateX(${w}px)`;
-    sl.style.width=document.getElementById('btn-plan').offsetWidth+'px';
-  }
-  document.getElementById('btn-now').style.color='var(--sub)';
-  document.getElementById('btn-plan').style.color='var(--blue)';
-  document.getElementById('plan-params').style.display='';
-  window._planMode='plan';
-}
-window._planMode='now';
-
-function setBikeType(t){
-  document.getElementById('plan-type').value = t;
-  const pos = t==='meca' ? 1 : 0;
-  ['type-slider','type-slider-now'].forEach(id=>{
-    const sl = document.getElementById(id);
-    if(sl) sl.style.transform = `translateX(${pos*100}%)`;
-  });
-  ['elec','meca'].forEach(v=>{
-    document.querySelectorAll(`[onclick="setBikeType('${v}')"]`).forEach(btn=>{
-      btn.style.color = v===t ? 'var(--blue)' : 'var(--sub)';
-    });
-  });
-}
-
-function swapPlanFromTo(){
-  const fromEl = document.getElementById('plan-from');
-  const toEl   = document.getElementById('plan-to');
-  const tmpVal = fromEl.value;
-  fromEl.value = toEl.value;
-  toEl.value   = tmpVal;
-  // Inverser aussi les positions et stations fixes
-  const tmpPos   = planFromPos;   planFromPos   = planToPos;   planToPos   = tmpPos;
-  const tmpFixed = planFromFixed; planFromFixed = planToFixed; planToFixed = tmpFixed;
-}
-
-function syncHourSelect(){
-  const t=document.getElementById('plan-hour-time')?.value||'00:00';
-  const h=parseInt(t.split(':')[0]);
-  const sel=document.getElementById('plan-hour');
-  if(sel) sel.value=String(h);
-}
-
-
-function closePlanFloat(){
-  const pf=document.getElementById('plan-float');
-  const expanded=document.getElementById('plan-float-expanded');
-  const compact=document.getElementById('plan-float-compact');
-  const results=document.getElementById('plan-results');
-  if(results) results.innerHTML='';
-  if(compact) compact.style.display='none';
-  if(expanded) expanded.style.display='block';
-  if(pf){ pf.style.maxHeight='250px'; pf.style.opacity='1'; pf.style.pointerEvents=''; }
-  if(planLayerGroup){ planLayerGroup.clearLayers(); }
-  if(typeof showBackgroundStations==='function') showBackgroundStations();
-  window._planCombos=null; window._openComboIdx=null; _openComboIdx=null;
-  const fromEl=document.getElementById('plan-from');
-  const toEl=document.getElementById('plan-to');
-  if(fromEl){ fromEl.value=''; fromEl.style.color=''; }
-  if(toEl){ toEl.value=''; toEl.style.color=''; }
-  window._planFromPos=null; window._planToPos=null;
-  planFromPos=null; planFromFixed=null; planToPos=null; planToFixed=null;
-  window._waitingForArr=false;
-  if(typeof closeStationPopup==='function') closeStationPopup();
-  if(typeof _stationPopup!=='undefined'&&_stationPopup){ _stationPopup.remove(); _stationPopup=null; }
-}
-
-function initPillSwipe(){
-  const pill=document.getElementById('plan-float-compact');
-  if(!pill||pill._swipeInit) return;
-  pill._swipeInit=true;
-  let sx=null,dragged=false;
-  const go=(dir)=>{
-    const cur=window._openComboIdx??0;
-    const n=Math.max(0,Math.min((window._planCombos?.length||1)-1,cur+dir));
-    if(n!==cur) selectComboIdx(n);
-  };
-  pill.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;dragged=false;},{passive:true});
-  pill.addEventListener('touchmove',e=>{if(sx!==null&&Math.abs(e.touches[0].clientX-sx)>8){dragged=true;}},{passive:true});
-  pill.addEventListener('touchend',e=>{
-    if(sx===null)return;
-    const dx=e.changedTouches[0].clientX-sx;
-    if(dragged&&Math.abs(dx)>30){go(dx<0?1:-1);}
-    else if(!dragged){expandPlanFloat();}
-    sx=null;dragged=false;
-  });
-}
-
-function hideBackgroundStations(){
-  if(markers && map && map.hasLayer(markers)){
-    map.removeLayer(markers);
-    window._stationsHidden=true;
-  }
-}
-function showBackgroundStations(){
-  if(markers && map && !map.hasLayer(markers)){
-    map.addLayer(markers);
-  }
-  window._stationsHidden=false;
-}
-
-/* ═══ BIKES ══════════════════════════════════════════════════════════════ */
-let _bikesData=null, _bikesSort='trips', _bikesOpenId=null;
-
-
-/* ═══ VÉLOS LIVE (JCDecaux direct, token via data/token.json) ══ */
-let _jcdToken = null, _jcdTokenExp = 0;
-async function getJcdToken(){
-  if(_jcdToken && Date.now() < _jcdTokenExp) return _jcdToken;
-  try{
-    const r = await fetch(`data/token.json?t=${Date.now()}`,{cache:'no-store'});
-    if(!r.ok) return null;
-    const d = await r.json();
-    if(!d.access_token) return null;
-    _jcdToken = `${d.token_type||'Taknv1'} ${d.access_token}`;
-    // Marge de sécurité : considérer expiré 5 min avant la vraie limite
-    const ageMs = Date.now() - new Date(d.updated_at).getTime();
-    const remainMs = (d.expires_in||3600)*1000 - ageMs - 5*60*1000;
-    _jcdTokenExp = Date.now() + Math.max(0, remainMs);
-    return _jcdToken;
-  }catch{ return null; }
-}
-
-// Chargement global : tous les vélos en 1 appel, indexés par station
-let _allBikesByStation = null; // Map<stationNumber, bike[]>
-let _allBikesLoadedAt = 0;
-let _allBikesLoadingPromise = null;
-const ALL_BIKES_REFRESH_MS = 3 * 60 * 1000; // rafraîchir toutes les 3 min
-
-async function loadAllBikesLive(){
-  // Évite les chargements concurrents
-  if(_allBikesLoadingPromise) return _allBikesLoadingPromise;
-  const tok = await getJcdToken();
-  if(!tok) return null;
-  _allBikesLoadingPromise = (async()=>{
-    try{
-      const r = await fetch('https://api.cyclocity.fr/contracts/lyon/bikes',{
-        headers:{ 'Accept':'application/vnd.bikes.v4+json', 'Authorization':tok }
-      });
-      if(!r.ok) return null;
-      const bikes = await r.json();
-      const byStation = new Map();
-      for(const b of bikes){
-        if(b.status==='REMOVED' || !b.stationNumber) continue;
-        if(!byStation.has(b.stationNumber)) byStation.set(b.stationNumber, []);
-        byStation.get(b.stationNumber).push(b);
-      }
-      _allBikesByStation = byStation;
-      _allBikesLoadedAt = Date.now();
-      window._bikesLiveReady = true;
-      return byStation;
-    }catch{ return null; }
-    finally{ _allBikesLoadingPromise = null; }
-  })();
-  return _allBikesLoadingPromise;
-}
-
-async function ensureAllBikesFresh(){
-  if(!_allBikesByStation || Date.now()-_allBikesLoadedAt > ALL_BIKES_REFRESH_MS){
-    await loadAllBikesLive();
-  }
-  return _allBikesByStation;
-}
-
-// Rafraîchissement périodique en tâche de fond
-setInterval(()=>{ loadAllBikesLive(); }, ALL_BIKES_REFRESH_MS);
-
-// Compat : retourne les vélos d'une station depuis le cache global (jamais de refetch par station)
-async function fetchStationBikesLive(stationNumber){
-  const byStation = await ensureAllBikesFresh();
-  if(!byStation) return null;
-  return byStation.get(stationNumber) || [];
-}
-
-async function loadBikesData(){
-  try{
-    const [rLatest, rToday]=await Promise.all([
-      fetch(`data/bikes/latest.json?t=${Date.now()}`,{cache:'no-store'}),
-      fetch(`data/bikes/today.json?t=${Date.now()}`,{cache:'no-store'}).catch(()=>null)
-    ]);
-    if(!rLatest.ok) return null;
-    const data=await rLatest.json();
-    if(rToday?.ok){
-      const today=await rToday.json();
-      const tripCount={},tripHistory={},lastSt2={},lastStatus2={},depTime2={};
-      (today.base?.bikes||[]).forEach(b=>{lastStatus2[b.id]=b.status||'A';lastSt2[b.id]=b.st;});
-      (today.events||[]).forEach(ev=>{
-        const prev=lastStatus2[ev.id];
-        if(prev==='A'&&(ev.status==='R'||ev.status==='X')){
-          depTime2[ev.id]={t:ev.t,st:lastSt2[ev.id]};
-        }
-        if((prev==='R'||prev==='X')&&ev.status==='A'&&depTime2[ev.id]){
-          const dep=depTime2[ev.id];
-          const arrSt=ev.st??lastSt2[ev.id];
-          if(dep.st&&arrSt&&dep.st!==arrSt){
-            tripCount[ev.id]=(tripCount[ev.id]||0)+1;
-            if(!tripHistory[ev.id]) tripHistory[ev.id]=[];
-            tripHistory[ev.id].push({dep_st:dep.st,arr_st:arrSt,dep_t:(dep.t||'').slice(11,16),arr_t:(ev.t||'').slice(11,16)});
-          }
-          delete depTime2[ev.id];
-        }
-        if(ev.status) lastStatus2[ev.id]=ev.status;
-        if(ev.st!=null) lastSt2[ev.id]=ev.st;
-      });
-      data.bikes=(data.bikes||[]).map(b=>({...b,trips:tripCount[b.id]||0,history:tripHistory[b.id]||[]}));
-      data._stNames=Object.fromEntries(allStations.map(s=>[s.number,(s.name||'').replace(/^\d+\s*[-–]\s*/,'').trim()]));
-    }
-    return data;
-  }catch{ return null; }
-}
-
-function onBikesSort(s){
-  _bikesSort=s;
-  ['trips','rating','batt'].forEach(k=>{
-    const btn=document.getElementById('bk-pill-'+k);
-    if(!btn) return;
-    btn.style.background=k===s?'#3a3a3c':'transparent';
-    btn.style.color=k===s?'#fff':'var(--sub)';
-  });
-  renderBikesTable();
-}
-
-async function initBikesTab(){
-  if(!_bikesData){
-    document.getElementById('bk-content').innerHTML='<div class="loader">Chargement…</div>';
-    _bikesData=await loadBikesData();
-  }
-  renderBikesTable();
-}
-
-function renderBikesTable(){
-  const el=document.getElementById('bk-content');
-  if(!_bikesData){ el.innerHTML='<div class="no-data">Données vélos non disponibles.<br><small>Déployez collect_bikes.py pour activer cette fonctionnalité.</small></div>'; return; }
-  const bikes=_bikesData.bikes||[];
-  const typeF=document.getElementById('bk-type')?.value||'all';
-  const searchF=(document.getElementById('bk-search')?.value||'').trim();
-  let rows=bikes.filter(b=>{
-    if(typeF!=='all'&&b.type!==typeF) return false;
-    if(searchF&&!String(b.id).includes(searchF)) return false;
-    return true;
-  });
-  const sorters={
-    trips:(a,b)=>(b.trips||0)-(a.trips||0),
-    rating:(a,b)=>(b.rating||0)-(a.rating||0),
-    batt:(a,b)=>(b.batt??-1)-(a.batt??-1),
-  };
-  rows.sort(sorters[_bikesSort]||sorters.trips);
-  const sortLabel={trips:'Trajets',rating:'Note',batt:'Batterie'}[_bikesSort];
-  el.innerHTML=`<table id="bk-table" style="width:100%;border-collapse:collapse;font-size:12px">
-    <thead><tr>
-      <th style="padding:5px 7px;text-align:left;border-bottom:0.5px solid rgba(255,255,255,.08);font-size:10px;font-weight:600;text-transform:uppercase;color:rgba(255,255,255,.55);background:rgba(12,12,16,.45)">#</th>
-      <th style="padding:5px 7px;text-align:left;border-bottom:0.5px solid rgba(255,255,255,.08);font-size:10px;font-weight:600;text-transform:uppercase;color:rgba(255,255,255,.55);background:rgba(12,12,16,.45)">Vélo</th>
-      <th style="padding:5px 7px;text-align:left;border-bottom:0.5px solid rgba(255,255,255,.08);font-size:10px;font-weight:600;text-transform:uppercase;color:rgba(255,255,255,.55);background:rgba(12,12,16,.45)">${sortLabel}</th>
-      <th style="padding:5px 7px;text-align:left;border-bottom:0.5px solid rgba(255,255,255,.08);font-size:10px;font-weight:600;text-transform:uppercase;color:rgba(255,255,255,.55);background:rgba(12,12,16,.45)">Statut</th>
-    </tr></thead>
-    <tbody>${rows.map((b,i)=>bikeRow(b,i)).join('')}</tbody>
-  </table>`;
-}
-
-function bikeRow(b,i){
-  const sortVal=()=>{
-    if(_bikesSort==='trips') return b.trips||0;
-    if(_bikesSort==='rating') return b.rating?b.rating.toFixed(1):'—';
-    if(_bikesSort==='batt'){
-      if(b.type==='E') return b.batt!=null?b.batt+'%':'—';
-      return b.mv?b.mv+'mV':'—';
-    }
-  };
-  const typeTag=b.type==='E'
-    ?'<span style="font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(10,132,255,.2);color:#60aaff;font-weight:600">⚡</span>'
-    :'<span style="font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);font-weight:600">M</span>';
-  const statusDot=b.status==='A'?'#34c759':b.status==='R'?'#ff9f0a':'#636366';
-  return `<tr onclick="toggleBikeDetail(${b.id},this)" style="cursor:pointer" id="bk-row-${b.id}">
-    <td style="padding:5px 7px;border-bottom:0.5px solid rgba(255,255,255,.08);color:rgba(255,255,255,.55)">${i+1}</td>
-    <td style="padding:5px 7px;border-bottom:0.5px solid rgba(255,255,255,.08)">${typeTag} <b>#${b.id}</b></td>
-    <td style="padding:5px 7px;border-bottom:0.5px solid rgba(255,255,255,.08);font-weight:600;color:#fff">${sortVal()}</td>
-    <td style="padding:5px 7px;border-bottom:0.5px solid rgba(255,255,255,.08)"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${statusDot}"></span></td>
-  </tr>
-  <tr id="bk-detail-${b.id}" style="display:none">
-    <td colspan="4" style="padding:0">
-      <div style="padding:8px 10px;background:rgba(8,8,12,.5);border-bottom:0.5px solid rgba(255,255,255,.08);font-size:11px">
-        ${bikeDetailHtml(b)}
-      </div>
-    </td>
-  </tr>`;
-}
-
-function bikeDetailHtml(b){
-  const stNames=_bikesData?._stNames||{};
-  const stnName=n=>stNames[n]||(n?'#'+n:'?');
-  const rows=[
-    ['Station', b.st?stnName(b.st)+' · borne '+b.borne:'En trajet'],
-    b.type==='E'&&b.batt!=null?['Batterie', battHtml(b.batt)]:null,
-    b.type==='M'&&b.mv?['Tension', b.mv+'mV']:null,
-    ['Note', b.rating?`<span style="color:#ff9f0a">${b.rating.toFixed(1)}</span> / 5 <span style="color:rgba(255,255,255,.4)">(${b.rcount||0} avis)</span>`:'—'],
-    ['Trajets auj.', b.trips||0],
-    ['Dernière révision', b.rev||'—'],
-    ['Dernier contrôle', b.ctrl||'—'],
-  ].filter(Boolean);
-  let html=rows.map(([l,v])=>`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:0.5px solid rgba(255,255,255,.04)"><span style="color:rgba(255,255,255,.5)">${l}</span><span style="color:#fff;font-weight:500">${v}</span></div>`).join('');
-  const hist=(b.history||[]).slice().reverse().slice(0,5);
-  if(hist.length){
-    html+=`<div style="margin-top:5px;font-size:9px;color:rgba(255,255,255,.35);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Trajets du jour</div>`;
-    html+=hist.map(t=>`<div style="display:flex;align-items:center;gap:4px;padding:2px 0;border-bottom:0.5px solid rgba(255,255,255,.04);font-size:10px"><span style="color:rgba(255,255,255,.4);min-width:36px">${t.dep_t}</span><span style="color:#fff;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${stnName(t.dep_st)}</span><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg><span style="color:#fff;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right">${stnName(t.arr_st)}</span><span style="color:rgba(255,255,255,.4);min-width:36px;text-align:right">${t.arr_t}</span></div>`).join('');
-  }
-  return html;
-}
-
-function battHtml(pct){
-  const c=pct>=70?'#34c759':pct>=40?'#ff9f0a':'#ff453a';
-  return `<span style="color:${c};font-weight:600">${pct}%</span>`;
-}
-
-let _bkOpenId=null;
-function toggleBikeDetail(id,row){
-  const det=document.getElementById('bk-detail-'+id);
-  if(_bkOpenId!==null&&_bkOpenId!==id){
-    const old=document.getElementById('bk-detail-'+_bkOpenId);
-    const oldRow=document.getElementById('bk-row-'+_bkOpenId);
-    if(old) old.style.display='none';
-    if(oldRow) oldRow.style.background='';
-  }
-  if(_bkOpenId===id){ det.style.display='none'; row.style.background=''; _bkOpenId=null; return; }
-  det.style.display=''; row.style.background='rgba(255,255,255,.04)';
-  _bkOpenId=id;
-}
-
-/* ── Enrichissement itinéraire : liste des vélos de la station départ ── */
-async function fetchStationBikes(stationNumber){
-  try{
-    const latest=await loadBikesData();
-    if(!latest) return [];
-    return (latest.bikes||[]).filter(b=>b.st===stationNumber&&b.status==='A');
-  }catch{ return []; }
-}
-
-function renderBikesList(bikes, tripDistKm){
-  if(!bikes.length) return '';
-  const elec=bikes.filter(b=>b.type==='E').sort((a,b)=>(b.batt||0)-(a.batt||0));
-  const meca=bikes.filter(b=>b.type==='M').sort((a,b)=>(b.mv||0)-(a.mv||0));
-  const all=[...elec,...meca];
-  const RANGE_KM=40;
-  let warnHtml='';
-  // Avertissement batterie
-  if(tripDistKm&&elec.length){
-    const minBatt=Math.ceil(tripDistKm/RANGE_KM*100*1.15);
-    const lowBikes=elec.filter(b=>b.batt!=null&&b.batt<minBatt);
-    if(lowBikes.length===elec.length){
-      warnHtml=`<div style="background:rgba(255,69,58,.08);border:0.5px solid rgba(255,69,58,.25);border-radius:6px;padding:4px 8px;margin-bottom:5px;font-size:10px;color:#ff453a;display:flex;align-items:center;gap:5px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>Batterie insuffisante pour ce trajet (${tripDistKm.toFixed(1)}km) — tous les élec &lt;${minBatt}%</div>`;
-    }
-  }
-  const rows=all.slice(0,6).map(b=>{
-    const isElec=b.type==='E';
-    const typeTag=isElec
-      ?'<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(10,132,255,.18);color:#60aaff;font-weight:600">⚡</span>'
-      :'<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);font-weight:600">M</span>';
-    let battHtml='<div style="flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.08)"><div style="height:100%;border-radius:2px;background:rgba(255,255,255,.2);width:100%"></div></div><span style="font-size:9px;color:rgba(255,255,255,.5);min-width:28px">—</span>';
-    if(isElec&&b.batt!=null){
-      const c=b.batt>=70?'#34c759':b.batt>=40?'#ff9f0a':'#ff453a';
-      battHtml=`<div style="flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.08)"><div style="height:100%;border-radius:2px;background:${c};width:${b.batt}%"></div></div><span style="font-size:9px;font-weight:600;color:${c};min-width:28px">${b.batt}%</span>`;
-    } else if(!isElec&&b.mv){
-      battHtml=`<span style="font-size:9px;color:rgba(255,255,255,.5);min-width:60px">${b.mv}mV</span>`;
-    }
-    const ratingHtml=b.rating?`<span style="font-size:9px;color:#ff9f0a">${b.rating.toFixed(1)}</span><span style="font-size:8px;color:rgba(255,255,255,.5)">(${b.rcount||0})</span>`:'';
-    const reserved=b.status==='S'?'style="opacity:.4"':'';
-    const reservedLabel=b.status==='S'?'<span style="font-size:8px;color:rgba(255,255,255,.5)">rés.</span>':'';
-    return `<div style="display:flex;align-items:center;gap:5px;padding:3px 0;border-bottom:0.5px solid rgba(255,255,255,.05)" ${reserved}>
-      ${typeTag}
-      <span style="font-size:9px;color:rgba(255,255,255,.55);min-width:14px">${b.borne||'?'}</span>
-      ${battHtml}
-      <span style="font-size:9px;color:rgba(255,255,255,.55);min-width:34px">#${b.id}</span>
-      ${ratingHtml}
-      ${reservedLabel}
-    </div>`;
-  }).join('');
-  return `<div style="margin-top:7px;padding:6px 8px;background:rgba(255,255,255,.04);border:0.5px solid rgba(255,255,255,.08);border-radius:8px">
-    <div style="font-size:9px;color:rgba(255,255,255,.5);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">vélos disponibles au départ · borne / batt / # / note</div>
-    ${warnHtml}${rows}
-  </div>`;
-}
-
-
-const _comboBikesCache={};
-async function loadComboBikes(idx){
-  const combo=window._planCombos?.[idx]; if(!combo) return;
-  const cacheKey=combo.dep.number+'_'+combo.dist;
-  if(_comboBikesCache[cacheKey]) return; // déjà chargé
-  const bikes=await fetchStationBikes(combo.dep.number);
-  if(!bikes.length) return;
-  _comboBikesCache[cacheKey]=bikes;
-  // Injecter dans le card actif
-  const card=document.querySelector(`.combo-card[data-idx="${idx}"]`);
-  if(!card) return;
-  const existing=card.querySelector('.combo-bikes-list');
-  if(existing) return;
-  const distKm=combo.dist/1000;
-  const bikesList=document.createElement('div');
-  bikesList.className='combo-bikes-list';
-  bikesList.innerHTML=renderBikesList(bikes,distKm);
-  card.appendChild(bikesList);
-}
-
-
-// Temps de marche : 1m ≈ 1.25min, min 1 min
-function walkMinutes(dist){ return Math.max(1, Math.round(dist/1000/5*60)); }
-function walkDistM(dist){ return Math.round(dist); }
-
-
-/* ═══ STATS SUB-TABS ════════════════════════════════════════════════════ */
-let _statsSubTab='stations';
-function setStatsSubTab(tab, el){
-  _statsSubTab=tab;
-  ['stations','velos','trajets'].forEach(t=>{
-    const p=document.getElementById('spanel-'+t);
-    const btn=document.getElementById('stab-'+t);
-    if(p) p.style.display=t===tab?'block':'none';
-    if(btn){
-      btn.style.color=t===tab?'#fff':'rgba(255,255,255,.45)';
-      btn.style.borderBottomColor=t===tab?'rgba(255,255,255,.6)':'transparent';
     }
   });
-  if(tab==='trajets') initTrajets();
+  html += `</div><div class="hmap-legend"><span>0 %</span><div class="hmap-legend-bar"></div><span>100 %</span><span style="margin-left:16px">= % vélos dispo · survolez pour la valeur</span></div>`;
+  wrap.innerHTML = html;
 }
 
-/* ═══ TRAJETS ════════════════════════════════════════════════════════════ */
-let _trajetsView='today';
-function onTrajetsView(v){
-  _trajetsView=v;
-  ['today','history'].forEach(t=>{
-    const btn=document.getElementById('tr-pill-'+t);
-    if(btn){ btn.style.background=t===v?'#3a3a3c':'transparent'; btn.style.color=t===v?'#fff':'rgba(255,255,255,.55)'; }
+// ─── TRACKING ─────────────────────────────────────────────────────────────────
+async function runTracking() {
+  const bikeNum = document.getElementById('t-bike').value.trim();
+  const stId    = parseInt(document.getElementById('t-station').value);
+  const date    = document.getElementById('t-date').value;
+  const time    = document.getElementById('t-time').value;
+  if (!stId || !date || !time) { alert('Renseignez la station, la date et l\'heure.'); return; }
+
+  const res = document.getElementById('track-result');
+  const cnt = document.getElementById('track-content');
+  res.style.display = 'block';
+  cnt.innerHTML = '<div class="loader">Analyse…</div>';
+
+  const snaps = await fetchDay(date);
+  if (!snaps?.length) { cnt.innerHTML = '<div class="no-data">Aucune donnée pour cette date.</div>'; return; }
+
+  const depMs  = new Date(`${date}T${time}:00+02:00`).getTime();
+  const endMs  = depMs + 2 * 3600e3;
+  const window_ = snaps.filter(s => { const ms = new Date(s.timestamp).getTime(); return ms >= depMs && ms <= endMs; });
+  if (!window_.length) { cnt.innerHTML = '<div class="no-data">Aucun snapshot dans la fenêtre de 2h.</div>'; return; }
+
+  const candidates = [];
+  liveStations.forEach(liveSt => {
+    if (liveSt.number === stId) return;
+    let maxDelta = 0, bestTime = null;
+    for (let i = 1; i < window_.length; i++) {
+      const prev = window_[i-1].stations?.find(s => s.number === liveSt.number);
+      const curr = window_[i].stations?.find(s => s.number === liveSt.number);
+      if (!prev || !curr) continue;
+      const delta = curr.available_bikes - prev.available_bikes;
+      if (delta > maxDelta) { maxDelta = delta; bestTime = new Date(window_[i].timestamp); }
+    }
+    if (maxDelta > 0) candidates.push({ st: liveSt, delta: maxDelta, time: bestTime });
   });
-  renderTrajets();
-}
+  candidates.sort((a, b) => b.delta - a.delta);
 
-async function initTrajets(){
-  if(!_bikesData) _bikesData=await loadBikesData();
-  renderTrajets();
-}
+  if (!candidates.length) { cnt.innerHTML = `<div class="no-data">Aucune variation positive détectée dans la fenêtre de 2h.</div>`; return; }
 
-function renderTrajets(){
-  const el=document.getElementById('tr-content');
-  if(!_bikesData){ el.innerHTML='<div class="no-data">Données vélos non disponibles.</div>'; return; }
-  const typeF=document.getElementById('tr-type')?.value||'all';
-  const stNames=_bikesData._stNames||{};
-  const stnName=n=>stNames[n]||(n?'#'+n:'?');
-  // Compter les flux depuis l'historique des trajets
-  const fluxMap={};
-  (_bikesData.bikes||[]).forEach(b=>{
-    if(typeF!=='all'&&b.type!==typeF) return;
-    (b.history||[]).forEach(t=>{
-      const key=t.dep_st+'→'+t.arr_st;
-      if(!fluxMap[key]) fluxMap[key]={dep:t.dep_st,arr:t.arr_st,count:0,type:b.type};
-      fluxMap[key].count++;
-    });
+  const depName = liveStations.find(s => s.number === stId)?.name || `#${stId}`;
+  let html = `<p style="font-size:12px;color:var(--muted);margin-bottom:14px">${bikeNum ? `Vélo <strong style="color:var(--text)">#${bikeNum}</strong> · ` : ''}Départ : <strong style="color:var(--text)">${cleanName(depName)}</strong> à <strong style="color:var(--text)">${time}</strong></p>`;
+  candidates.slice(0, 6).forEach((c, i) => {
+    const tStr = c.time ? c.time.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '—';
+    html += `<div class="res-row"><span class="res-name">#${i+1} · ${cleanName(c.st.name)}</span><span class="res-delta">+${c.delta} vélo${c.delta>1?'s':''}</span><span class="res-time">${tStr}</span></div>`;
   });
-  const rows=Object.values(fluxMap).sort((a,b)=>b.count-a.count).slice(0,30);
-  if(!rows.length){ el.innerHTML='<div class="no-data">Aucun trajet aujourd\'hui.</div>'; return; }
-  const maxCount=rows[0].count;
-  el.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:12px">
-    <thead><tr>
-      <th style="padding:5px 8px;border-bottom:0.5px solid rgba(255,255,255,.1);font-size:10px;font-weight:600;color:rgba(255,255,255,.5);background:rgba(12,12,16,.45)">#</th>
-      <th style="padding:5px 8px;border-bottom:0.5px solid rgba(255,255,255,.1);font-size:10px;font-weight:600;color:rgba(255,255,255,.5);background:rgba(12,12,16,.45)">Départ</th>
-      <th style="padding:5px 8px;border-bottom:0.5px solid rgba(255,255,255,.1);font-size:10px;font-weight:600;color:rgba(255,255,255,.5);background:rgba(12,12,16,.45)">Arrivée</th>
-      <th style="padding:5px 8px;border-bottom:0.5px solid rgba(255,255,255,.1);font-size:10px;font-weight:600;color:rgba(255,255,255,.5);background:rgba(12,12,16,.45)">Volume</th>
-    </tr></thead>
-    <tbody>${rows.map((r,i)=>`<tr>
-      <td style="padding:5px 8px;border-bottom:0.5px solid rgba(255,255,255,.05);color:rgba(255,255,255,.5)">${i+1}</td>
-      <td style="padding:5px 8px;border-bottom:0.5px solid rgba(255,255,255,.05);color:#fff">${stnName(r.dep)}</td>
-      <td style="padding:5px 8px;border-bottom:0.5px solid rgba(255,255,255,.05);color:#fff">${stnName(r.arr)}</td>
-      <td style="padding:5px 8px;border-bottom:0.5px solid rgba(255,255,255,.05)">
-        <div style="display:flex;align-items:center;gap:6px">
-          <div style="height:4px;border-radius:2px;background:#0a84ff;width:${Math.round(r.count/maxCount*80)}px"></div>
-          <span style="color:#fff;font-weight:600">${r.count}</span>
-        </div>
-      </td>
-    </tr>`).join('')}</tbody>
-  </table>`;
+  cnt.innerHTML = html;
 }
 
-
-function localDateStr(){ 
-  const d=new Date(); 
-  d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); 
-  return d.toISOString().slice(0,10); 
+// ─── SETTINGS ─────────────────────────────────────────────────────────────────
+function loadSettings() {
+  document.getElementById('cfg-ids').value = cfg.ids.join(', ');
+}
+function saveSettings() {
+  const raw = document.getElementById('cfg-ids').value.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+  cfg.ids = raw;
+  localStorage.setItem('vv_ids', JSON.stringify(cfg.ids));
+  const el = document.getElementById('cfg-saved');
+  el.style.display = 'inline';
+  setTimeout(() => { el.style.display = 'none'; }, 2200);
 }
 
-/* ═══ BOOT ════════════════════════════════════════════ */
-async function boot(){
-  // Démarrer le plus tôt possible, en parallèle du reste (gros payload ~10Mo)
-  loadAllBikesLive();
-  loadBikesData().then(d=>{ if(d) _bikesData=d; });
-
-  initRanges();
-  allStations=await loadLatest(); window._lastStationUpdate=Date.now(); updateLiveStatus();
-  await computeMovements();
-  initMap();
-  renderStations();
-  initPlanMap();
-  const bkDate=document.getElementById('bk-date'); if(bkDate) bkDate.value=localDateStr();
-}
-boot();
-setInterval(async()=>{ allStations=await loadLatest(); window._lastStationUpdate=Date.now(); updateLiveStatus(); await computeMovements(); renderStations(); },5*60*1000);
+// ─── BOOT ─────────────────────────────────────────────────────────────────────
+refreshLive();
+setInterval(refreshLive, 10 * 60 * 1000);
 </script>
 </body>
 </html>
