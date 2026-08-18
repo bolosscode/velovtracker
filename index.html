@@ -2427,21 +2427,54 @@ async function getJcdToken(){
   }catch{ return null; }
 }
 
-const _bikesCache = {}; // stationNumber -> {ts, bikes}
-async function fetchStationBikesLive(stationNumber){
-  const cached = _bikesCache[stationNumber];
-  if(cached && Date.now()-cached.ts < 20000) return cached.bikes; // cache 20s
+// Chargement global : tous les vélos en 1 appel, indexés par station
+let _allBikesByStation = null; // Map<stationNumber, bike[]>
+let _allBikesLoadedAt = 0;
+let _allBikesLoadingPromise = null;
+const ALL_BIKES_REFRESH_MS = 3 * 60 * 1000; // rafraîchir toutes les 3 min
+
+async function loadAllBikesLive(){
+  // Évite les chargements concurrents
+  if(_allBikesLoadingPromise) return _allBikesLoadingPromise;
   const tok = await getJcdToken();
   if(!tok) return null;
-  try{
-    const r = await fetch(`https://api.cyclocity.fr/contracts/lyon/bikes?stationNumber=${stationNumber}`,{
-      headers:{ 'Accept':'application/vnd.bikes.v4+json', 'Authorization':tok }
-    });
-    if(!r.ok) return null;
-    const bikes = await r.json();
-    _bikesCache[stationNumber] = { ts: Date.now(), bikes };
-    return bikes;
-  }catch{ return null; }
+  _allBikesLoadingPromise = (async()=>{
+    try{
+      const r = await fetch('https://api.cyclocity.fr/contracts/lyon/bikes',{
+        headers:{ 'Accept':'application/vnd.bikes.v4+json', 'Authorization':tok }
+      });
+      if(!r.ok) return null;
+      const bikes = await r.json();
+      const byStation = new Map();
+      for(const b of bikes){
+        if(b.status==='REMOVED' || !b.stationNumber) continue;
+        if(!byStation.has(b.stationNumber)) byStation.set(b.stationNumber, []);
+        byStation.get(b.stationNumber).push(b);
+      }
+      _allBikesByStation = byStation;
+      _allBikesLoadedAt = Date.now();
+      return byStation;
+    }catch{ return null; }
+    finally{ _allBikesLoadingPromise = null; }
+  })();
+  return _allBikesLoadingPromise;
+}
+
+async function ensureAllBikesFresh(){
+  if(!_allBikesByStation || Date.now()-_allBikesLoadedAt > ALL_BIKES_REFRESH_MS){
+    await loadAllBikesLive();
+  }
+  return _allBikesByStation;
+}
+
+// Rafraîchissement périodique en tâche de fond
+setInterval(()=>{ loadAllBikesLive(); }, ALL_BIKES_REFRESH_MS);
+
+// Compat : retourne les vélos d'une station depuis le cache global (jamais de refetch par station)
+async function fetchStationBikesLive(stationNumber){
+  const byStation = await ensureAllBikesFresh();
+  if(!byStation) return null;
+  return byStation.get(stationNumber) || [];
 }
 
 async function loadBikesData(){
@@ -2767,6 +2800,8 @@ async function boot(){
   initPlanMap();
   // Charger les données vélos en arrière-plan
   loadBikesData().then(d=>{ if(d) _bikesData=d; });
+  // Charger tous les vélos live JCDecaux (1 seul appel, indexé par station)
+  loadAllBikesLive();
   const bkDate=document.getElementById('bk-date'); if(bkDate) bkDate.value=localDateStr();
 }
 boot();
