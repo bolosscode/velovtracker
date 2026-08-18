@@ -2,7 +2,7 @@ name: Refresh Token JCDecaux
 
 on:
   schedule:
-    - cron: '0 * * * *'  # toutes les heures
+    - cron: '*/55 * * * *'  # toutes les 55 min (marge de securite vs latence GH Actions)
   workflow_dispatch:
 
 permissions:
