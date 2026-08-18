@@ -1,9 +1,7 @@
 name: Refresh Token JCDecaux
 
 on:
-  schedule:
-    - cron: '*/30 * * * *'  # toutes les 30 min (marge fiable vs latence/delai GH Actions)
-  workflow_dispatch:
+  workflow_dispatch:  # déclenché par cron-job.org (plus fiable que le schedule GitHub natif)
 
 permissions:
   contents: write
