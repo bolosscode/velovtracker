@@ -165,6 +165,9 @@ main{max-width:1500px;margin:auto;padding:20px}
     <div class="tab" data-tab="stats" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:rgba(255,255,255,.55);font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Stats</div>
   </div>
   <div style="display:flex;align-items:center;gap:8px">
+    <button id="refresh-btn" onclick="manualRefresh()" title="Actualiser" style="background:transparent;border:none;cursor:pointer;padding:3px;display:flex;align-items:center;color:rgba(255,255,255,.5);transition:transform .3s">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
+    </button>
     <div id="live-status" style="font-size:10px;cursor:pointer;user-select:none" onclick="toggleSourcePanel()"></div>
     <div id="clock" style="font-size:12px;color:rgba(255,255,255,.55)"></div>
   </div>
@@ -395,6 +398,27 @@ const fmt = d => d.toISOString().slice(0,16);
 const DOW_NAMES = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
 
 /* ═══ CLOCK & TABS ════════════════════════════════════ */
+async function manualRefresh(){
+  const btn=document.getElementById('refresh-btn');
+  if(btn){ btn.style.transform='rotate(360deg)'; btn.disabled=true; }
+  try{
+    allStations=await loadLatest();
+    window._lastStationUpdate=Date.now();
+    updateLiveStatus();
+    await computeMovements();
+    renderStations();
+    // Forcer le rechargement des vélos live (ignore le cache 3 min)
+    _allBikesByStation=null;
+    await loadAllBikesLive();
+    // Rafraîchir le panneau source s'il est ouvert
+    const sp=document.getElementById('source-panel');
+    if(sp && sp.style.display==='block') renderSourcePanel();
+  }catch(e){ console.error('Erreur refresh manuel', e); }
+  finally{
+    if(btn){ setTimeout(()=>{ btn.style.transform=''; btn.disabled=false; }, 400); }
+  }
+}
+
 function updateLiveStatus(){
   const el=document.getElementById('live-status');
   if(!el) return;
@@ -1433,7 +1457,7 @@ async function computePlan(){
       let battPenalty=false;
       const stBikesRaw=(_allBikesByStation?.get(dep.number)||[]);
       const stBikes=stBikesRaw.filter(b=>b.status==='AVAILABLE'&&b.type==='ELECTRICAL').map(b=>({
-        batt: b.bikeBatteryMv!=null?Math.max(0,Math.min(100,Math.round((b.bikeBatteryMv-1250)/(1550-1250)*100))):null
+        batt: b.battery?.percentage!=null?b.battery.percentage:null
       }));
       if(bikeType==='elec'&&stBikes.length>0){
         const distKm=dist/1000;
@@ -2101,8 +2125,8 @@ function renderBikeRow(b, i){
     ?'<svg width="9" height="9" viewBox="0 0 24 24" fill="rgba(255,255,255,.8)"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'
     :'<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
   let battEl='<span style="font-size:9px;color:rgba(255,255,255,.2);min-width:24px">—</span>';
-  if(isElec&&b.bikeBatteryMv!=null){
-    const pct=Math.max(0,Math.min(100,Math.round((b.bikeBatteryMv-1250)/(1550-1250)*100)));
+  if(isElec&&b.battery?.percentage!=null){
+    const pct=b.battery.percentage;
     const col=pct>=50?'#4ade80':pct>=20?'#f59e0b':'#f87171';
     battEl=`<span style="font-size:9px;font-weight:600;color:${col};min-width:34px">${pct}%</span>`;
   }
@@ -2124,7 +2148,7 @@ const BIKE_FIELD_LABELS={
   id:'id', number:'number', contractName:'contrat', type:'type', frameId:'frameId',
   stationNumber:'stationNumber', standNumber:'standNumber', status:'status', statusLabel:'statusLabel',
   hasBattery:'hasBattery', hasLock:'hasLock', isReserved:'isReserved', checked:'checked',
-  energySource:'energySource', bikeBatteryMv:'bikeBatteryMv', bikeTopSwVersion:'bikeTopSwVersion',
+  energySource:'energySource', battery:'battery', bikeTopSwVersion:'bikeTopSwVersion',
   bikeTopHwVersion:'bikeTopHwVersion', zedSwVersion:'zedSwVersion',
   createdAt:'createdAt', updatedAt:'updatedAt', lastDataFrameDate:'lastDataFrameDate',
   lastTripDateTime:'lastTripDateTime', lastControlDateTime:'lastControlDateTime',
@@ -2224,7 +2248,7 @@ async function showStationPopup(s, lat, lon){
     }
     const list=bikes.filter(b=>b.status!=='REMOVED').sort((a,b)=>{
       if(a.type!==b.type) return a.type==='ELECTRICAL'?-1:1;
-      return (b.bikeBatteryMv||0)-(a.bikeBatteryMv||0);
+      return (b.battery?.percentage||0)-(a.battery?.percentage||0);
     });
     if(!list.length){ slot.innerHTML=''; return; }
     slot.style.textAlign='left'; slot.style.padding='0';
@@ -2496,10 +2520,10 @@ async function fetchStationBikes(stationNumber){
       id: b.number,
       st: b.stationNumber,
       type: b.type==='ELECTRICAL'?'E':'M',
-      batt: b.type==='ELECTRICAL'&&b.bikeBatteryMv!=null
-        ? Math.max(0,Math.min(100,Math.round((b.bikeBatteryMv-1250)/(1550-1250)*100)))
+      batt: b.type==='ELECTRICAL'&&b.battery?.percentage!=null
+        ? b.battery.percentage
         : null,
-      mv: b.bikeBatteryMv||null,
+      mv: b.battery?.level??null,
       borne: b.standNumber,
       rating: b.rating?.value!=null?b.rating.value/20:null, // 0-100 -> 0-5
       rcount: b.rating?.count||0,
