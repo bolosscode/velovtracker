@@ -94,7 +94,7 @@ main{max-width:1500px;margin:auto;padding:20px}
 .dropdown.open{display:block}
 .opt{padding:9px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0f0}
 .opt:last-child{border-bottom:none}
-.opt:hover{background:#3a3a3c}
+.opt:hover{background:rgba(255,255,255,.1)}
 .opt-type{font-size:10px;color:rgba(255,255,255,.4);float:right}
 
 /* params row */
@@ -168,8 +168,7 @@ main{max-width:1500px;margin:auto;padding:20px}
     <button id="refresh-btn" onclick="manualRefresh()" title="Actualiser" style="background:transparent;border:none;cursor:pointer;padding:3px;display:flex;align-items:center;color:rgba(255,255,255,.5);transition:transform .3s">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
     </button>
-    <div id="live-status" style="font-size:10px;cursor:pointer;user-select:none" onclick="toggleSourcePanel()"></div>
-    <div id="clock" style="font-size:12px;color:rgba(255,255,255,.55)"></div>
+    <div id="live-status" style="font-size:10px;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px" onclick="toggleSourcePanel()"></div>
   </div>
 </header>
 
@@ -264,8 +263,8 @@ main{max-width:1500px;margin:auto;padding:20px}
     <div class="card" style="padding:12px;margin-bottom:8px">
       <div class="card-title" style="margin-bottom:8px;font-size:10px">Période &amp; tri</div>
       <div class="range" style="gap:5px;padding:8px">
-        <div style="display:flex;background:#2c2c2e;border-radius:20px;padding:2px">
-          <button onclick="onLbViewChange('day')" id="lb-pill-day" style="padding:5px 14px;border:none;background:#3a3a3c;color:#fff;font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Jour</button>
+        <div style="display:flex;background:rgba(255,255,255,.08);border-radius:20px;padding:2px">
+          <button onclick="onLbViewChange('day')" id="lb-pill-day" style="padding:5px 14px;border:none;background:rgba(255,255,255,.12);color:#fff;font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Jour</button>
           <button onclick="onLbViewChange('month')" id="lb-pill-month" style="padding:5px 14px;border:none;background:transparent;color:rgba(255,255,255,.55);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Mois</button>
           <button onclick="onLbViewChange('year')" id="lb-pill-year" style="padding:5px 14px;border:none;background:transparent;color:rgba(255,255,255,.55);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Année</button>
         </div>
@@ -423,8 +422,12 @@ function updateLiveStatus(){
   const el=document.getElementById('live-status');
   if(!el) return;
   const minAgo=Math.round((Date.now()-(window._lastStationUpdate||Date.now()))/60000);
-  if(minAgo<=1) el.innerHTML='<span style="color:#30d158;font-size:10px">● Live</span>';
-  else el.innerHTML=`<span style="color:#f59e0b;font-size:10px">● Màj il y a ${minAgo} min</span>`;
+  const statusHtml = minAgo<=1
+    ? '<span style="color:#30d158">● Live</span>'
+    : `<span style="color:#f59e0b">● Màj il y a ${minAgo} min</span>`;
+  const src = SOURCES[window._dataSource];
+  const srcLabel = src ? src.label : 'Source inconnue';
+  el.innerHTML=`${statusHtml}<span style="color:rgba(255,255,255,.25)">·</span><span style="color:rgba(255,255,255,.45)">${srcLabel}</span>`;
 }
 
 /* ═══ PANNEAU SOURCE ══════════════════════════════════ */
@@ -499,7 +502,7 @@ document.addEventListener('click', e => {
     p.style.display = 'none';
   }
 });
-setInterval(()=>{ document.getElementById('clock').textContent=new Date().toLocaleTimeString('fr-FR'); updateLiveStatus(); },1000);
+setInterval(()=>{ updateLiveStatus(); },1000);
 
 document.querySelectorAll('.tab').forEach(tab=>{
   tab.onclick=()=>{
@@ -971,8 +974,8 @@ async function renderCourbes(){
     dataFluxH.push(rawDeltas.filter(d=>d.ms>ms-3600e3&&d.ms<=ms).reduce((a,d)=>a+d.delta,0));
   });
   content.innerHTML=`
-    <div class="card"><div class="card-title">⚡ Électriques</div><canvas id="elec-chart" height="80"></canvas></div>
-    <div class="card"><div class="card-title">🔧 Mécaniques</div><canvas id="meca-chart" height="80"></canvas></div>
+    <div class="card"><div class="card-title"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="display:inline;vertical-align:-1px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Électriques</div><canvas id="elec-chart" height="80"></canvas></div>
+    <div class="card"><div class="card-title"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="display:inline;vertical-align:-1px"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> Mécaniques</div><canvas id="meca-chart" height="80"></canvas></div>
     <div class="card"><div class="card-title">↕ Départs/heure glissante</div><canvas id="flux-chart" height="60"></canvas></div>`;
   chartElec?.destroy(); chartMeca?.destroy(); chartFlux?.destroy();
   const pr=days<=1?0:2;
@@ -998,7 +1001,7 @@ function onLbViewChange(v){
   ['day','month','year'].forEach(x=>{
     const btn=document.getElementById('lb-pill-'+x);
     if(!btn) return;
-    btn.style.background=x===v?'#3a3a3c':'transparent';
+    btn.style.background=x===v?'rgba(255,255,255,.12)':'transparent';
     btn.style.color=x===v?'#fff':'var(--sub)';
   });
 }
@@ -1214,7 +1217,17 @@ function initPlanMap(){
         if(m.icon) parts.push(m.icon);
         if(meteo.temp!==undefined) parts.push(meteo.temp+'°C');
         if(meteo.wind!==undefined) parts.push(meteo.wind+' km/h');
-        div.textContent=parts.join(' · ');
+        const meteoSpan=document.createElement('span');
+        meteoSpan.textContent=parts.join(' · ');
+        const clockSpan=document.createElement('span');
+        clockSpan.id='meteo-clock';
+        clockSpan.style.marginLeft='6px';
+        clockSpan.style.opacity='.6';
+        div.appendChild(meteoSpan);
+        div.appendChild(document.createTextNode(' · '));
+        div.appendChild(clockSpan);
+        setInterval(()=>{ clockSpan.textContent=new Date().toLocaleTimeString('fr-FR'); },1000);
+        clockSpan.textContent=new Date().toLocaleTimeString('fr-FR');
         return div;
       };
       ctrl.addTo(planMap);
@@ -1870,7 +1883,7 @@ async function showComboCourbes(combo, targetEl=null){
     arrData.push(avg(av));
   }
 
-  const bikeLabel=bikeType==='elec'?'⚡ Élec':bikeType==='meca'?'🔧 Méca':'🚲 Vélos';
+  const bikeLabel=bikeType==='elec'?'<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="display:inline;vertical-align:-1px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Élec':bikeType==='meca'?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="display:inline;vertical-align:-1px"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> Méca':'Vélos';
   zone.innerHTML=`
     <div class="card" style="backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);margin-top:0;border-top:none;border-radius:0 0 var(--radius) var(--radius)">
       <div class="card-title">Probabilité sur 24h · ${DOW_NAMES[targetDow]} · ${cleanName(combo.dep.name)} → ${cleanName(combo.arr.name)}</div>
@@ -1940,7 +1953,7 @@ async function showStationDetail(number, targetEl=null){
   detail.innerHTML=
     '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'+
     '<div style="min-width:0"><div style="font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+cleanName(st.name)+'</div>'+
-    '<div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:2px">⚡'+st.electrical_bikes+' · 🔧'+st.mechanical_bikes+' · 🅿️'+st.available_bike_stands+'</div></div></div>'+
+    '<div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:2px"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="display:inline;vertical-align:-1px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'+st.electrical_bikes+' · <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="display:inline;vertical-align:-1px"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>'+st.mechanical_bikes+' · 🅿️'+st.available_bike_stands+'</div></div></div>'+
     '<div id="sd-tabs-'+number+'" style="display:flex;background:rgba(255,255,255,.06);border:0.5px solid rgba(255,255,255,.06);border-radius:20px;padding:2px;position:relative;margin-bottom:8px">'+
     '<div id="sd-thumb-'+number+'" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:33.33%;background:rgba(255,255,255,.18);border:0.5px solid rgba(255,255,255,.2);border-radius:18px;transition:transform .18s;pointer-events:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.2)"></div>'+
     '<div class="sd-tab on" onclick="renderSDSlide(0,'+number+')" style="flex:1;text-align:center;padding:5px 4px;font-size:10px;font-weight:600;color:#fff;cursor:pointer;position:relative;z-index:1">Vélos</div>'+
@@ -2083,10 +2096,10 @@ function renderSDSlide(slideIdx,number){
       {label:'Élec',data:dataElec,borderColor:'#0a84ff',backgroundColor:isLine?'#0a84ff18':'#0a84ff88',borderWidth:isLine?1.8:0,borderRadius:2,tension:0,pointRadius:0,spanGaps:true,fill:isLine},
       {label:'Méca',data:dataMeca,borderColor:'#ff9f0a',backgroundColor:isLine?'#ff9f0a18':'#ff9f0a88',borderWidth:isLine?1.8:0,borderRadius:2,tension:0,pointRadius:0,spanGaps:true,fill:isLine}
     ];
-    legendHtml='<span style="color:#0a84ff;font-size:10px">⚡ Élec</span><span style="color:#ff9f0a;font-size:10px;margin-left:10px">🔧 Méca</span>';
+    legendHtml='<span style="color:#0a84ff;font-size:10px"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="display:inline;vertical-align:-1px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Élec</span><span style="color:#ff9f0a;font-size:10px;margin-left:10px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="display:inline;vertical-align:-1px"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> Méca</span>';
     const avgE=Math.round((dataElec.filter(Boolean).reduce((a,b)=>a+b,0)||0)/Math.max(1,dataElec.filter(Boolean).length));
     const avgM=Math.round((dataMeca.filter(Boolean).reduce((a,b)=>a+b,0)||0)/Math.max(1,dataMeca.filter(Boolean).length));
-    statsHtml=`<div style="flex:1;background:rgba(12,12,16,.45);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#0a84ff">${avgE}</div><div style="font-size:10px;color:rgba(255,255,255,.55)">⚡ moy.</div></div><div style="flex:1;background:rgba(12,12,16,.45);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#ff9f0a">${avgM}</div><div style="font-size:10px;color:rgba(255,255,255,.55)">🔧 moy.</div></div>`;
+    statsHtml=`<div style="flex:1;background:rgba(12,12,16,.45);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#0a84ff">${avgE}</div><div style="font-size:10px;color:rgba(255,255,255,.55)"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="display:inline;vertical-align:-1px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> moy.</div></div><div style="flex:1;background:rgba(12,12,16,.45);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#ff9f0a">${avgM}</div><div style="font-size:10px;color:rgba(255,255,255,.55)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="display:inline;vertical-align:-1px"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> moy.</div></div>`;
   } else if(slideIdx===1){
     datasets=[{label:'Mvts',data:dataMvts,backgroundColor:'#f5f5f755',borderColor:'#f5f5f7',borderWidth:1,borderRadius:3,spanGaps:true}];
     legendHtml='<span style="font-size:10px;color:rgba(255,255,255,.55)">↕ Mouvements</span>';
@@ -2107,7 +2120,7 @@ function renderSDSlide(slideIdx,number){
   const chartType=slideIdx===0?(isLine?'line':'bar'):'bar';
   window._chartSD_elec=new Chart(cvs,{type:chartType,data:{labels,datasets},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(28,28,30,.92)',titleColor:'#f5f5f7',bodyColor:'#8e8e93',padding:8,cornerRadius:8}},
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(12,12,16,.9)',titleColor:'#f5f5f7',bodyColor:'#8e8e93',padding:8,cornerRadius:8}},
       scales:{x:{ticks:{color:'#636366',font:{size:9},maxTicksLimit:view==='day'?8:12},grid:{display:false},border:{display:false}},
               y:{ticks:{color:'#636366',font:{size:9},maxTicksLimit:4},grid:{color:'rgba(255,255,255,.05)'},border:{display:false}}}}});
 }
@@ -2237,6 +2250,10 @@ async function showStationPopup(s, lat, lon){
 
   mapEl.appendChild(div);
   _stationPopupEl=div;
+  // Empêcher les clics dans le popup de se propager vers la carte Leaflet
+  // (sinon map.on('click') ferme le popup avant que les listeners internes ne s'exécutent)
+  div.addEventListener('click', e=>e.stopPropagation());
+  div.addEventListener('mousedown', e=>e.stopPropagation());
 
   // Fetch live des vélos de cette station (asynchrone, remplit le slot)
   fetchStationBikesLive(s.number).then(bikes=>{
@@ -2550,7 +2567,7 @@ function renderBikesList(bikes, tripDistKm){
   const rows=all.slice(0,6).map(b=>{
     const isElec=b.type==='E';
     const typeTag=isElec
-      ?'<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(10,132,255,.18);color:#60aaff;font-weight:600">⚡</span>'
+      ?'<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(10,132,255,.18);color:#60aaff;font-weight:600"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="display:inline;vertical-align:-1px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>'
       :'<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);font-weight:600">M</span>';
     let battHtml='<div style="flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.08)"><div style="height:100%;border-radius:2px;background:rgba(255,255,255,.2);width:100%"></div></div><span style="font-size:9px;color:rgba(255,255,255,.5);min-width:28px">—</span>';
     if(isElec&&b.batt!=null){
