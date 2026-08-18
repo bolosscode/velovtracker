@@ -2149,7 +2149,32 @@ let _stationPopup=null;
 let _stationPopupEl=null;
 
 /* ═══ Rendu ligne vélo + détail complet API ═══ */
-function renderBikeRow(b, i){
+
+/* ═══ Recommandation vélo (note + révision récente + batterie pour élec) ═══ */
+function bikeRecoScore(b){
+  if(b.status!=='AVAILABLE'||b.isReserved) return -1;
+  const ratingScore=(b.rating?.value??50)/100; // 0-1, défaut neutre si pas noté
+  // Fraîcheur révision : 1.0 si <30j, décroît jusqu'à 0 vers 365j
+  let freshScore=0.3; // défaut si pas de date connue
+  if(b.lastControlDateTime){
+    const days=(Date.now()-new Date(b.lastControlDateTime).getTime())/86400000;
+    freshScore=Math.max(0,Math.min(1,1-days/365));
+  }
+  if(b.type==='ELECTRICAL'){
+    const battScore=(b.battery?.percentage??0)/100;
+    // Batterie pondère fort : un élec à plat n'est pas recommandable même bien noté
+    return ratingScore*0.35+freshScore*0.15+battScore*0.5;
+  }
+  return ratingScore*0.6+freshScore*0.4;
+}
+
+function markBestBikes(list){
+  const bestElec=list.filter(b=>b.type==='ELECTRICAL').sort((a,b)=>bikeRecoScore(b)-bikeRecoScore(a))[0];
+  const bestMeca=list.filter(b=>b.type==='MECHANICAL').sort((a,b)=>bikeRecoScore(b)-bikeRecoScore(a))[0];
+  return { bestElecId: bestElec&&bikeRecoScore(bestElec)>0?bestElec.id:null, bestMecaId: bestMeca&&bikeRecoScore(bestMeca)>0?bestMeca.id:null };
+}
+
+function renderBikeRow(b, i, isRecommended){
   const isElec=b.type==='ELECTRICAL';
   const reserved=b.isReserved;
   const avail=b.status==='AVAILABLE';
@@ -2166,7 +2191,9 @@ function renderBikeRow(b, i){
   const ratingCount=b.rating?.count;
   const ratingEl=ratingVal?`<span style="font-size:8px;color:rgba(255,255,255,.55)">★ ${Math.round(ratingVal)}<span style="color:rgba(255,255,255,.25)">${ratingCount?'('+ratingCount+')':''}</span></span>`:'';
   const reservedEl=reserved?'<span style="font-size:8px;color:rgba(255,255,255,.5)">rés.</span>':(!avail?`<span style="font-size:8px;color:rgba(255,255,255,.4)">${b.statusLabel||b.status}</span>`:'');
-  return `<div class="bike-row-live" data-idx="${i}" style="display:flex;align-items:center;gap:4px;padding:4px 2px;border-bottom:0.5px solid rgba(255,255,255,.05);opacity:${reserved||!avail?'.5':'1'};cursor:pointer" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background='transparent'">
+  const recoBadge=isRecommended?'<span style="font-size:8px;color:#4ade80;flex-shrink:0" title="Recommandé">&#9733;</span>':'';
+  return `<div class="bike-row-live" data-idx="${i}" style="display:flex;align-items:center;gap:4px;padding:4px 2px;border-bottom:0.5px solid rgba(255,255,255,.05);opacity:${reserved||!avail?'.5':'1'};cursor:pointer;${isRecommended?'background:rgba(74,222,128,.06)':''}" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background='${isRecommended?'rgba(74,222,128,.06)':'transparent'}'">
+    ${recoBadge}
     <span style="display:flex;align-items:center">${icon}</span>
     <span style="font-size:9px;color:rgba(255,255,255,.4);min-width:16px">${b.standNumber??'?'}</span>
     ${battEl}
@@ -2290,7 +2317,8 @@ async function showStationPopup(s, lat, lon){
     if(!list.length){ slot.innerHTML=''; return; }
     slot.style.textAlign='left'; slot.style.padding='0';
     window._popupBikesList=list;
-    slot.innerHTML=list.map((b,i)=>renderBikeRow(b,i)).join('');
+    const {bestElecId,bestMecaId}=markBestBikes(list);
+    slot.innerHTML=list.map((b,i)=>renderBikeRow(b,i,b.id===bestElecId||b.id===bestMecaId)).join('');
     slot.querySelectorAll('.bike-row-live').forEach(el=>{
       el.addEventListener('click', ()=>toggleBikeDetailLive(parseInt(el.dataset.idx)));
     });
