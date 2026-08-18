@@ -62,7 +62,8 @@ def get_token_playwright():
                     if 'access_token' in body:
                         state['access_token']  = body['access_token']
                         state['refresh_token'] = body.get('refresh_token')
-                        print("  Token IAM capturé", flush=True)
+                        state['expires_in']    = body.get('expires_in')
+                        print(f"  Token IAM capturé, expires_in={body.get('expires_in')}s", flush=True)
                 except Exception:
                     pass
 
@@ -139,10 +140,10 @@ def main():
         'refresh_token': state['refresh_token'],
         'token_type': state.get('token_type', 'Taknv1'),
         'updated_at': datetime.now().isoformat(timespec='seconds'),
-        'expires_in': 3600,
+        'expires_in': state.get('expires_in') or 3600,
     }
     TOKEN_F.write_text(json.dumps(token_data, ensure_ascii=False, indent=2))
-    print(f"  ✓ Token.json créé ({time.time()-t0:.1f}s)", flush=True)
+    print(f"  ✓ Token.json créé ({time.time()-t0:.1f}s), expires_in={token_data['expires_in']}s", flush=True)
 
 if __name__ == '__main__':
     main()
