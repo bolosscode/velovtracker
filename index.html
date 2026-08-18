@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-title" content="Vélo'v"/>
 <meta name="theme-color" content="#ffffff"/>
 <title>Vélo'v Lyon Analytics</title>
+<link rel="preconnect" href="https://api.cyclocity.fr" crossorigin>
+<link rel="dns-prefetch" href="https://api.cyclocity.fr">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
@@ -2453,6 +2455,7 @@ async function loadAllBikesLive(){
       }
       _allBikesByStation = byStation;
       _allBikesLoadedAt = Date.now();
+      window._bikesLiveReady = true;
       return byStation;
     }catch{ return null; }
     finally{ _allBikesLoadingPromise = null; }
@@ -2792,16 +2795,16 @@ function localDateStr(){
 
 /* ═══ BOOT ════════════════════════════════════════════ */
 async function boot(){
+  // Démarrer le plus tôt possible, en parallèle du reste (gros payload ~10Mo)
+  loadAllBikesLive();
+  loadBikesData().then(d=>{ if(d) _bikesData=d; });
+
   initRanges();
   allStations=await loadLatest(); window._lastStationUpdate=Date.now(); updateLiveStatus();
   await computeMovements();
   initMap();
   renderStations();
   initPlanMap();
-  // Charger les données vélos en arrière-plan
-  loadBikesData().then(d=>{ if(d) _bikesData=d; });
-  // Charger tous les vélos live JCDecaux (1 seul appel, indexé par station)
-  loadAllBikesLive();
   const bkDate=document.getElementById('bk-date'); if(bkDate) bkDate.value=localDateStr();
 }
 boot();
