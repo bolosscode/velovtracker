@@ -2188,7 +2188,7 @@ function toggleBikeDetailLive(idx){
     if(typeof val==='object') val=JSON.stringify(val);
     return `<div style="display:flex;justify-content:space-between;gap:8px;padding:2.5px 0;border-bottom:0.5px solid rgba(255,255,255,.05);font-size:9px">
       <span style="color:rgba(255,255,255,.4);flex-shrink:0">${label}</span>
-      <span style="color:#fff;font-weight:500;text-align:right;word-break:break-all">${val}</span>
+      <span style="color:#fff;font-weight:500;text-align:right;word-break:break-word;max-width:60%;overflow-wrap:anywhere">${val}</span>
     </div>`;
   }).join('');
 
@@ -2200,7 +2200,7 @@ function toggleBikeDetailLive(idx){
   const detail=document.createElement('div');
   detail.id='bike-detail-live';
   detail.dataset.idx=idx;
-  detail.style.cssText='margin:4px 0 6px;padding:8px 10px;background:rgba(255,255,255,.04);border:0.5px solid rgba(255,255,255,.08);border-radius:10px';
+  detail.style.cssText='margin:4px 0 6px;padding:8px 10px;background:rgba(255,255,255,.04);border:0.5px solid rgba(255,255,255,.08);border-radius:10px;max-height:220px;overflow-y:auto';
   detail.innerHTML=rows+ratingHtml;
   row.insertAdjacentElement('afterend', detail);
 }
@@ -2223,7 +2223,8 @@ async function showStationPopup(s, lat, lon){
     left:${pt.x}px;top:${pt.y-10}px;
     background:rgba(12,12,16,.52);backdrop-filter:blur(56px) saturate(220%) brightness(1.08);-webkit-backdrop-filter:blur(56px) saturate(220%) brightness(1.08);
     border:0.5px solid rgba(255,255,255,.18);border-radius:14px;
-    padding:10px 12px;min-width:160px;
+    padding:10px 12px;min-width:200px;max-width:min(280px,calc(100vw - 40px));
+    max-height:min(420px,calc(100vh - 100px));overflow-y:auto;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 24px rgba(0,0,0,.4);
     pointer-events:auto;`;
 
@@ -2481,7 +2482,7 @@ async function getJcdToken(){
 let _allBikesByStation = null; // Map<stationNumber, bike[]>
 let _allBikesLoadedAt = 0;
 let _allBikesLoadingPromise = null;
-const ALL_BIKES_REFRESH_MS = 3 * 60 * 1000; // rafraîchir toutes les 3 min
+const ALL_BIKES_REFRESH_MS = 2 * 60 * 1000; // rafraîchir toutes les 2 min
 
 async function loadAllBikesLive(){
   // Évite les chargements concurrents
@@ -2643,7 +2644,7 @@ async function boot(){
   initPlanMap();
 }
 boot();
-setInterval(async()=>{ allStations=await loadLatest(); window._lastStationUpdate=Date.now(); updateLiveStatus(); await computeMovements(); renderStations(); },5*60*1000);
+setInterval(async()=>{ allStations=await loadLatest(); window._lastStationUpdate=Date.now(); updateLiveStatus(); await computeMovements(); renderStations(); },2*60*1000);
 </script>
 </body>
 </html>
