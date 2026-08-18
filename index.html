@@ -2145,7 +2145,7 @@ function renderSDSlide(slideIdx,number){
 
 let _stationPopup=null;
 let _stationPopupEl=null;
-function showStationPopup(s, lat, lon){
+async function showStationPopup(s, lat, lon){
   closeStationPopup();
   window._popupStation={s,lat,lon};
   const hasDep=!!(window._planFromPos||planFromPos||planFromFixed);
@@ -2167,43 +2167,8 @@ function showStationPopup(s, lat, lon){
     box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 24px rgba(0,0,0,.4);
     pointer-events:auto;`;
 
-  // Bikes from latest.json
-  const stationBikes=(_bikesData?.bikes||[])
-    .filter(b=>b.st===s.number&&b.status!=='X')
-    .sort((a,b)=>{
-      // Élec d'abord, triés par batterie desc
-      if(a.type!==b.type) return a.type==='E'?-1:1;
-      return (b.batt||0)-(a.batt||0);
-    });
-
-  const bikesHtml=stationBikes.length?`
-    <div style="margin-bottom:${hasDep?'5':'8'}px">
-      ${stationBikes.map(b=>{
-        const isElec=b.type==='E';
-        const reserved=b.status==='S';
-        const icon=isElec
-          ?'<svg width="9" height="9" viewBox="0 0 24 24" fill="rgba(255,255,255,.8)"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'
-          :'<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
-        let battEl='<span style="font-size:9px;color:rgba(255,255,255,.2);min-width:24px">·</span>';
-        let autoEl='';
-        if(isElec&&b.batt!=null){
-          const km=Math.round(b.batt*40/100);
-          battEl=`<span style="font-size:9px;font-weight:600;color:#fff;min-width:50px">${b.batt}% <span style="font-size:8px;color:rgba(255,255,255,.3)">~${km}km</span></span>`;
-          autoEl='';
-        }
-        const ratingEl=b.rating?`<span style="font-size:8px;color:rgba(255,255,255,.7)">${b.rating.toFixed(1)}<span style="color:rgba(255,255,255,.28)">${b.rcount?'('+b.rcount+')':''}</span></span>`:'';
-        const reservedEl=reserved?'<span style="font-size:8px;color:rgba(255,255,255,.5)">rés.</span>':'';;
-        return `<div style="display:flex;align-items:center;gap:4px;padding:2.5px 0;border-bottom:0.5px solid rgba(255,255,255,.05);opacity:${reserved?'.4':'1'}">
-          <span style="display:flex;align-items:center">${icon}</span>
-          <span style="font-size:9px;color:rgba(255,255,255,.4);min-width:14px">${b.borne||'?'}</span>
-          ${battEl}${autoEl}
-          ${ratingEl}
-          <span style="font-size:9px;color:rgba(255,255,255,.28);flex:1;text-align:right">#${b.id}</span>
-          ${reservedEl}
-        </div>`;
-      }).join('')}
-    </div>`
-  :'';
+  // Vélos live JCDecaux (chargement asynchrone)
+  const bikesHtml = `<div id="stn-bikes-slot" style="margin-bottom:${hasDep?'5':'8'}px;font-size:10px;color:rgba(255,255,255,.35);text-align:center;padding:6px 0">Chargement…</div>`;
 
   div.innerHTML=`
     <div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:5px">${cleanName(s.name)}</div>
@@ -2224,6 +2189,48 @@ function showStationPopup(s, lat, lon){
 
   mapEl.appendChild(div);
   _stationPopupEl=div;
+
+  // Fetch live des vélos de cette station (asynchrone, remplit le slot)
+  fetchStationBikesLive(s.number).then(bikes=>{
+    const slot=document.getElementById('stn-bikes-slot');
+    if(!slot) return; // popup fermée entre-temps
+    if(!bikes){
+      slot.innerHTML='<span style="opacity:.6">Détail vélos indisponible</span>';
+      return;
+    }
+    const list=bikes.filter(b=>b.status!=='REMOVED').sort((a,b)=>{
+      if(a.type!==b.type) return a.type==='ELECTRICAL'?-1:1;
+      return (b.bikeBatteryMv||0)-(a.bikeBatteryMv||0);
+    });
+    if(!list.length){ slot.innerHTML=''; return; }
+    slot.style.textAlign='left'; slot.style.padding='0';
+    slot.innerHTML=list.map(b=>{
+      const isElec=b.type==='ELECTRICAL';
+      const reserved=b.isReserved;
+      const avail=b.status==='AVAILABLE';
+      const icon=isElec
+        ?'<svg width="9" height="9" viewBox="0 0 24 24" fill="rgba(255,255,255,.8)"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'
+        :'<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
+      let battEl='<span style="font-size:9px;color:rgba(255,255,255,.2);min-width:24px">·</span>';
+      if(isElec&&b.bikeBatteryMv!=null){
+        // bikeBatteryMv ~ tension pack (mV) → estimation grossière % (plage usuelle ~1250-1550mV)
+        const pct=Math.max(0,Math.min(100,Math.round((b.bikeBatteryMv-1250)/(1550-1250)*100)));
+        battEl=`<span style="font-size:9px;font-weight:600;color:#fff;min-width:34px">${pct}%</span>`;
+      }
+      const ratingVal=b.rating?.value;
+      const ratingCount=b.rating?.count;
+      const ratingEl=ratingVal?`<span style="font-size:8px;color:rgba(255,255,255,.7)">${Math.round(ratingVal)}%<span style="color:rgba(255,255,255,.28)">${ratingCount?'('+ratingCount+')':''}</span></span>`:'';
+      const reservedEl=reserved?'<span style="font-size:8px;color:rgba(255,255,255,.5)">rés.</span>':(!avail?`<span style="font-size:8px;color:rgba(255,255,255,.4)">${b.statusLabel||b.status}</span>`:'');
+      return `<div style="display:flex;align-items:center;gap:4px;padding:2.5px 0;border-bottom:0.5px solid rgba(255,255,255,.05);opacity:${reserved||!avail?'.5':'1'}">
+        <span style="display:flex;align-items:center">${icon}</span>
+        <span style="font-size:9px;color:rgba(255,255,255,.4);min-width:16px">${b.standNumber??'?'}</span>
+        ${battEl}
+        ${ratingEl}
+        <span style="font-size:9px;color:rgba(255,255,255,.28);flex:1;text-align:right">#${b.number}</span>
+        ${reservedEl}
+      </div>`;
+    }).join('');
+  });
 
   div.querySelector('#stn-dep-btn')?.addEventListener('click',()=>{
     const {s,lat,lon}=window._popupStation;
@@ -2400,6 +2407,42 @@ function showBackgroundStations(){
 
 /* ═══ BIKES ══════════════════════════════════════════════════════════════ */
 let _bikesData=null, _bikesSort='trips', _bikesOpenId=null;
+
+
+/* ═══ VÉLOS LIVE (JCDecaux direct, token via data/token.json) ══ */
+let _jcdToken = null, _jcdTokenExp = 0;
+async function getJcdToken(){
+  if(_jcdToken && Date.now() < _jcdTokenExp) return _jcdToken;
+  try{
+    const r = await fetch(`data/token.json?t=${Date.now()}`,{cache:'no-store'});
+    if(!r.ok) return null;
+    const d = await r.json();
+    if(!d.access_token) return null;
+    _jcdToken = `${d.token_type||'Taknv1'} ${d.access_token}`;
+    // Marge de sécurité : considérer expiré 5 min avant la vraie limite
+    const ageMs = Date.now() - new Date(d.updated_at).getTime();
+    const remainMs = (d.expires_in||3600)*1000 - ageMs - 5*60*1000;
+    _jcdTokenExp = Date.now() + Math.max(0, remainMs);
+    return _jcdToken;
+  }catch{ return null; }
+}
+
+const _bikesCache = {}; // stationNumber -> {ts, bikes}
+async function fetchStationBikesLive(stationNumber){
+  const cached = _bikesCache[stationNumber];
+  if(cached && Date.now()-cached.ts < 20000) return cached.bikes; // cache 20s
+  const tok = await getJcdToken();
+  if(!tok) return null;
+  try{
+    const r = await fetch(`https://api.cyclocity.fr/contracts/lyon/bikes?stationNumber=${stationNumber}`,{
+      headers:{ 'Accept':'application/vnd.bikes.v4+json', 'Authorization':tok }
+    });
+    if(!r.ok) return null;
+    const bikes = await r.json();
+    _bikesCache[stationNumber] = { ts: Date.now(), bikes };
+    return bikes;
+  }catch{ return null; }
+}
 
 async function loadBikesData(){
   try{
