@@ -2214,41 +2214,95 @@ const BIKE_FIELD_LABELS={
   lastRevisionDateTime:'lastRevisionDateTime', nextCheck:'nextCheck', nextReview:'nextReview',
 };
 
+function closeBikeDetailModal(){
+  document.getElementById('bike-detail-modal')?.remove();
+  document.getElementById('bike-detail-backdrop')?.remove();
+}
+
+// Champs essentiels affichés directement (les autres sont dans "+" détails techniques)
+const BIKE_ESSENTIAL_FIELDS={
+  statusLabel:'Statut',
+  lastControlDateTime:'Dernière révision',
+  lastTripDateTime:'Dernier trajet',
+};
+
+function fmtBikeDate(v){
+  try{ return new Date(v).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'})+' '+new Date(v).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); }
+  catch{ return v; }
+}
+
 function toggleBikeDetailLive(idx){
   const list=window._popupBikesList;
   if(!list) return;
   const b=list[idx];
-  const existing=document.getElementById('bike-detail-live');
-  if(existing){
-    const wasIdx=existing.dataset.idx;
-    existing.remove();
-    if(String(idx)===wasIdx) return; // toggle off
-  }
-  const row=document.querySelector(`.bike-row-live[data-idx="${idx}"]`);
-  if(!row) return;
+  closeBikeDetailModal();
 
-  const rows=Object.entries(BIKE_FIELD_LABELS).map(([key,label])=>{
-    let val=b[key];
-    if(key==='rating'){ val=null; }
-    if(val==null) return '';
+  const isElec=b.type==='ELECTRICAL';
+  const icon=isElec
+    ?'<svg width="13" height="13" viewBox="0 0 24 24" fill="rgba(255,255,255,.85)"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'
+    :'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
+
+  // Bloc essentiel
+  const essentialRows=[
+    `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid rgba(255,255,255,.06);font-size:10.5px"><span style="color:rgba(255,255,255,.45)">Type</span><span style="color:#fff;font-weight:600">${isElec?'Électrique':'Mécanique'}</span></div>`,
+    `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid rgba(255,255,255,.06);font-size:10.5px"><span style="color:rgba(255,255,255,.45)">Statut</span><span style="color:#fff;font-weight:600">${b.statusLabel||b.status||'—'}</span></div>`,
+  ];
+  if(isElec&&b.battery?.percentage!=null){
+    essentialRows.push(`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid rgba(255,255,255,.06);font-size:10.5px"><span style="color:rgba(255,255,255,.45)">Batterie</span><span style="color:#fff;font-weight:600">${b.battery.percentage}%</span></div>`);
+  }
+  if(b.rating?.value!=null){
+    essentialRows.push(`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid rgba(255,255,255,.06);font-size:10.5px"><span style="color:rgba(255,255,255,.45)">Note</span><span style="color:#fff;font-weight:600">${Math.round(b.rating.value)}${b.rating.count?' ('+b.rating.count+' avis)':''}</span></div>`);
+  }
+  if(b.lastControlDateTime){
+    essentialRows.push(`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid rgba(255,255,255,.06);font-size:10.5px"><span style="color:rgba(255,255,255,.45)">Dernière révision</span><span style="color:#fff;font-weight:600">${fmtBikeDate(b.lastControlDateTime)}</span></div>`);
+  }
+  if(b.lastTripDateTime){
+    essentialRows.push(`<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:10.5px"><span style="color:rgba(255,255,255,.45)">Dernier trajet</span><span style="color:#fff;font-weight:600">${fmtBikeDate(b.lastTripDateTime)}</span></div>`);
+  }
+
+  // Bloc technique (tous les autres champs, générique)
+  const shownKeys=new Set(['type','statusLabel','status','battery','rating','lastControlDateTime','lastTripDateTime']);
+  const techRows=Object.entries(b).filter(([k])=>!shownKeys.has(k)&&b[k]!=null).map(([key,val])=>{
     if(typeof val==='object') val=JSON.stringify(val);
-    return `<div style="display:flex;justify-content:space-between;gap:6px;padding:2.5px 0;border-bottom:0.5px solid rgba(255,255,255,.05);font-size:8.5px;break-inside:avoid">
-      <span style="color:rgba(255,255,255,.4);flex-shrink:0">${label}</span>
-      <span style="color:#fff;font-weight:500;text-align:right;word-break:break-word;overflow-wrap:anywhere;min-width:0">${val}</span>
+    return `<div style="display:flex;justify-content:space-between;gap:8px;padding:3.5px 0;font-size:9px;color:rgba(255,255,255,.55)">
+      <span style="flex-shrink:0">${key}</span>
+      <span style="text-align:right;word-break:break-word;overflow-wrap:anywhere">${val}</span>
     </div>`;
   }).join('');
 
-  const ratingHtml = b.rating ? `<div style="display:flex;justify-content:space-between;gap:6px;padding:2.5px 0;border-bottom:0.5px solid rgba(255,255,255,.05);font-size:8.5px;break-inside:avoid">
-      <span style="color:rgba(255,255,255,.4)">rating</span>
-      <span style="color:#fff;font-weight:500">${b.rating.value!=null?Math.round(b.rating.value):'—'}${b.rating.count?' ('+b.rating.count+' avis)':''}</span>
-    </div>` : '';
+  const backdrop=document.createElement('div');
+  backdrop.id='bike-detail-backdrop';
+  backdrop.style.cssText='position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.4)';
+  backdrop.addEventListener('click', closeBikeDetailModal);
 
-  const detail=document.createElement('div');
-  detail.id='bike-detail-live';
-  detail.dataset.idx=idx;
-  detail.style.cssText='margin:4px 0 6px;padding:8px 10px;background:rgba(255,255,255,.04);border:0.5px solid rgba(255,255,255,.08);border-radius:10px;max-height:150px;overflow-x:auto;overflow-y:hidden;columns:2;column-gap:10px;column-fill:auto';
-  detail.innerHTML=rows+ratingHtml;
-  row.insertAdjacentElement('afterend', detail);
+  const modal=document.createElement('div');
+  modal.id='bike-detail-modal';
+  modal.dataset.idx=idx;
+  modal.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:901;width:min(300px,calc(100vw - 40px));max-height:min(60vh,420px);background:rgba(12,12,16,.85);backdrop-filter:blur(56px) saturate(220%) brightness(1.08);-webkit-backdrop-filter:blur(56px) saturate(220%) brightness(1.08);border:0.5px solid rgba(255,255,255,.18);border-radius:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 16px 48px rgba(0,0,0,.5);display:flex;flex-direction:column;overflow:hidden';
+  modal.addEventListener('click', e=>e.stopPropagation());
+
+  modal.innerHTML=`
+    <div style="display:flex;align-items:center;gap:7px;padding:12px 14px;border-bottom:0.5px solid rgba(255,255,255,.1);flex-shrink:0">
+      ${icon}
+      <div style="font-size:13px;font-weight:700;color:#fff">Vélo #${b.number}</div>
+      <button id="bike-detail-close" style="margin-left:auto;background:rgba(255,255,255,.08);border:none;border-radius:50%;width:24px;height:24px;color:rgba(255,255,255,.6);cursor:pointer;display:flex;align-items:center;justify-content:center">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div style="padding:8px 14px 14px;overflow-y:auto;flex:1">
+      ${essentialRows.join('')}
+      <button id="bike-tech-toggle" style="margin-top:8px;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.06);border:0.5px solid rgba(255,255,255,.1);color:rgba(255,255,255,.5);cursor:pointer;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center">+</button>
+      <div id="bike-tech-body" style="display:none;margin-top:6px;padding-top:6px;border-top:0.5px dashed rgba(255,255,255,.1)">${techRows}</div>
+    </div>
+  `;
+
+  document.body.appendChild(backdrop);
+  document.body.appendChild(modal);
+  document.getElementById('bike-detail-close').addEventListener('click', closeBikeDetailModal);
+  document.getElementById('bike-tech-toggle').addEventListener('click', ()=>{
+    const el=document.getElementById('bike-tech-body');
+    el.style.display=el.style.display==='block'?'none':'block';
+  });
 }
 
 async function showStationPopup(s, lat, lon){
@@ -2360,6 +2414,7 @@ async function showStationPopup(s, lat, lon){
 function closeStationPopup(){
   if(_stationPopupEl){ _stationPopupEl.remove(); _stationPopupEl=null; }
   if(_stationPopup){ _stationPopup.remove(); _stationPopup=null; }
+  closeBikeDetailModal();
 }
 
 function initSliderSwipe(){
