@@ -171,7 +171,7 @@ main{max-width:1500px;margin:auto;padding:20px}
 </header>
 
 <!-- Panneau source de données -->
-<div id="source-panel" style="display:none;position:absolute;top:52px;right:10px;z-index:400;width:min(320px,calc(100% - 20px));background:rgba(30,30,38,.92);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border:0.5px solid rgba(255,255,255,.15);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.5);padding:12px 14px;font-size:11px;color:rgba(255,255,255,.85)">
+<div id="source-panel" style="display:none;position:absolute;top:52px;right:10px;z-index:400;width:min(320px,calc(100% - 20px));background:rgba(12,12,16,.52);backdrop-filter:blur(56px) saturate(220%) brightness(1.08);-webkit-backdrop-filter:blur(56px) saturate(220%) brightness(1.08);border-radius:14px;border:0.5px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 24px rgba(0,0,0,.4);padding:12px 14px;font-size:11px;color:rgba(255,255,255,.85)">
   <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.4);margin-bottom:8px">Source des données</div>
   <div id="source-content"></div>
 </div>
@@ -2091,6 +2091,83 @@ function renderSDSlide(slideIdx,number){
 
 let _stationPopup=null;
 let _stationPopupEl=null;
+
+/* ═══ Rendu ligne vélo + détail complet API ═══ */
+function renderBikeRow(b, i){
+  const isElec=b.type==='ELECTRICAL';
+  const reserved=b.isReserved;
+  const avail=b.status==='AVAILABLE';
+  const icon=isElec
+    ?'<svg width="9" height="9" viewBox="0 0 24 24" fill="rgba(255,255,255,.8)"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'
+    :'<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
+  let battEl='<span style="font-size:9px;color:rgba(255,255,255,.2);min-width:24px">—</span>';
+  if(isElec&&b.bikeBatteryMv!=null){
+    const pct=Math.max(0,Math.min(100,Math.round((b.bikeBatteryMv-1250)/(1550-1250)*100)));
+    const col=pct>=50?'#4ade80':pct>=20?'#f59e0b':'#f87171';
+    battEl=`<span style="font-size:9px;font-weight:600;color:${col};min-width:34px">${pct}%</span>`;
+  }
+  const ratingVal=b.rating?.value;
+  const ratingCount=b.rating?.count;
+  const ratingEl=ratingVal?`<span style="font-size:8px;color:rgba(255,255,255,.55)">★ ${Math.round(ratingVal)}<span style="color:rgba(255,255,255,.25)">${ratingCount?'('+ratingCount+')':''}</span></span>`:'';
+  const reservedEl=reserved?'<span style="font-size:8px;color:rgba(255,255,255,.5)">rés.</span>':(!avail?`<span style="font-size:8px;color:rgba(255,255,255,.4)">${b.statusLabel||b.status}</span>`:'');
+  return `<div class="bike-row-live" data-idx="${i}" style="display:flex;align-items:center;gap:4px;padding:4px 2px;border-bottom:0.5px solid rgba(255,255,255,.05);opacity:${reserved||!avail?'.5':'1'};cursor:pointer" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background='transparent'">
+    <span style="display:flex;align-items:center">${icon}</span>
+    <span style="font-size:9px;color:rgba(255,255,255,.4);min-width:16px">${b.standNumber??'?'}</span>
+    ${battEl}
+    ${ratingEl}
+    <span style="font-size:9px;color:rgba(255,255,255,.28);flex:1;text-align:right">#${b.number}</span>
+    ${reservedEl}
+  </div>`;
+}
+
+const BIKE_FIELD_LABELS={
+  id:'id', number:'number', contractName:'contrat', type:'type', frameId:'frameId',
+  stationNumber:'stationNumber', standNumber:'standNumber', status:'status', statusLabel:'statusLabel',
+  hasBattery:'hasBattery', hasLock:'hasLock', isReserved:'isReserved', checked:'checked',
+  energySource:'energySource', bikeBatteryMv:'bikeBatteryMv', bikeTopSwVersion:'bikeTopSwVersion',
+  bikeTopHwVersion:'bikeTopHwVersion', zedSwVersion:'zedSwVersion',
+  createdAt:'createdAt', updatedAt:'updatedAt', lastDataFrameDate:'lastDataFrameDate',
+  lastTripDateTime:'lastTripDateTime', lastControlDateTime:'lastControlDateTime',
+  lastRevisionDateTime:'lastRevisionDateTime', nextCheck:'nextCheck', nextReview:'nextReview',
+};
+
+function toggleBikeDetailLive(idx){
+  const list=window._popupBikesList;
+  if(!list) return;
+  const b=list[idx];
+  const existing=document.getElementById('bike-detail-live');
+  if(existing){
+    const wasIdx=existing.dataset.idx;
+    existing.remove();
+    if(String(idx)===wasIdx) return; // toggle off
+  }
+  const row=document.querySelector(`.bike-row-live[data-idx="${idx}"]`);
+  if(!row) return;
+
+  const rows=Object.entries(BIKE_FIELD_LABELS).map(([key,label])=>{
+    let val=b[key];
+    if(key==='rating'){ val=null; }
+    if(val==null) return '';
+    if(typeof val==='object') val=JSON.stringify(val);
+    return `<div style="display:flex;justify-content:space-between;gap:8px;padding:2.5px 0;border-bottom:0.5px solid rgba(255,255,255,.05);font-size:9px">
+      <span style="color:rgba(255,255,255,.4);flex-shrink:0">${label}</span>
+      <span style="color:#fff;font-weight:500;text-align:right;word-break:break-all">${val}</span>
+    </div>`;
+  }).join('');
+
+  const ratingHtml = b.rating ? `<div style="display:flex;justify-content:space-between;gap:8px;padding:2.5px 0;border-bottom:0.5px solid rgba(255,255,255,.05);font-size:9px">
+      <span style="color:rgba(255,255,255,.4)">rating</span>
+      <span style="color:#fff;font-weight:500">${b.rating.value!=null?Math.round(b.rating.value):'—'}${b.rating.count?' ('+b.rating.count+' avis)':''}</span>
+    </div>` : '';
+
+  const detail=document.createElement('div');
+  detail.id='bike-detail-live';
+  detail.dataset.idx=idx;
+  detail.style.cssText='margin:4px 0 6px;padding:8px 10px;background:rgba(255,255,255,.04);border:0.5px solid rgba(255,255,255,.08);border-radius:10px';
+  detail.innerHTML=rows+ratingHtml;
+  row.insertAdjacentElement('afterend', detail);
+}
+
 async function showStationPopup(s, lat, lon){
   closeStationPopup();
   window._popupStation={s,lat,lon};
@@ -2117,15 +2194,16 @@ async function showStationPopup(s, lat, lon){
   const bikesHtml = `<div id="stn-bikes-slot" style="margin-bottom:${hasDep?'5':'8'}px;font-size:10px;color:rgba(255,255,255,.35);text-align:center;padding:6px 0">Chargement…</div>`;
 
   div.innerHTML=`
-    <div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:5px">${cleanName(s.name)}</div>
-    <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(255,255,255,.6);margin-bottom:6px">
-      <span style="display:flex;align-items:center;gap:3px">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="#f5f5f7"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>${s.electrical_bikes}
+    <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:8px">${cleanName(s.name)}</div>
+    <div style="display:flex;align-items:center;gap:14px;font-size:12px;color:rgba(255,255,255,.75);margin-bottom:10px;padding-bottom:10px;border-bottom:0.5px solid rgba(255,255,255,.1)">
+      <span style="display:flex;align-items:center;gap:5px">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="#4ade80"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <span id="stn-total-elec" style="font-weight:700;color:#4ade80">${s.electrical_bikes}</span> élec
       </span>
-      <span style="display:flex;align-items:center;gap:3px">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#f5f5f7" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>${s.mechanical_bikes}
+      <span style="display:flex;align-items:center;gap:5px">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span id="stn-total-meca" style="font-weight:700">${s.mechanical_bikes}</span> méca
       </span>
-      <span style="margin-left:auto;color:${cls};font-weight:700">${pct}%</span>
     </div>
     ${bikesHtml}
     ${!hasDep?`<button id="stn-dep-btn" style="width:100%;padding:5px 8px;border-radius:8px;border:0.5px solid rgba(52,199,89,.3);background:rgba(52,199,89,.1);color:#34c759;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px">
@@ -2150,32 +2228,18 @@ async function showStationPopup(s, lat, lon){
     });
     if(!list.length){ slot.innerHTML=''; return; }
     slot.style.textAlign='left'; slot.style.padding='0';
-    slot.innerHTML=list.map(b=>{
-      const isElec=b.type==='ELECTRICAL';
-      const reserved=b.isReserved;
-      const avail=b.status==='AVAILABLE';
-      const icon=isElec
-        ?'<svg width="9" height="9" viewBox="0 0 24 24" fill="rgba(255,255,255,.8)"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'
-        :'<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
-      let battEl='<span style="font-size:9px;color:rgba(255,255,255,.2);min-width:24px">·</span>';
-      if(isElec&&b.bikeBatteryMv!=null){
-        // bikeBatteryMv ~ tension pack (mV) → estimation grossière % (plage usuelle ~1250-1550mV)
-        const pct=Math.max(0,Math.min(100,Math.round((b.bikeBatteryMv-1250)/(1550-1250)*100)));
-        battEl=`<span style="font-size:9px;font-weight:600;color:#fff;min-width:34px">${pct}%</span>`;
-      }
-      const ratingVal=b.rating?.value;
-      const ratingCount=b.rating?.count;
-      const ratingEl=ratingVal?`<span style="font-size:8px;color:rgba(255,255,255,.7)">${Math.round(ratingVal)}%<span style="color:rgba(255,255,255,.28)">${ratingCount?'('+ratingCount+')':''}</span></span>`:'';
-      const reservedEl=reserved?'<span style="font-size:8px;color:rgba(255,255,255,.5)">rés.</span>':(!avail?`<span style="font-size:8px;color:rgba(255,255,255,.4)">${b.statusLabel||b.status}</span>`:'');
-      return `<div style="display:flex;align-items:center;gap:4px;padding:2.5px 0;border-bottom:0.5px solid rgba(255,255,255,.05);opacity:${reserved||!avail?'.5':'1'}">
-        <span style="display:flex;align-items:center">${icon}</span>
-        <span style="font-size:9px;color:rgba(255,255,255,.4);min-width:16px">${b.standNumber??'?'}</span>
-        ${battEl}
-        ${ratingEl}
-        <span style="font-size:9px;color:rgba(255,255,255,.28);flex:1;text-align:right">#${b.number}</span>
-        ${reservedEl}
-      </div>`;
-    }).join('');
+    window._popupBikesList=list;
+    slot.innerHTML=list.map((b,i)=>renderBikeRow(b,i)).join('');
+    slot.querySelectorAll('.bike-row-live').forEach(el=>{
+      el.addEventListener('click', ()=>toggleBikeDetailLive(parseInt(el.dataset.idx)));
+    });
+    // Recalcule les totaux depuis les données live (plus précis que Grand Lyon)
+    const liveElecN=list.filter(b=>b.type==='ELECTRICAL'&&b.status==='AVAILABLE').length;
+    const liveMecaN=list.filter(b=>b.type==='MECHANICAL'&&b.status==='AVAILABLE').length;
+    const elecEl=document.getElementById('stn-total-elec');
+    const mecaEl=document.getElementById('stn-total-meca');
+    if(elecEl) elecEl.textContent=liveElecN;
+    if(mecaEl) mecaEl.textContent=liveMecaN;
   });
 
   div.querySelector('#stn-dep-btn')?.addEventListener('click',()=>{
