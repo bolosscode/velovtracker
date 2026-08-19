@@ -204,8 +204,11 @@ main{max-width:1500px;margin:auto;padding:20px}
       <div id="plan-float-expanded" style="padding:8px 10px">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
           <div style="flex:1;background:rgba(255,255,255,.09);border-radius:10px;overflow:visible;border:0.5px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)">
-            <div style="position:relative">
-              <input id="plan-from" class="search" type="text" placeholder="Départ…" autocomplete="off" style="background:transparent;border-radius:0;border:none;border-bottom:0.5px solid rgba(255,255,255,.08)"/>
+            <div style="position:relative;display:flex;align-items:center;border-bottom:0.5px solid rgba(255,255,255,.08)">
+              <input id="plan-from" class="search" type="text" placeholder="Départ…" autocomplete="off" style="background:transparent;border-radius:0;border:none;border-bottom:none;flex:1"/>
+              <button id="geoloc-btn" onclick="useMyLocation()" title="Utiliser ma position" style="width:26px;height:26px;border-radius:50%;background:rgba(10,132,255,.15);border:0.5px solid rgba(10,132,255,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-right:6px;-webkit-tap-highlight-color:transparent">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0a84ff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+              </button>
               <div class="dropdown" id="plan-from-dd"></div>
             </div>
             <div style="position:relative">
@@ -2409,9 +2412,9 @@ async function showStationPopup(s, lat, lon){
   // Vélos live JCDecaux (chargement asynchrone) — scroll interne propre à la liste,
   // le header (nom + totaux) et le bouton "Partir d'ici" restent toujours visibles
   const bikesHtml = `<div style="position:relative;margin-bottom:${hasDep?'3':'5'}px;flex-shrink:1">
-    <div id="stn-bikes-slot" style="font-size:10px;color:rgba(255,255,255,.35);text-align:center;padding:3px 8px 3px 0;overflow-y:auto;max-height:230px">Chargement…</div>
-    <div id="stn-scroll-track" style="display:none;position:absolute;top:0;right:0;width:3px;height:100%;background:rgba(255,255,255,.06);border-radius:2px;pointer-events:none">
-      <div id="stn-scroll-thumb" style="position:absolute;top:0;right:0;width:3px;background:rgba(255,255,255,.35);border-radius:2px"></div>
+    <div id="stn-bikes-slot" style="font-size:10px;color:rgba(255,255,255,.35);text-align:center;padding:3px 10px 3px 0;overflow-y:auto;max-height:230px">Chargement…</div>
+    <div id="stn-scroll-track" style="display:none;position:absolute;top:0;right:1px;width:4px;height:100%;background:rgba(255,255,255,.1);border-radius:2px;pointer-events:none">
+      <div id="stn-scroll-thumb" style="position:absolute;top:0;right:0;width:4px;background:#0a84ff;border-radius:2px;box-shadow:0 0 3px rgba(10,132,255,.6)"></div>
     </div>
   </div>`;
 
@@ -2873,6 +2876,44 @@ function localDateStr(){
 }
 
 /* ═══ BOOT ════════════════════════════════════════════ */
+/* ═══ GÉOLOCALISATION UTILISATEUR ═══ */
+function useMyLocation(){
+  if(!navigator.geolocation){ alert('Géolocalisation non supportée par ce navigateur.'); return; }
+  const btn=document.getElementById('geoloc-btn');
+  if(btn) btn.style.opacity='.5';
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      const {latitude:lat, longitude:lng}=pos.coords;
+      planFromPos={lat,lng}; planFromFixed=null;
+      window._planFromPos={lat,lng};
+      const fromInput=document.getElementById('plan-from');
+      if(fromInput){ fromInput.value='📍 Ma position'; fromInput.style.color=''; }
+      if(btn) btn.style.opacity='1';
+    },
+    err=>{
+      if(btn) btn.style.opacity='1';
+      console.warn('Géolocalisation refusée/indisponible', err);
+      alert("Impossible d'accéder à votre position. Vérifiez les autorisations de localisation.");
+    },
+    {enableHighAccuracy:true, timeout:8000, maximumAge:60000}
+  );
+}
+
+// Centrage automatique sur la position de l'utilisateur au démarrage,
+// uniquement si la permission est déjà accordée (pas de popup intrusive au 1er chargement)
+function tryAutoCenterOnUser(){
+  if(!navigator.permissions || !navigator.geolocation) return;
+  navigator.permissions.query({name:'geolocation'}).then(status=>{
+    if(status.state!=='granted') return; // ne rien demander si pas déjà accordé
+    navigator.geolocation.getCurrentPosition(
+      pos=>{
+        if(map) map.setView([pos.coords.latitude, pos.coords.longitude], 15);
+      },
+      ()=>{}, {enableHighAccuracy:false, timeout:5000, maximumAge:120000}
+    );
+  }).catch(()=>{});
+}
+
 async function boot(){
   // Démarrer le plus tôt possible, en parallèle du reste (gros payload ~10Mo)
   loadAllBikesLive();
@@ -2883,6 +2924,7 @@ async function boot(){
   initMap();
   renderStations();
   initPlanMap();
+  tryAutoCenterOnUser();
 }
 boot();
 setInterval(async()=>{ allStations=await loadLatest(); window._lastStationUpdate=Date.now(); updateLiveStatus(); await computeMovements(); renderStations(); },2*60*1000);
