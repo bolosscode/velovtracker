@@ -498,6 +498,31 @@ function renderSourcePanel(){
 
     <div style="margin-top:10px;padding-top:8px;border-top:0.5px solid rgba(255,255,255,.08);font-size:10px;color:rgba(255,255,255,.4);line-height:1.5">
       ${src.detail}
+    </div>
+
+    ${renderBikesSourceBlock()}`;
+}
+
+function renderBikesSourceBlock(){
+  const n = _allBikesByStation ? [..._allBikesByStation.values()].reduce((a,l)=>a+l.length,0) : null;
+  const loadedAt = _allBikesLoadedAt ? new Date(_allBikesLoadedAt) : null;
+  const ageMin = loadedAt ? Math.round((Date.now()-loadedAt.getTime())/60000) : null;
+  const ageStr = ageMin===null ? 'non chargé' : ageMin < 1 ? "à l'instant" : `il y a ${ageMin} min`;
+  const ageCol = ageMin===null ? 'rgba(255,255,255,.4)' : ageMin <= 3 ? '#30d158' : ageMin <= 10 ? '#f59e0b' : '#ff453a';
+  const fmtT = d => d ? d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '—';
+  return `
+    <div style="margin-top:10px;padding-top:10px;border-top:0.5px solid rgba(255,255,255,.08)">
+      <div style="font-weight:600;color:#fff;margin-bottom:2px">JCDecaux (vélos)</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.4);font-family:ui-monospace,monospace;margin-bottom:10px">api.cyclocity.fr</div>
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:11px">
+        <span style="color:rgba(255,255,255,.45)">Chargés à</span>
+        <span style="color:${ageCol}">${fmtT(loadedAt)} <span style="color:rgba(255,255,255,.35)">${ageStr}</span></span>
+        <span style="color:rgba(255,255,255,.45)">Vélos</span>
+        <span>${n!=null?n:'—'}</span>
+      </div>
+      <div style="margin-top:10px;font-size:10px;color:rgba(255,255,255,.4);line-height:1.5">
+        Live direct navigateur — token rafraîchi côté serveur toutes les 30 min
+      </div>
     </div>`;
 }
 
@@ -1745,6 +1770,19 @@ async function drawTop3Routes(){
     arrM.bindTooltip(cleanName(combo.arr.name),{direction:'top',permanent:false});
     arrM.on('click',()=>selectComboIdx(_i));
     arrM.addTo(planLayerGroup);
+
+    // Station relai (trajet trop long) — affichée pour le combo principal uniquement
+    if(i===0 && combo.relaiStation){
+      const relaiIcon=L.divIcon({
+        html:`<div style="width:22px;height:22px;border-radius:50%;background:#ff9f0a;border:2px solid #fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.4)">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>`,
+        iconSize:[22,22], iconAnchor:[11,11], className:''
+      });
+      L.marker([combo.relaiStation.lat,combo.relaiStation.lng],{icon:relaiIcon})
+        .bindTooltip(`Relai : ${cleanName(combo.relaiStation.name)}`,{permanent:false,direction:'top'})
+        .addTo(planLayerGroup);
+    }
   });
   // Zoom sur le premier
   if(routes[0]?.coords) planMap.fitBounds(L.polyline(routes[0].coords).getBounds().pad(.25));
