@@ -370,6 +370,13 @@ function compactPlanFloat(){
           </div>
           <div style="display:flex;gap:3px">${dotsHtml}</div>
         </div>
+        ${(()=>{
+          const cacheKey=combo.dep.number+'_'+combo.dist;
+          const cachedBikes=_comboBikesCache[cacheKey];
+          if(!cachedBikes) return '';
+          const reco=renderRecoBikesCompact(cachedBikes);
+          return reco ? `<div style="margin-top:2px">${reco}</div>` : '';
+        })()}
       </div>`;
   } else {
     el.innerHTML=`<div style="font-size:12px;color:rgba(255,255,255,.6);cursor:pointer;flex:1" onclick="expandPlanFloat()">Tap pour voir les itinéraires</div>`;
@@ -1656,11 +1663,9 @@ async function computePlan(){
         ?`<div style="text-align:center;padding:8px"><button onclick="window._showMoreCombos()" style="padding:5px 16px;border-radius:20px;border:0.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);font-size:12px;cursor:pointer;color:rgba(255,255,255,.55)">Voir les ${top.length-limit} autres</button></div>`:'';
       return html+more;
     }
-    // Mobile : slider swipeable avec dots
-    const dots=shown.map((_,i)=>`<div class="cdot${i===0?' on':''}" style="width:${i===0?'14':'5'}px" data-cidx="${i}"></div>`).join('');
-    return `<div style="overflow:hidden;padding:0 0px">
-      <div id="combo-slider-track" style="display:flex;gap:8px;transition:transform .3s cubic-bezier(.4,0,.2,1);will-change:transform">${html.replace(/margin-bottom:4px/g,'min-width:calc(100% - 18px);flex-shrink:0;margin-bottom:0;margin-left:0px')}</div>
-    </div>
+    // Mobile : slider natif scroll-snap (fiable, momentum + snap gérés par le navigateur)
+    const dots=shown.map((_,i)=>`<div class="cdot${i===0?' on':''}" style="width:${i===0?'14':'5'}px;cursor:pointer" data-cidx="${i}" onclick="selectComboIdx(${i})"></div>`).join('');
+    return `<div id="combo-slider-track" style="display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:0 0 2px">${html.replace(/margin-bottom:4px/g,'min-width:calc(100% - 18px);flex-shrink:0;margin-bottom:0;margin-left:0px;scroll-snap-align:start')}</div>
     <div class="combo-dots" id="combo-dots" style="display:flex;justify-content:center;gap:5px;padding:6px 0 2px">${dots}</div>`;
   };
 
@@ -1704,9 +1709,9 @@ async function selectComboIdx(idx){
   _openComboIdx=idx;
   document.querySelectorAll('.combo-card').forEach((c,i)=>c.classList.toggle('selected',i===idx));
   await showRoute(idx);
-  // Compact seulement si le float est encore étendu
-  const expanded=document.getElementById('plan-float-expanded');
-  if(expanded && expanded.style.display!=='none') compactPlanFloat();
+  updateSliderPosition(idx);
+  // Ne plus re-compacter automatiquement : taper une card doit juste
+  // prévisualiser l'itinéraire, pas refermer la liste vers le formulaire
 }
 
 
@@ -2534,20 +2539,38 @@ function initSliderSwipe(){
   if(!track) return;
   if(track._swipeInit) return; // already attached
   track._swipeInit=true;
-  let sx=null,dragged=false;
-  const go=(dir)=>{
-    const cur=window._openComboIdx??0;
-    const n=Math.max(0,Math.min((window._planCombos?.length||1)-1,cur+dir));
-    if(n!==cur) selectComboIdx(n);
-  };
-  track.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;dragged=false;},{passive:true});
-  track.addEventListener('touchmove',e=>{if(sx!==null&&Math.abs(e.touches[0].clientX-sx)>8)dragged=true;},{passive:true});
-  track.addEventListener('touchend',e=>{
-    if(sx===null)return;
-    const dx=e.changedTouches[0].clientX-sx;
-    if(dragged&&Math.abs(dx)>30)go(dx<0?1:-1);
-    sx=null;dragged=false;
-  });
+  // Scroll natif : on détecte la card active à l'arrêt du scroll et on synchronise
+  // la sélection (route affichée, dots) — plus fiable qu'un swipe touch manuel
+  let scrollTimer=null;
+  track.addEventListener('scroll',()=>{
+    clearTimeout(scrollTimer);
+    scrollTimer=setTimeout(()=>{
+      const cards=[...track.querySelectorAll('.combo-card')];
+      if(!cards.length) return;
+      // Card dont le bord gauche est le plus proche du bord gauche visible
+      let closest=0, closestDist=Infinity;
+      cards.forEach((card,i)=>{
+        const dist=Math.abs(card.offsetLeft-track.scrollLeft);
+        if(dist<closestDist){ closestDist=dist; closest=i; }
+      });
+      if(closest!==(window._openComboIdx??0)) selectComboIdx(closest);
+    },120);
+  },{passive:true});
+}
+
+// Fait défiler le slider jusqu'à la card idx (utilisé par les dots + sélection programmatique)
+function updateSliderPosition(idx){
+  const track=document.getElementById('combo-slider-track');
+  const dotsEl=document.getElementById('combo-dots');
+  if(dotsEl){
+    [...dotsEl.children].forEach((d,i)=>{
+      d.classList.toggle('on', i===idx);
+      d.style.width=i===idx?'14px':'5px';
+    });
+  }
+  if(!track) return;
+  const card=track.querySelectorAll('.combo-card')[idx];
+  if(card) track.scrollTo({left:card.offsetLeft, behavior:'smooth'});
 }
 
 function filterLbTable(q){
@@ -2808,19 +2831,30 @@ const _comboBikesCache={};
 async function loadComboBikes(idx){
   const combo=window._planCombos?.[idx]; if(!combo) return;
   const cacheKey=combo.dep.number+'_'+combo.dist;
-  if(_comboBikesCache[cacheKey]) return; // déjà chargé
+  if(_comboBikesCache[cacheKey]){
+    refreshPillIfNeeded(idx);
+    return; // déjà chargé
+  }
   const bikes=await fetchStationBikes(combo.dep.number);
   if(!bikes.length) return;
   _comboBikesCache[cacheKey]=bikes;
   // Injecter dans le card actif
   const card=document.querySelector(`.combo-card[data-idx="${idx}"]`);
-  if(!card) return;
-  const existing=card.querySelector('.combo-bikes-list');
-  if(existing) return;
-  const bikesList=document.createElement('div');
-  bikesList.className='combo-bikes-list';
-  bikesList.innerHTML=renderRecoBikesCompact(bikes);
-  card.appendChild(bikesList);
+  if(card && !card.querySelector('.combo-bikes-list')){
+    const bikesList=document.createElement('div');
+    bikesList.className='combo-bikes-list';
+    bikesList.innerHTML=renderRecoBikesCompact(bikes);
+    card.appendChild(bikesList);
+  }
+  refreshPillIfNeeded(idx);
+}
+
+// Rafraîchit la pastille compacte si elle affiche justement cette combinaison
+// (les vélos arrivent en asynchrone, après le premier rendu de la pastille)
+function refreshPillIfNeeded(idx){
+  const pill=document.getElementById('plan-float-compact');
+  if(!pill || pill.style.display==='none') return;
+  if((window._openComboIdx??0)===idx) compactPlanFloat();
 }
 
 
