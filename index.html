@@ -1676,10 +1676,12 @@ async function computePlan(){
   if(_toInput) _toInput.style.color=arrFullWarn?'#ff9f0a':'';
   results.innerHTML=_warnHtml+renderComboList(autoLimit);
   if(window.innerWidth<=640) setTimeout(initSliderSwipe,50);
-  window._showMoreCombos=()=>{ results.innerHTML=renderComboList(top.length); drawTop3Routes(); setTimeout(initSliderSwipe,50); };
+  window._showMoreCombos=()=>{ results.innerHTML=renderComboList(top.length); drawTop3Routes(); loadAllComboBikes(); setTimeout(initSliderSwipe,50); };
   window._planCombos=top;
   _openComboIdx=null;
   drawTop3Routes();
+  // Charger les vélos recommandés pour toutes les cards affichées, sans attendre de clic
+  loadAllComboBikes();
   if(typeof hideBackgroundStations==='function') hideBackgroundStations();
   if(window.innerWidth<=640) compactPlanFloat();
 }
@@ -2775,9 +2777,9 @@ function renderRecoBikesCompact(bikes){
     id:b.id, standNumber:b.borne,
   });
   const shaped=bikes.map(toApiShape);
-  const bestElec=shaped.filter(b=>b.type==='ELECTRICAL').sort((a,b)=>bikeRecoScore(b)-bikeRecoScore(a))[0];
-  const bestMeca=shaped.filter(b=>b.type==='MECHANICAL').sort((a,b)=>bikeRecoScore(b)-bikeRecoScore(a))[0];
-  const picks=[bestElec,bestMeca].filter(Boolean);
+  const wantedType=document.getElementById('plan-type')?.value||'elec'; // 'elec' | 'meca' | 'any'
+  const pool=wantedType==='any'?shaped:shaped.filter(b=>b.type===(wantedType==='elec'?'ELECTRICAL':'MECHANICAL'));
+  const picks=pool.filter(b=>bikeRecoScore(b)>0).sort((a,b)=>bikeRecoScore(b)-bikeRecoScore(a)).slice(0,3);
   if(!picks.length) return '';
   const rows=picks.map(b=>{
     const isElec=b.type==='ELECTRICAL';
@@ -2785,11 +2787,21 @@ function renderRecoBikesCompact(bikes){
       ?'<svg width="8" height="8" viewBox="0 0 24 24" fill="rgba(255,255,255,.8)"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'
       :'<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
     const battTxt=isElec&&b.battery?.percentage!=null?`${b.battery.percentage}%`:'';
-    return `<span style="display:inline-flex;align-items:center;gap:2px;font-size:8.5px;color:rgba(255,255,255,.5)">${icon}${b.standNumber??'?'}${battTxt?' · '+battTxt:''}</span>`;
+    const ratingTxt=b.rating?.value!=null?`★${Math.round(b.rating.value)}`:'';
+    const extra=[battTxt,ratingTxt].filter(Boolean).join(' · ');
+    return `<span style="display:inline-flex;align-items:center;gap:2px;font-size:8.5px;color:rgba(255,255,255,.5)">${icon}${b.standNumber??'?'}${extra?' · '+extra:''}</span>`;
   }).join('<span style="color:rgba(255,255,255,.2);margin:0 2px">·</span>');
   return `<div style="margin-top:4px;display:flex;align-items:center;gap:3px">
     <span style="font-size:8px;color:#4ade80">★</span>${rows}
   </div>`;
+}
+
+function loadAllComboBikes(){
+  const cards=document.querySelectorAll('.combo-card[data-idx]');
+  cards.forEach(card=>{
+    const idx=parseInt(card.dataset.idx);
+    if(!Number.isNaN(idx)) loadComboBikes(idx);
+  });
 }
 
 const _comboBikesCache={};
