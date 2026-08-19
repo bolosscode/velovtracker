@@ -1775,6 +1775,19 @@ async function showRoute(idx){
   L.circleMarker([combo.arr.lat,combo.arr.lng],{radius:10,fillColor:'#ff3b30',color:'#fff',weight:2,fillOpacity:.95})
     .bindTooltip(cleanName(combo.arr.name),{permanent:false,direction:'top'}).addTo(planLayerGroup);
 
+  // Station relai (si trajet trop long pour rester dans la limite gratuite)
+  if(combo.relaiStation){
+    const relaiIcon=L.divIcon({
+      html:`<div style="width:22px;height:22px;border-radius:50%;background:#ff9f0a;border:2px solid #fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.4)">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>`,
+      iconSize:[22,22], iconAnchor:[11,11], className:''
+    });
+    L.marker([combo.relaiStation.lat,combo.relaiStation.lng],{icon:relaiIcon})
+      .bindTooltip(`Relai : ${cleanName(combo.relaiStation.name)}`,{permanent:false,direction:'top'})
+      .addTo(planLayerGroup);
+  }
+
   // Routing Valhalla entre les deux stations
   const bikeType=document.getElementById('plan-type').value;
   const speed=bikeType==='meca'?16:21;
@@ -2705,51 +2718,35 @@ async function fetchStationBikes(stationNumber){
   }catch{ return []; }
 }
 
-function renderBikesList(bikes, tripDistKm){
+// 2 vélos recommandés (1 élec + 1 méca), compacts — utilise le même score que le popup station
+function renderRecoBikesCompact(bikes){
   if(!bikes.length) return '';
-  const elec=bikes.filter(b=>b.type==='E').sort((a,b)=>(b.batt||0)-(a.batt||0));
-  const meca=bikes.filter(b=>b.type==='M').sort((a,b)=>(b.mv||0)-(a.mv||0));
-  const all=[...elec,...meca];
-  const RANGE_KM=40;
-  let warnHtml='';
-  // Avertissement batterie
-  if(tripDistKm&&elec.length){
-    const minBatt=Math.ceil(tripDistKm/RANGE_KM*100*1.15);
-    const lowBikes=elec.filter(b=>b.batt!=null&&b.batt<minBatt);
-    if(lowBikes.length===elec.length){
-      warnHtml=`<div style="background:rgba(255,69,58,.08);border:0.5px solid rgba(255,69,58,.25);border-radius:6px;padding:4px 8px;margin-bottom:5px;font-size:10px;color:#ff453a;display:flex;align-items:center;gap:5px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>Batterie insuffisante pour ce trajet (${tripDistKm.toFixed(1)}km) — tous les élec &lt;${minBatt}%</div>`;
-    }
-  }
-  const rows=all.slice(0,6).map(b=>{
-    const isElec=b.type==='E';
-    const typeTag=isElec
-      ?'<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(10,132,255,.18);color:#60aaff;font-weight:600"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="display:inline;vertical-align:-1px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>'
-      :'<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);font-weight:600">M</span>';
-    let battHtml='<div style="flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.08)"><div style="height:100%;border-radius:2px;background:rgba(255,255,255,.2);width:100%"></div></div><span style="font-size:9px;color:rgba(255,255,255,.5);min-width:28px">—</span>';
-    if(isElec&&b.batt!=null){
-      const c=b.batt>=70?'#34c759':b.batt>=40?'#ff9f0a':'#ff453a';
-      battHtml=`<div style="flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.08)"><div style="height:100%;border-radius:2px;background:${c};width:${b.batt}%"></div></div><span style="font-size:9px;font-weight:600;color:${c};min-width:28px">${b.batt}%</span>`;
-    } else if(!isElec&&b.mv){
-      battHtml=`<span style="font-size:9px;color:rgba(255,255,255,.5);min-width:60px">${b.mv}mV</span>`;
-    }
-    const ratingHtml=b.rating?`<span style="font-size:9px;color:#ff9f0a">${b.rating.toFixed(1)}</span><span style="font-size:8px;color:rgba(255,255,255,.5)">(${b.rcount||0})</span>`:'';
-    const reserved=b.status==='S'?'style="opacity:.4"':'';
-    const reservedLabel=b.status==='S'?'<span style="font-size:8px;color:rgba(255,255,255,.5)">rés.</span>':'';
-    return `<div style="display:flex;align-items:center;gap:5px;padding:3px 0;border-bottom:0.5px solid rgba(255,255,255,.05)" ${reserved}>
-      ${typeTag}
-      <span style="font-size:9px;color:rgba(255,255,255,.55);min-width:14px">${b.borne||'?'}</span>
-      ${battHtml}
-      <span style="font-size:9px;color:rgba(255,255,255,.55);min-width:34px">#${b.id}</span>
-      ${ratingHtml}
-      ${reservedLabel}
-    </div>`;
-  }).join('');
-  return `<div style="margin-top:7px;padding:6px 8px;background:rgba(255,255,255,.04);border:0.5px solid rgba(255,255,255,.08);border-radius:8px">
-    <div style="font-size:9px;color:rgba(255,255,255,.5);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">vélos disponibles au départ · borne / batt / # / note</div>
-    ${warnHtml}${rows}
+  const toApiShape=b=>({
+    type: b.type==='E'?'ELECTRICAL':'MECHANICAL',
+    status: b.status==='S'?'RESERVED':'AVAILABLE',
+    isReserved: b.status==='S',
+    battery: b.batt!=null?{percentage:b.batt}:null,
+    rating: b.rating!=null?{value:b.rating*20,count:b.rcount}:null,
+    lastControlDateTime: null,
+    id:b.id, standNumber:b.borne,
+  });
+  const shaped=bikes.map(toApiShape);
+  const bestElec=shaped.filter(b=>b.type==='ELECTRICAL').sort((a,b)=>bikeRecoScore(b)-bikeRecoScore(a))[0];
+  const bestMeca=shaped.filter(b=>b.type==='MECHANICAL').sort((a,b)=>bikeRecoScore(b)-bikeRecoScore(a))[0];
+  const picks=[bestElec,bestMeca].filter(Boolean);
+  if(!picks.length) return '';
+  const rows=picks.map(b=>{
+    const isElec=b.type==='ELECTRICAL';
+    const icon=isElec
+      ?'<svg width="8" height="8" viewBox="0 0 24 24" fill="rgba(255,255,255,.8)"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'
+      :'<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
+    const battTxt=isElec&&b.battery?.percentage!=null?`${b.battery.percentage}%`:'';
+    return `<span style="display:inline-flex;align-items:center;gap:2px;font-size:8.5px;color:rgba(255,255,255,.5)">${icon}${b.standNumber??'?'}${battTxt?' · '+battTxt:''}</span>`;
+  }).join('<span style="color:rgba(255,255,255,.2);margin:0 2px">·</span>');
+  return `<div style="margin-top:4px;display:flex;align-items:center;gap:3px">
+    <span style="font-size:8px;color:#4ade80">★</span>${rows}
   </div>`;
 }
-
 
 const _comboBikesCache={};
 async function loadComboBikes(idx){
@@ -2764,10 +2761,9 @@ async function loadComboBikes(idx){
   if(!card) return;
   const existing=card.querySelector('.combo-bikes-list');
   if(existing) return;
-  const distKm=combo.dist/1000;
   const bikesList=document.createElement('div');
   bikesList.className='combo-bikes-list';
-  bikesList.innerHTML=renderBikesList(bikes,distKm);
+  bikesList.innerHTML=renderRecoBikesCompact(bikes);
   card.appendChild(bikesList);
 }
 
