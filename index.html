@@ -42,7 +42,7 @@
 }
 #bottom-nav{
   position:fixed;bottom:0;left:0;right:0;z-index:300;
-  background:rgba(8,8,12,.5);backdrop-filter:blur(14px);
+  background:rgba(12,12,16,.85);backdrop-filter:blur(14px);
   border-top:0.5px solid #38383a;
   display:flex;padding:0;height:60px;
 }
@@ -55,23 +55,23 @@
 #bottom-nav .tab span{font-size:11px;display:block;color:rgba(255,255,255,.55)}
 #bottom-nav .tab.on{color:#fff;border-top-color:rgba(255,255,255,.5)}
 :root{
-  --bg:#0a0a0e;--paper:rgba(12,12,16,.45);--ink:#fff;--sub:rgba(255,255,255,.55);--dim:rgba(255,255,255,.4);
+  --bg:#0a0a0e;--paper:rgba(12,12,16,.85);--ink:#fff;--sub:rgba(255,255,255,.55);--dim:rgba(255,255,255,.4);
   --border:#38383a;--blue:#f5f5f7;--green:#30d158;--orange:#ff9f0a;--red:#ff453a;
   --radius:14px;--shadow:0 2px 8px rgba(0,0,0,.4);
 }
-body{background:rgba(8,8,12,.5);color:#fff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Arial,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased;letter-spacing:-0.01em;color-scheme:dark}
+body{background:rgba(12,12,16,.85);color:#fff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Arial,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased;letter-spacing:-0.01em;color-scheme:dark}
 
-header{position:sticky;top:0;z-index:300;height:56px;background:rgba(8,8,12,.5);backdrop-filter:blur(14px);border-bottom:none;display:flex;align-items:center;justify-content:space-between;padding:0 22px}
+header{position:sticky;top:0;z-index:300;height:56px;background:rgba(12,12,16,.85);backdrop-filter:blur(14px);border-bottom:none;display:flex;align-items:center;justify-content:space-between;padding:0 22px}
 .brand{font-weight:700;font-size:20px;color:#fff}.brand em{color:#fff;font-style:normal}
 .clock{font-size:12px;color:rgba(255,255,255,.4)}
 
-nav{position:sticky;top:56px;z-index:250;background:rgba(8,8,12,.5);border-bottom:0.5px solid #38383a;display:flex;padding:0 20px;overflow-x:auto}
-nav{position:sticky;top:56px;z-index:250;background:rgba(8,8,12,.5);border-bottom:0.5px solid #38383a;display:flex;padding:0 20px;overflow-x:auto}
+nav{position:sticky;top:56px;z-index:250;background:rgba(12,12,16,.85);border-bottom:0.5px solid #38383a;display:flex;padding:0 20px;overflow-x:auto}
+nav{position:sticky;top:56px;z-index:250;background:rgba(12,12,16,.85);border-bottom:0.5px solid #38383a;display:flex;padding:0 20px;overflow-x:auto}
 .tab.on{color:#fff;border-bottom-color:rgba(255,255,255,.5);background:transparent}
 
 main{max-width:1500px;margin:auto;padding:20px}
 .panel{display:none;overflow:hidden}.panel.on{display:block}
-.card{background:rgba(12,12,16,.45);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
+.card{background:rgba(12,12,16,.85);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
 .card-title{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:14px}
 
 #map{height:calc(100vh - 140px);border-radius:var(--radius);overflow:hidden;position:relative;z-index:1}
@@ -90,7 +90,7 @@ main{max-width:1500px;margin:auto;padding:20px}
 .loc-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .search{width:100%;padding:10px 12px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);font-size:13px;outline:none;transition:border-color .15s;color:#fff;}
 .search:focus{border-color:var(--blue)}
-.dropdown{position:fixed;z-index:9999;background:rgba(12,12,16,.45);border:1px solid rgba(255,255,255,.12);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.6);display:none;max-height:240px;overflow-y:auto;min-width:280px;background:rgba(12,12,16,.45);border:0.5px solid rgba(255,255,255,.12);border-radius:10px;box-shadow:var(--shadow);display:none;z-index:100;max-height:220px;overflow-y:auto}
+.dropdown{position:fixed;z-index:9999;background:rgba(12,12,16,.85);border:1px solid rgba(255,255,255,.12);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.6);display:none;max-height:240px;overflow-y:auto;min-width:280px;background:rgba(12,12,16,.85);border:0.5px solid rgba(255,255,255,.12);border-radius:10px;box-shadow:var(--shadow);display:none;z-index:100;max-height:220px;overflow-y:auto}
 .dropdown.open{display:block}
 .opt{padding:9px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0f0}
 .opt:last-child{border-bottom:none}
@@ -108,8 +108,8 @@ main{max-width:1500px;margin:auto;padding:20px}
 
 /* results */
 .combo-card{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:0.5px solid rgba(255,255,255,.08);cursor:pointer;transition:background .15s}
-.combo-card:hover{background:rgba(12,12,16,.45)}
-.combo-card.selected{background:rgba(12,12,16,.45);border-left:3px solid var(--blue)}
+.combo-card:hover{background:rgba(12,12,16,.85)}
+.combo-card.selected{background:rgba(12,12,16,.85);border-left:3px solid var(--blue)}
 .combo-card:last-child{border-bottom:none}
 .combo-rank{font-size:22px;font-weight:700;color:var(--blue);min-width:32px;text-align:center}
 .combo-info{flex:1}
@@ -128,9 +128,9 @@ main{max-width:1500px;margin:auto;padding:20px}
 
 /* table leaderboard */
 #lb-table{width:100%;border-collapse:collapse;font-size:13px}
-#lb-table th{text-align:left;padding:4px 7px;border-bottom:0.5px solid rgba(255,255,255,.08);font-size:10px;font-weight:600;text-transform:uppercase;color:rgba(255,255,255,.55);background:rgba(12,12,16,.45);white-space:nowrap}
+#lb-table th{text-align:left;padding:4px 7px;border-bottom:0.5px solid rgba(255,255,255,.08);font-size:10px;font-weight:600;text-transform:uppercase;color:rgba(255,255,255,.55);background:rgba(12,12,16,.85);white-space:nowrap}
 #lb-table td{padding:4px 7px;border-bottom:0.5px solid rgba(255,255,255,.08);font-variant-numeric:tabular-nums;font-size:12px}
-#lb-table tr:hover td{background:rgba(12,12,16,.45)}
+#lb-table tr:hover td{background:rgba(12,12,16,.85)}
 .rank-cell{font-weight:700;color:var(--blue);width:40px}
 .mv-bar{display:inline-block;height:6px;border-radius:3px;background:var(--blue);vertical-align:middle;margin-left:6px}
 .fill-pill{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
@@ -138,8 +138,8 @@ main{max-width:1500px;margin:auto;padding:20px}
 .fill-med{background:rgba(255,159,10,.15);color:#ff9f0a}
 .fill-low{background:rgba(255,69,58,.15);color:#ff453a}
 
-.loader,.no-data{padding:40px;text-align:center;color:rgba(255,255,255,.4);background:rgba(12,12,16,.45);border-radius:var(--radius)}
-.range{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:rgba(12,12,16,.45);padding:10px;border-radius:10px;margin-bottom:14px}
+.loader,.no-data{padding:40px;text-align:center;color:rgba(255,255,255,.4);background:rgba(12,12,16,.85);border-radius:var(--radius)}
+.range{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:rgba(12,12,16,.85);padding:10px;border-radius:10px;margin-bottom:14px}
 .range select,.range input{padding:8px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);font-size:13px;outline:none}
 .btn{padding:8px 18px;border-radius:10px;border:none;background:#f5f5f7;color:#1c1c1e;font-size:13px;font-weight:600;cursor:pointer}
 .btn:hover{opacity:.85}
@@ -158,7 +158,7 @@ main{max-width:1500px;margin:auto;padding:20px}
 </head>
 <body>
 
-<header style="display:flex;align-items:center;justify-content:space-between;padding:0 14px;height:38px;background:rgba(16,16,20,.55);backdrop-filter:blur(48px) saturate(200%) brightness(1.05);-webkit-backdrop-filter:blur(48px) saturate(200%) brightness(1.05);border:0.5px solid rgba(255,255,255,.14);border-radius:14px;position:absolute;top:10px;left:10px;right:10px;z-index:300;box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 4px 24px rgba(0,0,0,.4)">
+<header style="display:flex;align-items:center;justify-content:space-between;padding:0 14px;height:38px;background:rgba(12,12,16,.85);backdrop-filter:blur(48px) saturate(200%) brightness(1.05);-webkit-backdrop-filter:blur(48px) saturate(200%) brightness(1.05);border:0.5px solid rgba(255,255,255,.14);border-radius:14px;position:absolute;top:10px;left:10px;right:10px;z-index:300;box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 4px 24px rgba(0,0,0,.4)">
   <div style="font-size:15px;font-weight:700;color:#fff;letter-spacing:-.01em">Vélo'v</div>
   <div style="display:flex;gap:2px">
     <div class="tab on" data-tab="map" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:#fff;font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg> Carte</div>
@@ -173,7 +173,7 @@ main{max-width:1500px;margin:auto;padding:20px}
 </header>
 
 <!-- Panneau source de données -->
-<div id="source-panel" style="display:none;position:absolute;top:52px;right:10px;z-index:400;width:min(320px,calc(100% - 20px));background:rgba(12,12,16,.52);backdrop-filter:blur(56px) saturate(220%) brightness(1.08);-webkit-backdrop-filter:blur(56px) saturate(220%) brightness(1.08);border-radius:14px;border:0.5px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 24px rgba(0,0,0,.4);padding:12px 14px;font-size:11px;color:rgba(255,255,255,.85)">
+<div id="source-panel" style="display:none;position:absolute;top:52px;right:10px;z-index:400;width:min(320px,calc(100% - 20px));background:rgba(12,12,16,.85);backdrop-filter:blur(56px) saturate(220%) brightness(1.08);-webkit-backdrop-filter:blur(56px) saturate(220%) brightness(1.08);border-radius:14px;border:0.5px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 24px rgba(0,0,0,.4);padding:12px 14px;font-size:11px;color:rgba(255,255,255,.85)">
   <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.4);margin-bottom:8px">Source des données</div>
   <div id="source-content"></div>
 </div>
@@ -192,8 +192,8 @@ main{max-width:1500px;margin:auto;padding:20px}
     <div id="map" style="height:100%;width:100%"></div>
 
     <!-- Flottant glass -->
-    <div id="plan-float" style="position:absolute;top:58px;left:10px;right:10px;z-index:200;background:rgba(12,12,16,.52);backdrop-filter:blur(56px) saturate(220%) brightness(1.08);-webkit-backdrop-filter:blur(56px) saturate(220%) brightness(1.08);border-radius:16px;border:0.5px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),inset 1px 0 0 rgba(255,255,255,.1),0 8px 32px rgba(0,0,0,.35),0 2px 8px rgba(0,0,0,.2);overflow:visible;transition:max-height .3s cubic-bezier(.4,0,.2,1),opacity .2s;max-height:250px">
-      <div id="plan-close-btn" onclick="closePlanFloat()" style="position:absolute;top:-7px;right:-7px;width:16px;height:16px;border-radius:50%;background:rgba(12,12,16,.45);border:0.5px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:201"><svg width="8" height="8" viewBox="0 0 8 8" fill="none"><line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="rgba(255,255,255,.45)" stroke-width="1.5" stroke-linecap="round"/><line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="rgba(255,255,255,.45)" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+    <div id="plan-float" style="position:absolute;top:58px;left:10px;right:10px;z-index:200;background:rgba(12,12,16,.85);backdrop-filter:blur(56px) saturate(220%) brightness(1.08);-webkit-backdrop-filter:blur(56px) saturate(220%) brightness(1.08);border-radius:16px;border:0.5px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),inset 1px 0 0 rgba(255,255,255,.1),0 8px 32px rgba(0,0,0,.35),0 2px 8px rgba(0,0,0,.2);overflow:visible;transition:max-height .3s cubic-bezier(.4,0,.2,1),opacity .2s;max-height:250px">
+      <div id="plan-close-btn" onclick="closePlanFloat()" style="position:absolute;top:-7px;right:-7px;width:16px;height:16px;border-radius:50%;background:rgba(12,12,16,.85);border:0.5px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:201"><svg width="8" height="8" viewBox="0 0 8 8" fill="none"><line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="rgba(255,255,255,.45)" stroke-width="1.5" stroke-linecap="round"/><line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="rgba(255,255,255,.45)" stroke-width="1.5" stroke-linecap="round"/></svg></div>
       <div id="plan-float-expanded" style="padding:8px 10px">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
           <div style="flex:1;background:rgba(255,255,255,.09);border-radius:10px;overflow:visible;border:0.5px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)">
@@ -270,7 +270,7 @@ main{max-width:1500px;margin:auto;padding:20px}
         </div>
         <input type="hidden" id="lb-view" value="day"/>
         <input type="date" id="lb-date"/>
-        <input type="month" id="lb-month" style="display:none;padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);font-size:13px;background:rgba(12,12,16,.45);color:#fff"/>
+        <input type="month" id="lb-month" style="display:none;padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);font-size:13px;background:rgba(12,12,16,.85);color:#fff"/>
         <select id="lb-year" style="display:none;padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);font-size:13px"><option value="2025">2025</option><option value="2026" selected>2026</option></select>
         <select id="lb-sort">
           <option value="mv">Mouvements</option>
@@ -278,7 +278,7 @@ main{max-width:1500px;margin:auto;padding:20px}
           <option value="stands">Places libres</option>
           <option value="fill">Remplissage</option>
         </select>
-        <input id="lb-station-search" type="text" placeholder="Station…" oninput="filterLbTable(this.value)" style="padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);background:rgba(12,12,16,.45);color:#fff;font-size:13px;outline:none;min-width:0;flex:1"/>
+        <input id="lb-station-search" type="text" placeholder="Station…" oninput="filterLbTable(this.value)" style="padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);background:rgba(12,12,16,.85);color:#fff;font-size:13px;outline:none;min-width:0;flex:1"/>
         <button class="btn" onclick="computeLeaderboard()">Calculer</button>
         <span id="lb-meteo" style="font-size:12px;color:rgba(255,255,255,.55)"></span>
       </div>
@@ -1123,7 +1123,7 @@ function renderLbTable(mvData){
       <td style="text-align:right">${ctxVal(st)}</td></tr>
       <tr class="detail-row" id="lb-detail-${st.number}" style="display:none">
         <td colspan="4" style="padding:0">
-          <div id="stats-detail-${st.number}" style="padding:14px;background:rgba(12,12,16,.35);border-bottom:0.5px solid rgba(255,255,255,.08)"></div>
+          <div id="stats-detail-${st.number}" style="padding:14px;background:rgba(12,12,16,.85);border-bottom:0.5px solid rgba(255,255,255,.08)"></div>
         </td>
       </tr>`;
   }).join('');
@@ -1212,7 +1212,7 @@ function initPlanMap(){
       ctrl.onAdd=()=>{
         const div=L.DomUtil.create('div');
         div.id='meteo-ctrl';
-        div.style.cssText='background:rgba(12,12,16,.52);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);border:0.5px solid rgba(255,255,255,.08);border-radius:10px;padding:5px 10px;font-size:11px;color:rgba(255,255,255,.7);margin-bottom:4px;pointer-events:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)';
+        div.style.cssText='background:rgba(12,12,16,.85);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);border:0.5px solid rgba(255,255,255,.08);border-radius:10px;padding:5px 10px;font-size:11px;color:rgba(255,255,255,.7);margin-bottom:4px;pointer-events:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)';
         const parts=[];
         if(m.icon) parts.push(m.icon);
         if(meteo.temp!==undefined) parts.push(meteo.temp+'°C');
@@ -1593,7 +1593,7 @@ async function computePlan(){
         <span style="font-size:9px;color:#0a84ff;font-weight:600">${walkArrMin} min</span>
         <span style="color:#0a84ff;display:flex;align-items:center">${WALK_SVG}</span>
       </div>`:'';
-      return `<div class="combo-card${i===0?' selected':''}" onclick="toggleComboDetail(${i},this);loadComboBikes(${i})" data-idx="${i}" style="padding:6px 9px;border-radius:8px;margin-bottom:4px;background:rgba(12,12,16,.42);border:0.5px solid rgba(255,255,255,.12);cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)">
+      return `<div class="combo-card${i===0?' selected':''}" onclick="toggleComboDetail(${i},this);loadComboBikes(${i})" data-idx="${i}" style="padding:6px 9px;border-radius:8px;margin-bottom:4px;background:rgba(12,12,16,.85);border:0.5px solid rgba(255,255,255,.12);cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)">
         ${walkDepHtml}
         <div style="display:flex;align-items:center;gap:8px;padding:${walkDepMin||walkArrMin?'4px 0':0}">
           <div style="width:3px;height:28px;border-radius:2px;background:${rColor};flex-shrink:0"></div>
@@ -2118,18 +2118,18 @@ function renderSDSlide(slideIdx,number){
     legendHtml='<span style="color:#0a84ff;font-size:10px"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="display:inline;vertical-align:-1px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Élec</span><span style="color:#ff9f0a;font-size:10px;margin-left:10px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="display:inline;vertical-align:-1px"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> Méca</span>';
     const avgE=Math.round((dataElec.filter(Boolean).reduce((a,b)=>a+b,0)||0)/Math.max(1,dataElec.filter(Boolean).length));
     const avgM=Math.round((dataMeca.filter(Boolean).reduce((a,b)=>a+b,0)||0)/Math.max(1,dataMeca.filter(Boolean).length));
-    statsHtml=`<div style="flex:1;background:rgba(12,12,16,.45);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#0a84ff">${avgE}</div><div style="font-size:10px;color:rgba(255,255,255,.55)"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="display:inline;vertical-align:-1px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> moy.</div></div><div style="flex:1;background:rgba(12,12,16,.45);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#ff9f0a">${avgM}</div><div style="font-size:10px;color:rgba(255,255,255,.55)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="display:inline;vertical-align:-1px"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> moy.</div></div>`;
+    statsHtml=`<div style="flex:1;background:rgba(12,12,16,.85);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#0a84ff">${avgE}</div><div style="font-size:10px;color:rgba(255,255,255,.55)"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="display:inline;vertical-align:-1px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> moy.</div></div><div style="flex:1;background:rgba(12,12,16,.85);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#ff9f0a">${avgM}</div><div style="font-size:10px;color:rgba(255,255,255,.55)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="display:inline;vertical-align:-1px"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> moy.</div></div>`;
   } else if(slideIdx===1){
     datasets=[{label:'Mvts',data:dataMvts,backgroundColor:'#f5f5f755',borderColor:'#f5f5f7',borderWidth:1,borderRadius:3,spanGaps:true}];
     legendHtml='<span style="font-size:10px;color:rgba(255,255,255,.55)">↕ Mouvements</span>';
     const total=(dataMvts.filter(Boolean).reduce((a,b)=>a+b,0)||0);
     const maxMvt=Math.max(...(dataMvts.filter(Boolean)||[0]));
-    statsHtml=`<div style="flex:1;background:rgba(12,12,16,.45);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#fff">${Math.round(total)}</div><div style="font-size:10px;color:rgba(255,255,255,.55)">total</div></div><div style="flex:1;background:rgba(12,12,16,.45);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700">${maxMvt}</div><div style="font-size:10px;color:rgba(255,255,255,.55)">max</div></div>`;
+    statsHtml=`<div style="flex:1;background:rgba(12,12,16,.85);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#fff">${Math.round(total)}</div><div style="font-size:10px;color:rgba(255,255,255,.55)">total</div></div><div style="flex:1;background:rgba(12,12,16,.85);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700">${maxMvt}</div><div style="font-size:10px;color:rgba(255,255,255,.55)">max</div></div>`;
   } else {
     datasets=[{label:'Solde',data:dataSolde,backgroundColor:dataSolde.map(v=>(v||0)>=0?'#34c75988':'#ff453a88'),borderColor:dataSolde.map(v=>(v||0)>=0?'#34c759':'#ff453a'),borderWidth:1,borderRadius:2,spanGaps:true}];
     legendHtml='<span style="color:#34c759;font-size:10px">▲ Entrées</span><span style="color:#ff453a;font-size:10px;margin-left:8px">▼ Sorties</span>';
     const bilan=(dataSolde.filter(Boolean).reduce((a,b)=>a+b,0)||0);
-    statsHtml=`<div style="flex:1;background:rgba(12,12,16,.45);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:${bilan>=0?'#34c759':'#ff453a'}">${bilan>=0?'+':''}${Math.round(bilan)}</div><div style="font-size:10px;color:rgba(255,255,255,.55)">bilan</div></div>`;
+    statsHtml=`<div style="flex:1;background:rgba(12,12,16,.85);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:${bilan>=0?'#34c759':'#ff453a'}">${bilan>=0?'+':''}${Math.round(bilan)}</div><div style="font-size:10px;color:rgba(255,255,255,.55)">bilan</div></div>`;
   }
   const legendEl=document.getElementById('sd-legend-'+number);
   const statsEl=document.getElementById('sd-stats-row');
@@ -2139,7 +2139,7 @@ function renderSDSlide(slideIdx,number){
   const chartType=slideIdx===0?(isLine?'line':'bar'):'bar';
   window._chartSD_elec=new Chart(cvs,{type:chartType,data:{labels,datasets},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(12,12,16,.9)',titleColor:'#f5f5f7',bodyColor:'#8e8e93',padding:8,cornerRadius:8}},
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(12,12,16,.85)',titleColor:'#f5f5f7',bodyColor:'#8e8e93',padding:8,cornerRadius:8}},
       scales:{x:{ticks:{color:'#636366',font:{size:9},maxTicksLimit:view==='day'?8:12},grid:{display:false},border:{display:false}},
               y:{ticks:{color:'#636366',font:{size:9},maxTicksLimit:4},grid:{color:'rgba(255,255,255,.05)'},border:{display:false}}}}});
 }
@@ -2312,8 +2312,15 @@ async function showStationPopup(s, lat, lon){
   const pct=s.bike_stands?Math.round(s.available_bikes/s.bike_stands*100):0;
   const cls='rgba(255,255,255,.7)';
 
-  // Convertir lat/lng en coordonnées pixel sur la carte
-  const pt=map.latLngToContainerPoint([lat,lon]);
+  // Centrer la carte sur la station (offset vers le bas pour laisser la place au popup au-dessus)
+  const mapEl0=document.getElementById('map');
+  const offsetY0=mapEl0.clientHeight*0.18;
+  const targetPoint=map.project([lat,lon], map.getZoom()).subtract([0, offsetY0]);
+  const targetLatLng=map.unproject(targetPoint, map.getZoom());
+  map.panTo(targetLatLng, {animate:true, duration:0.35});
+
+  // Position finale connue à l'avance (evite d'interroger la carte pendant l'animation)
+  const pt={ x: mapEl0.clientWidth/2, y: mapEl0.clientHeight/2 + offsetY0 };
   const mapEl=document.getElementById('map');
   const mapRect=mapEl.getBoundingClientRect();
 
@@ -2321,15 +2328,16 @@ async function showStationPopup(s, lat, lon){
   div.id='stn-custom-popup';
   div.style.cssText=`position:absolute;z-index:500;transform:translate(-50%,-100%);
     left:${pt.x}px;top:${pt.y-10}px;
-    background:rgba(12,12,16,.52);backdrop-filter:blur(56px) saturate(220%) brightness(1.08);-webkit-backdrop-filter:blur(56px) saturate(220%) brightness(1.08);
+    background:rgba(12,12,16,.85);backdrop-filter:blur(56px) saturate(220%) brightness(1.08);-webkit-backdrop-filter:blur(56px) saturate(220%) brightness(1.08);
     border:0.5px solid rgba(255,255,255,.18);border-radius:14px;
     padding:10px 12px;min-width:200px;max-width:min(320px,calc(100vw - 40px));
-    max-height:min(420px,calc(100vh - 100px));overflow-y:auto;
+    max-height:min(70vh,480px);display:flex;flex-direction:column;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 24px rgba(0,0,0,.4);
     pointer-events:auto;`;
 
-  // Vélos live JCDecaux (chargement asynchrone)
-  const bikesHtml = `<div id="stn-bikes-slot" style="margin-bottom:${hasDep?'5':'8'}px;font-size:10px;color:rgba(255,255,255,.35);text-align:center;padding:6px 0">Chargement…</div>`;
+  // Vélos live JCDecaux (chargement asynchrone) — scroll interne propre à la liste,
+  // le header (nom + totaux) et le bouton "Partir d'ici" restent toujours visibles
+  const bikesHtml = `<div id="stn-bikes-slot" style="margin-bottom:${hasDep?'5':'8'}px;font-size:10px;color:rgba(255,255,255,.35);text-align:center;padding:6px 0;overflow-y:auto;max-height:280px;flex-shrink:1">Chargement…</div>`;
 
   div.innerHTML=`
     <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:8px">${cleanName(s.name)}</div>
