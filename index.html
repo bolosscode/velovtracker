@@ -145,6 +145,13 @@ main{max-width:1500px;margin:auto;padding:20px}
 .btn:hover{opacity:.85}
 .search::placeholder{color:rgba(255,255,255,.45)}
 
+/* Scrollbar visible (macOS masque les scrollbars par défaut) */
+.bikes-scroll{ scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.25) transparent; }
+.bikes-scroll::-webkit-scrollbar{ width:5px; }
+.bikes-scroll::-webkit-scrollbar-track{ background:transparent; }
+.bikes-scroll::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.25); border-radius:3px; }
+.bikes-scroll::-webkit-scrollbar-thumb:hover{ background:rgba(255,255,255,.4); }
+
 @media(min-width:768px){
   body{overflow:hidden}
   #tab-map{height:100vh !important;width:100vw !important}
@@ -2192,7 +2199,7 @@ function renderBikeRow(b, i, isRecommended){
   const ratingEl=ratingVal?`<span style="font-size:8px;color:rgba(255,255,255,.55)">★ ${Math.round(ratingVal)}<span style="color:rgba(255,255,255,.25)">${ratingCount?'('+ratingCount+')':''}</span></span>`:'';
   const reservedEl=reserved?'<span style="font-size:8px;color:rgba(255,255,255,.5)">rés.</span>':(!avail?`<span style="font-size:8px;color:rgba(255,255,255,.4)">${b.statusLabel||b.status}</span>`:'');
   const recoBadge=isRecommended?'<span style="font-size:8px;color:#4ade80;flex-shrink:0" title="Recommandé">&#9733;</span>':'';
-  return `<div class="bike-row-live" data-idx="${i}" style="display:flex;align-items:center;gap:4px;padding:8px 4px;min-height:36px;border-bottom:0.5px solid rgba(255,255,255,.05);opacity:${reserved||!avail?'.5':'1'};cursor:pointer;-webkit-tap-highlight-color:rgba(255,255,255,.08);${isRecommended?'background:rgba(74,222,128,.06)':''}">
+  return `<div class="bike-row-live" data-idx="${i}" style="display:flex;align-items:center;gap:3px;padding:4px 3px;min-height:26px;border-bottom:0.5px solid rgba(255,255,255,.05);opacity:${reserved||!avail?'.5':'1'};cursor:pointer;-webkit-tap-highlight-color:rgba(255,255,255,.08);${isRecommended?'background:rgba(74,222,128,.06)':''}">
     ${recoBadge}
     <span style="display:flex;align-items:center">${icon}</span>
     <span style="font-size:9px;color:rgba(255,255,255,.4);min-width:16px">${b.standNumber??'?'}</span>
@@ -2329,33 +2336,33 @@ async function showStationPopup(s, lat, lon){
   div.style.cssText=`position:absolute;z-index:500;transform:translate(-50%,-100%);
     left:${pt.x}px;top:${pt.y-10}px;
     background:rgba(12,12,16,.85);backdrop-filter:blur(56px) saturate(220%) brightness(1.08);-webkit-backdrop-filter:blur(56px) saturate(220%) brightness(1.08);
-    border:0.5px solid rgba(255,255,255,.18);border-radius:14px;
-    padding:10px 12px;min-width:200px;max-width:min(320px,calc(100vw - 40px));
-    max-height:min(70vh,480px);display:flex;flex-direction:column;
+    border:0.5px solid rgba(255,255,255,.18);border-radius:11px;
+    padding:7px 9px;min-width:180px;max-width:min(280px,calc(100vw - 32px));
+    max-height:min(60vh,400px);display:flex;flex-direction:column;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 24px rgba(0,0,0,.4);
     pointer-events:auto;`;
 
   // Vélos live JCDecaux (chargement asynchrone) — scroll interne propre à la liste,
   // le header (nom + totaux) et le bouton "Partir d'ici" restent toujours visibles
-  const bikesHtml = `<div id="stn-bikes-slot" style="margin-bottom:${hasDep?'5':'8'}px;font-size:10px;color:rgba(255,255,255,.35);text-align:center;padding:6px 0;overflow-y:auto;max-height:280px;flex-shrink:1">Chargement…</div>`;
+  const bikesHtml = `<div id="stn-bikes-slot" class="bikes-scroll" style="margin-bottom:${hasDep?'3':'5'}px;font-size:10px;color:rgba(255,255,255,.35);text-align:center;padding:3px 4px 3px 0;overflow-y:auto;max-height:230px;flex-shrink:1">Chargement…</div>`;
 
   div.innerHTML=`
-    <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:8px">${cleanName(s.name)}</div>
-    <div style="display:flex;align-items:center;gap:14px;font-size:12px;color:rgba(255,255,255,.75);margin-bottom:10px;padding-bottom:10px;border-bottom:0.5px solid rgba(255,255,255,.1)">
-      <span style="display:flex;align-items:center;gap:5px">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="#4ade80"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        <span id="stn-total-elec" style="font-weight:700;color:#4ade80">${s.electrical_bikes}</span> élec
+    <div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:4px">${cleanName(s.name)}</div>
+    <div style="display:flex;align-items:center;gap:9px;font-size:10.5px;color:rgba(255,255,255,.75);margin-bottom:4px;padding-bottom:4px;border-bottom:0.5px solid rgba(255,255,255,.1)">
+      <span style="display:flex;align-items:center;gap:3px">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="#4ade80"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <span id="stn-total-elec" style="font-weight:700;color:#4ade80">${s.electrical_bikes}</span>
       </span>
-      <span style="display:flex;align-items:center;gap:5px">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-        <span id="stn-total-meca" style="font-weight:700">${s.mechanical_bikes}</span> méca
+      <span style="display:flex;align-items:center;gap:3px">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span id="stn-total-meca" style="font-weight:700">${s.mechanical_bikes}</span>
       </span>
     </div>
     ${bikesHtml}
-    ${!hasDep?`<button id="stn-dep-btn" style="width:100%;padding:5px 8px;border-radius:8px;border:0.5px solid rgba(52,199,89,.3);background:rgba(52,199,89,.1);color:#34c759;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px">
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Partir d'ici</button>`
-    :`<button id="stn-arr-btn" style="width:100%;padding:5px 8px;border-radius:8px;border:0.5px solid rgba(255,69,58,.3);background:rgba(255,69,58,.1);color:#ff453a;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px">
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Arriver ici</button>`}`;
+    ${!hasDep?`<button id="stn-dep-btn" style="width:100%;padding:4px 7px;border-radius:7px;border:0.5px solid rgba(52,199,89,.3);background:rgba(52,199,89,.1);color:#fff;font-size:10px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px">
+      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Partir d'ici</button>`
+    :`<button id="stn-arr-btn" style="width:100%;padding:4px 7px;border-radius:7px;border:0.5px solid rgba(255,69,58,.3);background:rgba(255,69,58,.1);color:#ff453a;font-size:10px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px">
+      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Arriver ici</button>`}`;
 
   mapEl.appendChild(div);
   _stationPopupEl=div;
@@ -2363,6 +2370,21 @@ async function showStationPopup(s, lat, lon){
   // (sinon map.on('click') ferme le popup avant que les listeners internes ne s'exécutent)
   div.addEventListener('click', e=>e.stopPropagation());
   div.addEventListener('mousedown', e=>e.stopPropagation());
+
+  // Éviter la superposition avec le flottant de recherche (mobile surtout) :
+  // si le popup empiète sur le bas du flottant, on le décale vers le bas
+  requestAnimationFrame(()=>{
+    const floatEl=document.getElementById('plan-float');
+    if(!floatEl||!div.isConnected) return;
+    const floatRect=floatEl.getBoundingClientRect();
+    const popRect=div.getBoundingClientRect();
+    const overlapMargin=10;
+    if(popRect.top < floatRect.bottom+overlapMargin){
+      const shift=(floatRect.bottom+overlapMargin)-popRect.top;
+      const currentTop=parseFloat(div.style.top);
+      div.style.top=(currentTop+shift)+'px';
+    }
+  });
 
   // Fetch live des vélos de cette station (asynchrone, remplit le slot)
   fetchStationBikesLive(s.number).then(bikes=>{
