@@ -1307,6 +1307,9 @@ async function computePlan(){
   _openComboIdx=null;
   window._planCombos=null;
   if(planLayerGroup) planLayerGroup.clearLayers();
+  // Vider le cache vélos : sinon une nouvelle recherche réutilisant la même station
+  // de départ ne réaffiche jamais les vélos recommandés (DOM neuf, cache obsolète)
+  for(const k in _comboBikesCache) delete _comboBikesCache[k];
 
   // Vérifier les champs AVANT tout chargement
   if(!planFromPos && !planFromFixed){
