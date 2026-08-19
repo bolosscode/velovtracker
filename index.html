@@ -2344,7 +2344,12 @@ async function showStationPopup(s, lat, lon){
 
   // Vélos live JCDecaux (chargement asynchrone) — scroll interne propre à la liste,
   // le header (nom + totaux) et le bouton "Partir d'ici" restent toujours visibles
-  const bikesHtml = `<div id="stn-bikes-slot" class="bikes-scroll" style="margin-bottom:${hasDep?'3':'5'}px;font-size:10px;color:rgba(255,255,255,.35);text-align:center;padding:3px 4px 3px 0;overflow-y:auto;max-height:230px;flex-shrink:1">Chargement…</div>`;
+  const bikesHtml = `<div style="position:relative;margin-bottom:${hasDep?'3':'5'}px;flex-shrink:1">
+    <div id="stn-bikes-slot" style="font-size:10px;color:rgba(255,255,255,.35);text-align:center;padding:3px 8px 3px 0;overflow-y:auto;max-height:230px">Chargement…</div>
+    <div id="stn-scroll-track" style="display:none;position:absolute;top:0;right:0;width:3px;height:100%;background:rgba(255,255,255,.06);border-radius:2px;pointer-events:none">
+      <div id="stn-scroll-thumb" style="position:absolute;top:0;right:0;width:3px;background:rgba(255,255,255,.35);border-radius:2px"></div>
+    </div>
+  </div>`;
 
   div.innerHTML=`
     <div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:4px">${cleanName(s.name)}</div>
@@ -2413,6 +2418,24 @@ async function showStationPopup(s, lat, lon){
     const mecaEl=document.getElementById('stn-total-meca');
     if(elecEl) elecEl.textContent=liveElecN;
     if(mecaEl) mecaEl.textContent=liveMecaN;
+
+    // Indicateur de scroll custom (les scrollbars overlay macOS/Chrome sont invisibles au repos)
+    const track=document.getElementById('stn-scroll-track');
+    const thumb=document.getElementById('stn-scroll-thumb');
+    if(track&&thumb){
+      const updateThumb=()=>{
+        const {scrollHeight,clientHeight,scrollTop}=slot;
+        if(scrollHeight<=clientHeight+1){ track.style.display='none'; return; }
+        track.style.display='block';
+        const thumbH=Math.max(20,clientHeight*clientHeight/scrollHeight);
+        const maxThumbTop=clientHeight-thumbH;
+        const thumbTop=maxThumbTop*(scrollTop/(scrollHeight-clientHeight));
+        thumb.style.height=thumbH+'px';
+        thumb.style.top=thumbTop+'px';
+      };
+      updateThumb();
+      slot.addEventListener('scroll', updateThumb);
+    }
   });
 
   div.querySelector('#stn-dep-btn')?.addEventListener('click',()=>{
