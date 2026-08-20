@@ -2302,7 +2302,7 @@ function renderBikeRow(b, i, isRecommended){
   let battEl='<span style="font-size:9px;color:rgba(255,255,255,.2);min-width:24px">—</span>';
   if(isElec&&b.battery?.percentage!=null){
     const pct=b.battery.percentage;
-    const col=pct>=50?'#4ade80':pct>=20?'#f59e0b':'#f87171';
+    const col=pct>=60?'#4ade80':pct>=10?'#f59e0b':'#f87171';  // seuils officiels app Vélo'v (BATTERY.HIGH/LOW.THRESHOLD)
     battEl=`<span style="font-size:9px;font-weight:600;color:${col};min-width:34px">${pct}%</span>`;
   }
   const ratingVal=b.rating?.value;
@@ -2943,21 +2943,6 @@ function useMyLocation(){
   );
 }
 
-// Centrage automatique sur la position de l'utilisateur au démarrage,
-// uniquement si la permission est déjà accordée (pas de popup intrusive au 1er chargement)
-function tryAutoCenterOnUser(){
-  if(!navigator.permissions || !navigator.geolocation) return;
-  navigator.permissions.query({name:'geolocation'}).then(status=>{
-    if(status.state!=='granted') return; // ne rien demander si pas déjà accordé
-    navigator.geolocation.getCurrentPosition(
-      pos=>{
-        if(map) map.setView([pos.coords.latitude, pos.coords.longitude], 15);
-      },
-      ()=>{}, {enableHighAccuracy:false, timeout:5000, maximumAge:120000}
-    );
-  }).catch(()=>{});
-}
-
 async function boot(){
   // Démarrer le plus tôt possible, en parallèle du reste (gros payload ~10Mo)
   loadAllBikesLive();
@@ -2968,7 +2953,9 @@ async function boot(){
   initMap();
   renderStations();
   initPlanMap();
-  tryAutoCenterOnUser();
+  // Note: le centrage auto au boot a été retiré (map.setView() au démarrage
+  // interférait avec le premier clic dans le champ de recherche).
+  // Le bouton géoloc explicite (useMyLocation) reste disponible.
 }
 boot();
 setInterval(async()=>{ allStations=await loadLatest(); window._lastStationUpdate=Date.now(); updateLiveStatus(); await computeMovements(); renderStations(); },2*60*1000);
