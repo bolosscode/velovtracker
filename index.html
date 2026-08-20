@@ -449,15 +449,20 @@ function updateLiveStatus(){
 
 /* ═══ PANNEAU SOURCE ══════════════════════════════════ */
 const SOURCES = {
+  jcdecaux: {
+    label: 'JCDecaux (GBFS v3)',
+    url: 'api.cyclocity.fr',
+    detail: 'Flux GBFS officiel JCDecaux, source directe sans intermédiaire'
+  },
   grandlyon: {
     label: 'Métropole de Lyon',
     url: 'download.data.grandlyon.com',
-    detail: 'API temps réel JCDecaux via Grand Lyon Open Data'
+    detail: 'Fallback : republication JCDecaux par Grand Lyon Open Data'
   },
   local: {
     label: 'Cache GitHub Pages',
     url: 'data/latest.json',
-    detail: 'Collecte automatique toutes les 2 min via API JCDecaux v3'
+    detail: 'Fallback final : dernier snapshot connu'
   }
 };
 
@@ -624,21 +629,60 @@ function parseStation(r){
     bike_stands:r.bike_stands||0, electrical_bikes:elec, mechanical_bikes:meca,
     lat:r.lat, lng:r.lng };
 }
+
+// GBFS v3 JCDecaux natif : public, aucune auth requise, source la plus directe
+async function loadStationsGBFS(){
+  const [infoR, statusR] = await Promise.all([
+    fetch('https://api.cyclocity.fr/contracts/lyon/gbfs/v3/station_information.json',{signal:AbortSignal.timeout(8000),cache:'no-store'}),
+    fetch('https://api.cyclocity.fr/contracts/lyon/gbfs/v3/station_status.json',{signal:AbortSignal.timeout(8000),cache:'no-store'})
+  ]);
+  if(!infoR.ok||!statusR.ok) throw new Error('gbfs http error');
+  const [infoJ, statusJ] = await Promise.all([infoR.json(), statusR.json()]);
+  const infoById = new Map((infoJ.data?.stations||[]).map(s=>[s.station_id, s]));
+  const rows = (statusJ.data?.stations||[]).map(st=>{
+    const info = infoById.get(st.station_id);
+    if(!info) return null;
+    const vTypes = Object.fromEntries((st.vehicle_types_available||[]).map(v=>[v.vehicle_type_id, v.count||0]));
+    const meca = vTypes.mechanical||0, elec = vTypes.electrical||0;
+    return {
+      number: parseInt(st.station_id),
+      name: info.name?.[0]?.text || info.name || '',
+      available_bikes: meca+elec,
+      available_bike_stands: st.num_docks_available||0,
+      bike_stands: info.capacity||0,
+      electrical_bikes: elec,
+      mechanical_bikes: meca,
+      lat: info.lat, lng: info.lon,
+      _lastReported: st.last_reported,
+    };
+  }).filter(Boolean);
+  const latest = rows.reduce((max,r)=>Math.max(max, r._lastReported||0), 0);
+  window._dataTimestamp = latest ? new Date(latest*1000).toISOString() : null;
+  return rows;
+}
+
 async function loadLatest(){
   try{
-    // Source primaire : API Grand Lyon directe
+    // Source primaire : JCDecaux natif (GBFS v3), public, pas de dépendance à un tiers
+    const rows = await loadStationsGBFS();
+    if(rows.length){
+      window._dataSource = 'jcdecaux';
+      return rows;
+    }
+  }catch{}
+  try{
+    // Fallback : API Grand Lyon (republication)
     const r=await fetch('https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov/all.json?maxfeatures=-1&start=1',{signal:AbortSignal.timeout(8000),cache:'no-store'});
     if(r.ok){
       const j = await r.json();
       const rows = j.values || [];
       window._dataSource = 'grandlyon';
-      // last_update de la première station = fraîcheur réelle des données
       window._dataTimestamp = rows[0]?.last_update || null;
       return rows.map(parseStation);
     }
   }catch{}
   try{
-    // Fallback : fichier local data/latest.json
+    // Fallback final : fichier local data/latest.json
     const r=await fetch(`data/latest.json?t=${Date.now()}`,{cache:'no-store',signal:AbortSignal.timeout(8000)});
     if(!r.ok) throw new Error('no local');
     const d=await r.json();
