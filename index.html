@@ -897,31 +897,29 @@ async function checkRainOverLyon(tileUrl){
   }catch{ return null; } // indéterminé (erreur réseau/canvas)
 }
 
-function setRadarStatus(text, color){
-  const el=document.getElementById('radar-status');
-  if(el){ el.textContent=text; el.style.color=color; el.style.display=text?'inline':'none'; }
+function setRadarDot(color){
+  const dot=document.getElementById('radar-dot');
+  if(dot) dot.style.background=color||'transparent';
 }
 
 async function toggleWeatherRadar(on){
   if(!on){
     if(radarLayer){ map.removeLayer(radarLayer); radarLayer=null; }
     if(radarRefreshTimer){ clearInterval(radarRefreshTimer); radarRefreshTimer=null; }
-    setRadarStatus('','');
+    setRadarDot(null);
     return;
   }
   const applyFrame=async()=>{
     try{
       const path=await fetchRadarFrame();
-      if(!path){ setRadarStatus('indisponible','#ff453a'); return; }
+      if(!path){ setRadarDot('#ff453a'); return; }
       const url=`https://tilecache.rainviewer.com${path}/256/{z}/{x}/{y}/4/1_1.png`;
       if(radarLayer) map.removeLayer(radarLayer);
       radarLayer=L.tileLayer(url,{opacity:0.45, maxZoom:7, attribution:'RainViewer'});
       radarLayer.addTo(map);
       const hasRain=await checkRainOverLyon(url);
-      if(hasRain===true) setRadarStatus('pluie détectée','#0a84ff');
-      else if(hasRain===false) setRadarStatus('actif · pas de pluie','rgba(255,255,255,.4)');
-      else setRadarStatus('actif','rgba(255,255,255,.4)');
-    }catch(e){ console.warn('Radar météo indisponible', e); setRadarStatus('indisponible','#ff453a'); }
+      setRadarDot(hasRain===true?'#0a84ff':hasRain===false?'#30d158':'#8e8e93');
+    }catch(e){ console.warn('Radar météo indisponible', e); setRadarDot('#ff453a'); }
   };
   await applyFrame();
   radarRefreshTimer=setInterval(applyFrame, 10*60*1000); // rafraîchi toutes les 10 min
@@ -1406,33 +1404,43 @@ function initPlanMap(){
       ctrl.onAdd=()=>{
         const div=L.DomUtil.create('div');
         div.id='meteo-ctrl';
-        div.style.cssText='display:flex;align-items:center;gap:6px;background:rgba(12,12,16,.85);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);border:0.5px solid rgba(255,255,255,.08);border-radius:10px;padding:5px 8px;font-size:11px;color:rgba(255,255,255,.7);margin-bottom:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)';
+        div.style.cssText='display:flex;flex-direction:column;align-items:center;gap:0;width:72px;background:rgba(12,12,16,.85);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);border:0.5px solid rgba(255,255,255,.08);border-radius:10px;padding:6px 8px;font-size:11px;color:rgba(255,255,255,.7);margin-bottom:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)';
         L.DomEvent.disableClickPropagation(div);
-        const parts=[];
-        if(m.icon) parts.push(m.icon);
-        if(meteo.temp!==undefined) parts.push(meteo.temp+'°C');
-        if(meteo.wind!==undefined) parts.push(meteo.wind+' km/h');
-        const meteoSpan=document.createElement('span');
-        meteoSpan.style.pointerEvents='none';
-        meteoSpan.textContent=parts.join(' · ');
-        const clockSpan=document.createElement('span');
-        clockSpan.id='meteo-clock';
-        clockSpan.style.cssText='margin-left:2px;opacity:.6;pointer-events:none';
-        div.appendChild(meteoSpan);
-        div.appendChild(document.createTextNode(' · '));
-        div.appendChild(clockSpan);
-        setInterval(()=>{ clockSpan.textContent=new Date().toLocaleTimeString('fr-FR'); },1000);
-        clockSpan.textContent=new Date().toLocaleTimeString('fr-FR');
 
-        // Séparateur + 2 toggles calques (relief, radar météo) — même style d'icônes que le reste de l'app
-        const sep=document.createElement('span');
-        sep.style.cssText='width:0.5px;height:12px;background:rgba(255,255,255,.15);margin:0 2px';
-        div.appendChild(sep);
+        // Ligne 1 : icône + température (sans décimale, horloge retirée car déjà
+        // visible ailleurs dans l'app — priorité à la compacité)
+        const row1=document.createElement('div');
+        row1.style.cssText='display:flex;align-items:center;justify-content:center;gap:3px;pointer-events:none';
+        const tempParts=[];
+        if(m.icon) tempParts.push(m.icon);
+        if(meteo.temp!==undefined) tempParts.push(Math.round(meteo.temp)+'°');
+        row1.textContent=tempParts.join(' ');
+        div.appendChild(row1);
+
+        // Séparateur horizontal
+        const sepH1=document.createElement('div');
+        sepH1.style.cssText='width:100%;height:0.5px;background:rgba(255,255,255,.1);margin:4px 0';
+        div.appendChild(sepH1);
+
+        // Ligne 2 : vent seul
+        const row2=document.createElement('div');
+        row2.style.cssText='display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.5);font-size:10px;pointer-events:none';
+        if(meteo.wind!==undefined) row2.textContent=meteo.wind+' km/h';
+        div.appendChild(row2);
+
+        const sepH2=document.createElement('div');
+        sepH2.style.cssText='width:100%;height:0.5px;background:rgba(255,255,255,.1);margin:4px 0';
+        div.appendChild(sepH2);
+
+        // Ligne 3 : 2 toggles calques (relief, radar météo) — mêmes icônes trait fin que le reste de l'app
+        const row3=document.createElement('div');
+        row3.style.cssText='display:flex;align-items:center;justify-content:center;gap:4px';
+        div.appendChild(row3);
 
         const mkToggle=(svgPath, title, onToggle)=>{
           const btn=document.createElement('div');
           btn.title=title;
-          btn.style.cssText='width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(255,255,255,.45);transition:background .15s,color .15s';
+          btn.style.cssText='position:relative;width:18px;height:18px;border-radius:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(255,255,255,.45);transition:background .15s,color .15s';
           btn.innerHTML=svgPath;
           let on=false;
           btn.onclick=()=>{
@@ -1444,15 +1452,16 @@ function initPlanMap(){
           return btn;
         };
 
-        const reliefIcon='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3L2 12h4l-3 9h18l-3-9h4L14 3l-3 5-3-5z"/></svg>';
-        const radarIcon='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z"/></svg>';
+        const reliefIcon='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3L2 12h4l-3 9h18l-3-9h4L14 3l-3 5-3-5z"/></svg>';
+        const radarIcon='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z"/></svg>';
 
-        div.appendChild(mkToggle(reliefIcon, 'Relief', toggleHillshade));
-        div.appendChild(mkToggle(radarIcon, 'Radar météo', toggleWeatherRadar));
-        const radarStatusSpan=document.createElement('span');
-        radarStatusSpan.id='radar-status';
-        radarStatusSpan.style.cssText='display:none;font-size:9px;margin-left:2px;pointer-events:none;white-space:nowrap';
-        div.appendChild(radarStatusSpan);
+        row3.appendChild(mkToggle(reliefIcon, 'Relief', toggleHillshade));
+        const radarBtn=mkToggle(radarIcon, 'Radar météo', toggleWeatherRadar);
+        const radarDot=document.createElement('span');
+        radarDot.id='radar-dot';
+        radarDot.style.cssText='position:absolute;top:0px;right:0px;width:4px;height:4px;border-radius:50%;background:transparent;box-shadow:0 0 0 1px rgba(12,12,16,.85)';
+        radarBtn.appendChild(radarDot);
+        row3.appendChild(radarBtn);
 
         return div;
       };
