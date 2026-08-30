@@ -146,11 +146,12 @@ main{max-width:1500px;margin:auto;padding:20px}
 .search::placeholder{color:rgba(255,255,255,.45)}
 
 /* Scrollbar visible (macOS masque les scrollbars par défaut) */
-.bikes-scroll{ scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.25) transparent; }
-.bikes-scroll::-webkit-scrollbar{ width:5px; }
-.bikes-scroll::-webkit-scrollbar-track{ background:transparent; }
-.bikes-scroll::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.25); border-radius:3px; }
-.bikes-scroll::-webkit-scrollbar-thumb:hover{ background:rgba(255,255,255,.4); }
+/* Scrollbar native masquée sur la liste vélos : on utilise un curseur custom
+   (voir #stn-scroll-thumb) pour un rendu identique sur toutes les plateformes,
+   au lieu de dépendre du rendu très variable des scrollbars natives (invisible
+   sur macOS overlay, visible+doublée sur Windows, etc.) */
+.no-native-scrollbar{ scrollbar-width:none; -ms-overflow-style:none; }
+.no-native-scrollbar::-webkit-scrollbar{ display:none; width:0; height:0; }
 
 @media(min-width:768px){
   body{overflow:hidden}
@@ -2456,7 +2457,7 @@ async function showStationPopup(s, lat, lon){
   // Vélos live JCDecaux (chargement asynchrone) — scroll interne propre à la liste,
   // le header (nom + totaux) et le bouton "Partir d'ici" restent toujours visibles
   const bikesHtml = `<div style="position:relative;margin-bottom:${hasDep?'3':'5'}px;flex-shrink:1">
-    <div id="stn-bikes-slot" style="font-size:10px;color:rgba(255,255,255,.35);text-align:center;padding:3px 10px 3px 0;overflow-y:auto;max-height:230px">Chargement…</div>
+    <div id="stn-bikes-slot" class="no-native-scrollbar" style="font-size:10px;color:rgba(255,255,255,.35);text-align:center;padding:3px 10px 3px 0;overflow-y:auto;max-height:230px">Chargement…</div>
     <div id="stn-scroll-track" style="display:none;position:absolute;top:0;right:1px;width:4px;height:100%;background:rgba(255,255,255,.1);border-radius:2px;pointer-events:none">
       <div id="stn-scroll-thumb" style="position:absolute;top:0;right:0;width:4px;background:#0a84ff;border-radius:2px;box-shadow:0 0 3px rgba(10,132,255,.6)"></div>
     </div>
@@ -2482,10 +2483,12 @@ async function showStationPopup(s, lat, lon){
 
   mapEl.appendChild(div);
   _stationPopupEl=div;
-  // Empêcher les clics dans le popup de se propager vers la carte Leaflet
-  // (sinon map.on('click') ferme le popup avant que les listeners internes ne s'exécutent)
-  div.addEventListener('click', e=>e.stopPropagation());
-  div.addEventListener('mousedown', e=>e.stopPropagation());
+  // Empêcher les clics ET le scroll (trackpad/tactile) de se propager vers Leaflet.
+  // Sans ça, Leaflet capte le geste comme un pan de carte au lieu de laisser
+  // scroller la liste interne — c'est pour ça que ça ne marchait ni sur Mac
+  // (trackpad) ni sur mobile (tactile), seulement à la molette sur Windows.
+  L.DomEvent.disableClickPropagation(div);
+  L.DomEvent.disableScrollPropagation(div);
 
   // Éviter la superposition avec le flottant de recherche (mobile surtout) :
   // si le popup empiète sur le bas du flottant, on le décale vers le bas
