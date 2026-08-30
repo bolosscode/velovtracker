@@ -841,8 +841,11 @@ async function computeMovements(){
 function initMap(){
   if(map) return;
   map=L.map('map',{zoomControl:false}).setView([45.757,4.832],13); L.control.zoom({position:'bottomright'}).addTo(map);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    {attribution:'© OpenStreetMap © CARTO',maxZoom:20}).addTo(map);
+  // CARTO exige désormais une clé API au-delà d'un certain zoom (watermark
+  // "API KEY REQUIRED" sinon) → bascule sur les tuiles OSM standard, gratuites
+  // et sans clé, sans limite de zoom liée à une politique commerciale.
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(map);
   map.on('zoomend', renderStations);
 }
 function renderStations(){
