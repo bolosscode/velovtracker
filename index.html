@@ -853,6 +853,48 @@ function initMap(){
   if(tilePane) tilePane.style.filter='grayscale(75%) contrast(1.05) brightness(1.02)';
   map.on('zoomend', renderStations);
 }
+
+/* ═══ CALQUES optionnels : Relief + Radar météo ═══ */
+let hillshadeLayer=null, radarLayer=null, radarRefreshTimer=null;
+
+function toggleHillshade(on){
+  if(on){
+    if(!hillshadeLayer){
+      hillshadeLayer=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}',
+        {opacity:0.35, maxZoom:16, attribution:'Esri'});
+    }
+    hillshadeLayer.addTo(map);
+  } else if(hillshadeLayer){
+    map.removeLayer(hillshadeLayer);
+  }
+}
+
+async function fetchRadarFrame(){
+  const r=await fetch('https://api.rainviewer.com/public/weather-maps.json',{signal:AbortSignal.timeout(8000)});
+  const d=await r.json();
+  const last=d.radar?.past?.slice(-1)[0];
+  return last?.path||null;
+}
+
+async function toggleWeatherRadar(on){
+  if(!on){
+    if(radarLayer){ map.removeLayer(radarLayer); radarLayer=null; }
+    if(radarRefreshTimer){ clearInterval(radarRefreshTimer); radarRefreshTimer=null; }
+    return;
+  }
+  const applyFrame=async()=>{
+    try{
+      const path=await fetchRadarFrame();
+      if(!path) return;
+      const url=`https://tilecache.rainviewer.com${path}/256/{z}/{x}/{y}/4/1_1.png`;
+      if(radarLayer) map.removeLayer(radarLayer);
+      radarLayer=L.tileLayer(url,{opacity:0.45, maxZoom:7, attribution:'RainViewer'});
+      radarLayer.addTo(map);
+    }catch(e){ console.warn('Radar météo indisponible', e); }
+  };
+  await applyFrame();
+  radarRefreshTimer=setInterval(applyFrame, 10*60*1000); // rafraîchi toutes les 10 min
+}
 function renderStations(){
   if(markers) markers.clearLayers();
   markers=L.layerGroup();
@@ -1226,22 +1268,48 @@ function renderLbTable(mvData){
 document.getElementById('lb-sort').addEventListener('change',()=>renderLbTable(Object.keys(lbMvCache).length?lbMvCache:todayMv));
 
 async function showDayMeteo(date){
+  const el=document.getElementById('lb-meteo');
+  if(!el) return;
+
+  // Pluie/précipitation depuis nos propres snapshots (déjà stockés)
   const snaps=await fetchDay(date);
-  if(!snaps||!snaps.length) return;
-  let totalPrecip=0,totalTemp=0,nMeteo=0,rainySnaps=0;
-  snaps.forEach(s=>{
+  let totalPrecip=0,rainySnaps=0,nMeteo=0;
+  (snaps||[]).forEach(s=>{
     const m=s.meteo; if(!m) return;
     totalPrecip+=m.precipitation||0;
-    if(m.temp!==undefined) totalTemp+=m.temp;
     if(m.rain) rainySnaps++;
     nMeteo++;
   });
-  if(!nMeteo) return;
-  const avgTemp=Math.round(totalTemp/nMeteo*10)/10;
-  const rainyPct=Math.round(rainySnaps/nMeteo*100);
+  const rainyPct=nMeteo?Math.round(rainySnaps/nMeteo*100):0;
   const icon=rainyPct>50?'🌧️':rainyPct>20?'⛅':'☀️';
-  const el=document.getElementById('lb-meteo');
-  if(el) el.textContent=`${icon} ${avgTemp}°C · ${(totalPrecip/nMeteo).toFixed(1)} mm/h moy · ${rainyPct}% pluvieux`;
+
+  // Temp/vent min·max·moy depuis l'archive Open-Meteo (données horaires propres,
+  // nos snapshots n'ont pas le vent et sont trop épars pour un vrai min/max)
+  let tempStr='', windStr='';
+  try{
+    const r=await fetch(`https://archive-api.open-meteo.com/v1/archive?latitude=45.75&longitude=4.83&start_date=${date}&end_date=${date}&hourly=temperature_2m,windspeed_10m&timezone=Europe%2FParis`,{signal:AbortSignal.timeout(8000)});
+    if(r.ok){
+      const d=await r.json();
+      const temps=(d.hourly?.temperature_2m||[]).filter(v=>v!=null);
+      const winds=(d.hourly?.windspeed_10m||[]).filter(v=>v!=null);
+      if(temps.length){
+        const tMin=Math.round(Math.min(...temps)*10)/10, tMax=Math.round(Math.max(...temps)*10)/10;
+        const tAvg=Math.round(temps.reduce((a,b)=>a+b,0)/temps.length*10)/10;
+        tempStr=`${tMin}–${tMax}°C (${tAvg} moy)`;
+      }
+      if(winds.length){
+        const wMin=Math.round(Math.min(...winds)), wMax=Math.round(Math.max(...winds));
+        const wAvg=Math.round(winds.reduce((a,b)=>a+b,0)/winds.length);
+        windStr=`vent ${wMin}–${wMax} km/h (${wAvg} moy)`;
+      }
+    }
+  }catch(e){ console.warn('Archive météo indisponible', e); }
+
+  const parts=[icon];
+  if(tempStr) parts.push(tempStr);
+  if(windStr) parts.push(windStr);
+  if(nMeteo) parts.push(`${rainyPct}% pluvieux`);
+  el.textContent=parts.join(' · ');
 }
 
 /* ═══ PLANIFIER ════════════════════════════════════════ */
@@ -1307,22 +1375,50 @@ function initPlanMap(){
       ctrl.onAdd=()=>{
         const div=L.DomUtil.create('div');
         div.id='meteo-ctrl';
-        div.style.cssText='background:rgba(12,12,16,.85);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);border:0.5px solid rgba(255,255,255,.08);border-radius:10px;padding:5px 10px;font-size:11px;color:rgba(255,255,255,.7);margin-bottom:4px;pointer-events:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)';
+        div.style.cssText='display:flex;align-items:center;gap:6px;background:rgba(12,12,16,.85);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);border:0.5px solid rgba(255,255,255,.08);border-radius:10px;padding:5px 8px;font-size:11px;color:rgba(255,255,255,.7);margin-bottom:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)';
+        L.DomEvent.disableClickPropagation(div);
         const parts=[];
         if(m.icon) parts.push(m.icon);
         if(meteo.temp!==undefined) parts.push(meteo.temp+'°C');
         if(meteo.wind!==undefined) parts.push(meteo.wind+' km/h');
         const meteoSpan=document.createElement('span');
+        meteoSpan.style.pointerEvents='none';
         meteoSpan.textContent=parts.join(' · ');
         const clockSpan=document.createElement('span');
         clockSpan.id='meteo-clock';
-        clockSpan.style.marginLeft='6px';
-        clockSpan.style.opacity='.6';
+        clockSpan.style.cssText='margin-left:2px;opacity:.6;pointer-events:none';
         div.appendChild(meteoSpan);
         div.appendChild(document.createTextNode(' · '));
         div.appendChild(clockSpan);
         setInterval(()=>{ clockSpan.textContent=new Date().toLocaleTimeString('fr-FR'); },1000);
         clockSpan.textContent=new Date().toLocaleTimeString('fr-FR');
+
+        // Séparateur + 2 toggles calques (relief, radar météo) — même style d'icônes que le reste de l'app
+        const sep=document.createElement('span');
+        sep.style.cssText='width:0.5px;height:12px;background:rgba(255,255,255,.15);margin:0 2px';
+        div.appendChild(sep);
+
+        const mkToggle=(svgPath, title, onToggle)=>{
+          const btn=document.createElement('div');
+          btn.title=title;
+          btn.style.cssText='width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(255,255,255,.45);transition:background .15s,color .15s';
+          btn.innerHTML=svgPath;
+          let on=false;
+          btn.onclick=()=>{
+            on=!on;
+            btn.style.background=on?'rgba(10,132,255,.2)':'transparent';
+            btn.style.color=on?'#0a84ff':'rgba(255,255,255,.45)';
+            onToggle(on);
+          };
+          return btn;
+        };
+
+        const reliefIcon='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3L2 12h4l-3 9h18l-3-9h4L14 3l-3 5-3-5z"/></svg>';
+        const radarIcon='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z"/></svg>';
+
+        div.appendChild(mkToggle(reliefIcon, 'Relief', toggleHillshade));
+        div.appendChild(mkToggle(radarIcon, 'Radar météo', toggleWeatherRadar));
+
         return div;
       };
       ctrl.addTo(planMap);
