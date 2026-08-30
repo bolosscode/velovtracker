@@ -647,7 +647,11 @@ async function loadStationsGBFS(){
     const meca = vTypes.mechanical||0, elec = vTypes.electrical||0;
     return {
       number: parseInt(st.station_id),
-      name: info.name?.[0]?.text || info.name || '',
+      name: (()=>{
+        if(Array.isArray(info.name)) return info.name.find(n=>n.text)?.text || info.name[0]?.text || '';
+        if(typeof info.name==='string') return info.name;
+        return '';
+      })(),
       available_bikes: meca+elec,
       available_bike_stands: st.num_docks_available||0,
       bike_stands: info.capacity||0,
