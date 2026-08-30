@@ -647,7 +647,11 @@ async function loadStationsGBFS(){
     const meca = vTypes.mechanical||0, elec = vTypes.electrical||0;
     return {
       number: parseInt(st.station_id),
-      name: info.name?.[0]?.text || info.name || '',
+      name: (()=>{
+        if(Array.isArray(info.name)) return info.name.find(n=>n.text)?.text || info.name[0]?.text || '';
+        if(typeof info.name==='string') return info.name;
+        return '';
+      })(),
       available_bikes: meca+elec,
       available_bike_stands: st.num_docks_available||0,
       bike_stands: info.capacity||0,
@@ -1794,26 +1798,31 @@ async function drawTop3Routes(){
   const routePromises=top.slice(0,3).map(async(combo,i)=>{
     let coords=null;
     const bikeT=window._planBikeType||'elec';
-    const [vr3,br3]=await Promise.allSettled([
-      (async()=>{
-        const b3={locations:[{lon:combo.dep.lng,lat:combo.dep.lat},{lon:combo.arr.lng,lat:combo.arr.lat}],costing:'bicycle',
-          costing_options:{bicycle:{bicycle_type:bikeT==='meca'?'Hybrid':'Road',cycling_speed:bikeT==='meca'?15:22,use_roads:0.1,use_hills:bikeT==='meca'?0:0.7}},directions_type:'none'};
-        const r=await fetch(`https://valhalla1.openstreetmap.de/route?json=${encodeURIComponent(JSON.stringify(b3))}`,{signal:AbortSignal.timeout(10000)});
-        if(!r.ok) throw 0;
-        const d=await r.json(); const leg=d.trip?.legs?.[0]; if(!leg) throw 0;
-        return {coords:decodePolyline(leg.shape),dist:(d.trip.summary?.length||0)*1000};
-      })(),
-      (async()=>{
-        const r=await fetch(`https://brouter.de/brouter?lonlats=${combo.dep.lng},${combo.dep.lat}|${combo.arr.lng},${combo.arr.lat}&profile=trekking&alternativeidx=0&format=geojson`,{signal:AbortSignal.timeout(10000)});
-        if(!r.ok) throw 0;
-        const d=await r.json(); const geom=d.features?.[0]?.geometry; if(!geom) throw 0;
-        return {coords:geom.coordinates.map(([ln,la])=>[la,ln]),dist:parseInt(d.features[0].properties?.['track-length'])||0};
-      })()
-    ]);
-    const cands=[];
-    if(vr3.status==='fulfilled') cands.push(vr3.value);
-    if(br3.status==='fulfilled') cands.push(br3.value);
-    if(cands.length){ cands.sort((a,b)=>a.dist-b.dist); coords=cands[0].coords; }
+    await new Promise(r=>setTimeout(r, i*150));
+    const fetchRoute=async()=>{
+      const [vr3,br3]=await Promise.allSettled([
+        (async()=>{
+          const b3={locations:[{lon:combo.dep.lng,lat:combo.dep.lat},{lon:combo.arr.lng,lat:combo.arr.lat}],costing:'bicycle',
+            costing_options:{bicycle:{bicycle_type:bikeT==='meca'?'Hybrid':'Road',cycling_speed:bikeT==='meca'?15:22,use_roads:0.1,use_hills:bikeT==='meca'?0:0.7}},directions_type:'none'};
+          const r=await fetch(`https://valhalla1.openstreetmap.de/route?json=${encodeURIComponent(JSON.stringify(b3))}`,{signal:AbortSignal.timeout(10000)});
+          if(!r.ok) throw 0;
+          const d=await r.json(); const leg=d.trip?.legs?.[0]; if(!leg) throw 0;
+          return {coords:decodePolyline(leg.shape),dist:(d.trip.summary?.length||0)*1000};
+        })(),
+        (async()=>{
+          const r=await fetch(`https://brouter.de/brouter?lonlats=${combo.dep.lng},${combo.dep.lat}|${combo.arr.lng},${combo.arr.lat}&profile=trekking&alternativeidx=0&format=geojson`,{signal:AbortSignal.timeout(10000)});
+          if(!r.ok) throw 0;
+          const d=await r.json(); const geom=d.features?.[0]?.geometry; if(!geom) throw 0;
+          return {coords:geom.coordinates.map(([ln,la])=>[la,ln]),dist:parseInt(d.features[0].properties?.['track-length'])||0};
+        })()
+      ]);
+      const cands=[];
+      if(vr3.status==='fulfilled') cands.push(vr3.value);
+      if(br3.status==='fulfilled') cands.push(br3.value);
+      return cands.length ? cands.sort((a,b)=>a.dist-b.dist)[0].coords : null;
+    };
+    coords=await fetchRoute();
+    if(!coords){ await new Promise(r=>setTimeout(r,500)); coords=await fetchRoute(); }
     return {coords,i,combo};
   });
   const routes=await Promise.all(routePromises);
