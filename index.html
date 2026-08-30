@@ -841,10 +841,12 @@ async function computeMovements(){
 function initMap(){
   if(map) return;
   map=L.map('map',{zoomControl:false}).setView([45.757,4.832],13); L.control.zoom({position:'bottomright'}).addTo(map);
-  // Style Humanitarian OSM (HOT) : plus lisible que le rendu OSM standard,
-  // gratuit, sans clé API, sans limite de zoom commerciale (contrairement à CARTO).
+  // Style Humanitarian OSM (HOT) désaturé via filtre CSS : rendu quasi
+  // monochrome, gratuit, sans clé API, laisse ressortir les marqueurs de station.
   L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
     {attribution:'© OpenStreetMap contributors, tiles © HOT',maxZoom:20}).addTo(map);
+  const tilePane=document.querySelector('.leaflet-tile-pane');
+  if(tilePane) tilePane.style.filter='grayscale(75%) contrast(1.05) brightness(1.02)';
   map.on('zoomend', renderStations);
 }
 function renderStations(){
