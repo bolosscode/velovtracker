@@ -876,21 +876,52 @@ async function fetchRadarFrame(){
   return last?.path||null;
 }
 
+// Vérifie s'il y a réellement de la pluie au-dessus de Lyon dans la dernière
+// image radar (le calque peut être actif et correct tout en étant invisible
+// s'il ne pleut simplement pas — sans ce check, ça ressemble à un bug).
+async function checkRainOverLyon(tileUrl){
+  try{
+    const z=7;
+    const lat=45.757, lng=4.832;
+    const n=Math.pow(2,z);
+    const worldX=(lng+180)/360*n, worldY=(1-Math.log(Math.tan(lat*Math.PI/180)+1/Math.cos(lat*Math.PI/180))/Math.PI)/2*n;
+    const tileX=Math.floor(worldX), tileY=Math.floor(worldY);
+    const pxX=Math.floor((worldX-tileX)*256), pxY=Math.floor((worldY-tileY)*256);
+    const url=tileUrl.replace('{z}',z).replace('{x}',tileX).replace('{y}',tileY);
+    const img=new Image(); img.crossOrigin='anonymous';
+    await new Promise((res,rej)=>{ img.onload=res; img.onerror=rej; img.src=url; });
+    const canvas=document.createElement('canvas'); canvas.width=img.width; canvas.height=img.height;
+    const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0);
+    const px=ctx.getImageData(pxX,pxY,1,1).data;
+    return px[3]>10; // alpha non-nul = pluie visible à cet endroit
+  }catch{ return null; } // indéterminé (erreur réseau/canvas)
+}
+
+function setRadarStatus(text, color){
+  const el=document.getElementById('radar-status');
+  if(el){ el.textContent=text; el.style.color=color; el.style.display=text?'inline':'none'; }
+}
+
 async function toggleWeatherRadar(on){
   if(!on){
     if(radarLayer){ map.removeLayer(radarLayer); radarLayer=null; }
     if(radarRefreshTimer){ clearInterval(radarRefreshTimer); radarRefreshTimer=null; }
+    setRadarStatus('','');
     return;
   }
   const applyFrame=async()=>{
     try{
       const path=await fetchRadarFrame();
-      if(!path) return;
+      if(!path){ setRadarStatus('indisponible','#ff453a'); return; }
       const url=`https://tilecache.rainviewer.com${path}/256/{z}/{x}/{y}/4/1_1.png`;
       if(radarLayer) map.removeLayer(radarLayer);
       radarLayer=L.tileLayer(url,{opacity:0.45, maxZoom:7, attribution:'RainViewer'});
       radarLayer.addTo(map);
-    }catch(e){ console.warn('Radar météo indisponible', e); }
+      const hasRain=await checkRainOverLyon(url);
+      if(hasRain===true) setRadarStatus('pluie détectée','#0a84ff');
+      else if(hasRain===false) setRadarStatus('actif · pas de pluie','rgba(255,255,255,.4)');
+      else setRadarStatus('actif','rgba(255,255,255,.4)');
+    }catch(e){ console.warn('Radar météo indisponible', e); setRadarStatus('indisponible','#ff453a'); }
   };
   await applyFrame();
   radarRefreshTimer=setInterval(applyFrame, 10*60*1000); // rafraîchi toutes les 10 min
@@ -1418,6 +1449,10 @@ function initPlanMap(){
 
         div.appendChild(mkToggle(reliefIcon, 'Relief', toggleHillshade));
         div.appendChild(mkToggle(radarIcon, 'Radar météo', toggleWeatherRadar));
+        const radarStatusSpan=document.createElement('span');
+        radarStatusSpan.id='radar-status';
+        radarStatusSpan.style.cssText='display:none;font-size:9px;margin-left:2px;pointer-events:none;white-space:nowrap';
+        div.appendChild(radarStatusSpan);
 
         return div;
       };
