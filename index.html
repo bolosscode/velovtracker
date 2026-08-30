@@ -2057,21 +2057,38 @@ async function showRoute(idx){
     }
   }catch{}
 
-  // Routing piéton via OSRM foot (bleu pointillé)
+  // Routing piéton via BRouter (profil hiking-mountain — le seul vrai profil
+  // piéton public de BRouter ; l'ancien "OSRM /foot/" servait en réalité le
+  // même graphe que /driving/ sur le serveur public, d'où un tracé aberrant
+  // qui suivait les routes voiture au lieu des chemins piétons).
   const walkRoutes=[];
   if(planFromPos&&!planFromFixed) walkRoutes.push({from:planFromPos,to:{lat:combo.dep.lat,lng:combo.dep.lng}});
   if(planToPos&&!planToFixed) walkRoutes.push({from:{lat:combo.arr.lat,lng:combo.arr.lng},to:planToPos});
   for(const wr of walkRoutes){
     try{
-      const wo=await fetch(`https://router.project-osrm.org/route/v1/foot/${wr.from.lng},${wr.from.lat};${wr.to.lng},${wr.to.lat}?overview=full&geometries=polyline6`,{signal:AbortSignal.timeout(6000)});
-      if(wo.ok){
-        const wd=await wo.json();
-        const wgeom=wd.routes?.[0]?.geometry;
-        if(wgeom){
-          const wcoords=decodePolyline(wgeom);
-          L.polyline(wcoords,{color:'#fff',weight:5,opacity:.3,lineCap:'round',lineJoin:'round'}).addTo(planLayerGroup);
-          L.polyline(wcoords,{color:'#0a84ff',weight:2.5,dashArray:'5,6',opacity:.8,lineCap:'round',lineJoin:'round'}).addTo(planLayerGroup);
+      let wcoords=null;
+      try{
+        const wb=await fetch(`https://brouter.de/brouter?lonlats=${wr.from.lng},${wr.from.lat}|${wr.to.lng},${wr.to.lat}&profile=hiking-mountain&alternativeidx=0&format=geojson`,{signal:AbortSignal.timeout(8000)});
+        if(wb.ok){
+          const wdB=await wb.json();
+          const wgeomB=wdB.features?.[0]?.geometry;
+          if(wgeomB?.type==='LineString') wcoords=wgeomB.coordinates.map(([ln,la])=>[la,ln]);
         }
+      }catch{}
+      if(!wcoords){
+        // Fallback OSRM foot (imparfait mais mieux que rien si BRouter est down)
+        const wo=await fetch(`https://router.project-osrm.org/route/v1/foot/${wr.from.lng},${wr.from.lat};${wr.to.lng},${wr.to.lat}?overview=full&geometries=polyline6`,{signal:AbortSignal.timeout(6000)});
+        if(wo.ok){
+          const wd=await wo.json();
+          const wgeom=wd.routes?.[0]?.geometry;
+          if(wgeom) wcoords=decodePolyline(wgeom);
+        }
+      }
+      if(wcoords){
+        L.polyline(wcoords,{color:'#fff',weight:5,opacity:.3,lineCap:'round',lineJoin:'round'}).addTo(planLayerGroup);
+        L.polyline(wcoords,{color:'#0a84ff',weight:2.5,dashArray:'5,6',opacity:.8,lineCap:'round',lineJoin:'round'}).addTo(planLayerGroup);
+      } else {
+        L.polyline([[wr.from.lat,wr.from.lng],[wr.to.lat,wr.to.lng]],{color:'#0a84ff',weight:2,dashArray:'5,5',opacity:.6}).addTo(planLayerGroup);
       }
     }catch{
       // Fallback ligne droite
