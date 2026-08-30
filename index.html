@@ -647,11 +647,7 @@ async function loadStationsGBFS(){
     const meca = vTypes.mechanical||0, elec = vTypes.electrical||0;
     return {
       number: parseInt(st.station_id),
-      name: (()=>{
-        if(Array.isArray(info.name)) return info.name.find(n=>n.text)?.text || info.name[0]?.text || '';
-        if(typeof info.name==='string') return info.name;
-        return '';
-      })(),
+      name: info.name?.[0]?.text || info.name || '',
       available_bikes: meca+elec,
       available_bike_stands: st.num_docks_available||0,
       bike_stands: info.capacity||0,
@@ -845,11 +841,10 @@ async function computeMovements(){
 function initMap(){
   if(map) return;
   map=L.map('map',{zoomControl:false}).setView([45.757,4.832],13); L.control.zoom({position:'bottomright'}).addTo(map);
-  // CARTO exige désormais une clé API au-delà d'un certain zoom (watermark
-  // "API KEY REQUIRED" sinon) → bascule sur les tuiles OSM standard, gratuites
-  // et sans clé, sans limite de zoom liée à une politique commerciale.
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    {attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(map);
+  // Style Humanitarian OSM (HOT) : plus lisible que le rendu OSM standard,
+  // gratuit, sans clé API, sans limite de zoom commerciale (contrairement à CARTO).
+  L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+    {attribution:'© OpenStreetMap contributors, tiles © HOT',maxZoom:20}).addTo(map);
   map.on('zoomend', renderStations);
 }
 function renderStations(){
