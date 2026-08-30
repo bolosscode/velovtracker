@@ -1966,6 +1966,32 @@ async function drawTop3Routes(){
     return {coords,i,combo};
   });
   const routes=await Promise.all(routePromises);
+
+  // Déviation via relais (combo principal uniquement) : vrai trajet routier
+  // dep→relais puis relais→arr, dessiné EN PREMIER (donc en-dessous — le
+  // tracé vert/rouge normal, ajouté après dans la boucle, le recouvrira
+  // partout sauf là où la déviation réelle diverge du trajet direct).
+  const mainCombo=routes.find(r=>r.i===0)?.combo;
+  if(mainCombo?.relaiStation){
+    const fetchLeg=async(from,to)=>{
+      try{
+        const r=await fetch(`https://brouter.de/brouter?lonlats=${from.lng},${from.lat}|${to.lng},${to.lat}&profile=trekking&alternativeidx=0&format=geojson`,{signal:AbortSignal.timeout(9000)});
+        if(!r.ok) return null;
+        const d=await r.json();
+        const geom=d.features?.[0]?.geometry;
+        return geom?.type==='LineString' ? geom.coordinates.map(([ln,la])=>[la,ln]) : null;
+      }catch{ return null; }
+    };
+    const [leg1,leg2]=await Promise.all([
+      fetchLeg({lat:mainCombo.dep.lat,lng:mainCombo.dep.lng},{lat:mainCombo.relaiStation.lat,lng:mainCombo.relaiStation.lng}),
+      fetchLeg({lat:mainCombo.relaiStation.lat,lng:mainCombo.relaiStation.lng},{lat:mainCombo.arr.lat,lng:mainCombo.arr.lng})
+    ]);
+    if(leg1&&leg2){
+      const relaiCoords=[...leg1,...leg2];
+      L.polyline(relaiCoords,{color:'#ff9f0a',weight:5,opacity:.85,lineCap:'round',lineJoin:'round'}).addTo(planLayerGroup);
+    }
+  }
+
   // Tracer en ordre inverse (le 1er par-dessus)
   [...routes].reverse().forEach(({coords,i,combo})=>{
     if(coords){
@@ -1999,7 +2025,7 @@ async function drawTop3Routes(){
     }
   });
   // Zoom sur le premier
-  if(routes[0]?.coords) planMap.fitBounds(L.polyline(routes[0].coords).getBounds().pad(.25));
+  if(routes[0]?.coords) planMap.fitBounds(L.polyline(routes[0].coords).getBounds().pad(.25),{animate:false});
 }
 
 async function showRoute(idx){
@@ -2096,7 +2122,7 @@ async function showRoute(idx){
       L.polyline(coords,{color:routeColor,weight:5,opacity:.9,lineCap:'round',lineJoin:'round'}).addTo(planLayerGroup);
       setTimeout(()=>{
         planMap.invalidateSize();
-        planMap.fitBounds(L.polyline(coords).getBounds().pad(.2));
+        planMap.fitBounds(L.polyline(coords).getBounds().pad(.2),{animate:false});
       }, 100);
     }
   }catch{}
