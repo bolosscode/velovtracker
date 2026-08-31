@@ -416,12 +416,36 @@ function initPillCarouselScroll(){
         const dist=Math.abs(page.offsetLeft-track.scrollLeft);
         if(dist<closestDist){ closestDist=dist; closest=i; }
       });
-      if(closest!==(window._openComboIdx??0)) selectComboIdx(closest);
+      if(closest!==(window._openComboIdx??0)){
+        // Swipe = juste mettre en valeur ce tracé parmi les 3 déjà dessinés,
+        // sans effacer la vue d'ensemble (contrairement à selectComboIdx qui
+        // appelle showRoute et ne garde qu'un seul itinéraire à l'écran)
+        window._openComboIdx=closest;
+        highlightComboOnMap(closest);
+        updatePillCarouselActive(closest);
+      }
     },120);
   },{passive:true});
   const idx=window._openComboIdx??0;
   const activePage=track.querySelectorAll('.pill-page')[idx];
   if(activePage) track.scrollTo({left:activePage.offsetLeft, behavior:'instant'});
+}
+
+// Met en valeur un tracé parmi ceux déjà dessinés par drawTop3Routes (plus
+// épais, plus opaque, ramené au premier plan) sans effacer les autres.
+function highlightComboOnMap(idx){
+  const layers=window._comboRouteLayers, base=window._comboBaseStyle;
+  if(!layers) return;
+  Object.entries(layers).forEach(([i,pl])=>{
+    i=parseInt(i);
+    const b=base[i]||{weight:3,opacity:.6};
+    if(i===idx){
+      pl.setStyle({weight:b.weight+2, opacity:1});
+      pl.bringToFront();
+    } else {
+      pl.setStyle({weight:b.weight, opacity:Math.max(0.3, b.opacity-0.25)});
+    }
+  });
 }
 function expandPlanFloat(){
   document.getElementById('plan-float-expanded').style.display='block';
@@ -2037,12 +2061,19 @@ async function drawTop3Routes(){
     }
   }
 
+  // Stocker les tracés + leurs poids/opacités de base pour pouvoir les
+  // mettre en valeur au swipe SANS tout effacer/redessiner (voir highlightComboOnMap)
+  window._comboRouteLayers={};
+  window._comboBaseStyle={};
+
   // Tracer en ordre inverse (le 1er par-dessus)
   [...routes].reverse().forEach(({coords,i,combo})=>{
     if(coords){
       L.polyline(coords,{color:'#fff',weight:weights[i]+3,opacity:.6,lineCap:'round',lineJoin:'round'}).addTo(planLayerGroup);
       const pl=L.polyline(coords,{color:colors[i],weight:weights[i],opacity:opacities[i],lineCap:'round',lineJoin:'round'}).addTo(planLayerGroup);
       const _i=i; pl.on('click',()=>selectComboIdx(_i));
+      window._comboRouteLayers[i]=pl;
+      window._comboBaseStyle[i]={weight:weights[i],opacity:opacities[i]};
       // Zone de clic élargie invisible
       L.polyline(coords,{color:'transparent',weight:20,opacity:0}).on('click',()=>selectComboIdx(_i)).addTo(planLayerGroup);
     }
