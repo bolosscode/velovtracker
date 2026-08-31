@@ -381,10 +381,13 @@ function compactPlanFloat(){
     document.getElementById('plan-float-expanded').style.display='block';
     el.style.display='none'; return;
   }
-  const top=window._planCombos||[];
+  // Limité aux 3 premiers : ce sont les seuls dont le tracé est réellement
+  // dessiné sur la carte (drawTop3Routes), au-delà le swipe n'aurait aucune
+  // correspondance visuelle sur la carte.
+  const top=(window._planCombos||[]).slice(0,3);
   if(top.length){
     const pagesHtml=top.map((combo,i)=>renderPillPage(combo,i)).join('');
-    const dotsHtml=top.slice(0,Math.min(top.length,8)).map((_,i)=>
+    const dotsHtml=top.map((_,i)=>
       `<div class="pdot" style="width:${i===idx?'12px':'4px'};height:4px;border-radius:2px;background:rgba(255,255,255,${i===idx?'.7':'.25'})"></div>`).join('');
     el.innerHTML=`
       <div id="pill-page-track" style="display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none">${pagesHtml}</div>
