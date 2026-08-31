@@ -1790,8 +1790,8 @@ async function computePlan(){
       const liveDep2=allStations.find(s=>s.number===dep.number);
       const liveArr2=allStations.find(s=>s.number===arr.number);
 
-      // Batterie : pénalisation si aucun élec viable
-      let battPenalty=false;
+      // Batterie : détecter si aucun élec n'a l'autonomie pour tout le trajet
+      let battPenalty=false, battShortfall=false;
       const stBikesRaw=(_allBikesByStation?.get(dep.number)||[]);
       const stBikes=stBikesRaw.filter(b=>b.status==='AVAILABLE'&&b.type==='ELECTRICAL').map(b=>({
         batt: b.battery?.percentage!=null?b.battery.percentage:null
@@ -1800,7 +1800,9 @@ async function computePlan(){
         const distKm=dist/1000;
         const minBatt=Math.ceil(distKm/40*100*1.10);
         const hasViable=stBikes.some(b=>b.batt!=null&&b.batt>=minBatt);
-        if(!hasViable){ score=0; battPenalty=true; }
+        if(!hasViable){ battPenalty=true; battShortfall=true; }
+        // Ne plus mettre le score à 0 sèchement : si un relais permet de
+        // couvrir le trajet en 2 étapes, la combinaison reste valable.
       }
 
       // Prix : surcoût si trajet > limite gratuite
@@ -1808,14 +1810,21 @@ async function computePlan(){
       const overMin=Math.max(0,rideMin-priceLimit);
       const overPrice=overMin>0?Math.round(overMin*0.10*100)/100:0;
 
-      // Segmentation : suggérer station relai si trajet trop long
+      // Segmentation : suggérer station relai si trajet trop long en temps
+      // (dépassement du forfait gratuit) OU si la batterie ne suffit pas
+      // pour toute la distance — même mécanisme dans les deux cas.
       let relaiStation=null;
-      if(overMin>2){
+      if(overMin>2||battShortfall){
         const midLat=(dep.lat+arr.lat)/2, midLng=(dep.lng+arr.lng)/2;
         relaiStation=allStations
           .filter(s=>s.number!==dep.number&&s.number!==arr.number&&s.available_bike_stands>0)
           .map(s=>({...s,d:haversine(s.lat,s.lng,midLat,midLng)}))
           .sort((a,b)=>a.d-b.d)[0]||null;
+        // Si un relais batterie a été trouvé, ce n'est plus un échec sec :
+        // on retire la pénalité de score brutale, le badge visuel reste
+        // pour informer, mais la combinaison redevient viable via le relais.
+        if(battShortfall&&relaiStation) battPenalty=true;
+        else if(battShortfall&&!relaiStation) score=0; // vraiment aucune solution
       }
 
       combos.push({
@@ -1908,7 +1917,7 @@ async function computePlan(){
             <div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:1px;display:flex;align-items:center;gap:4px">
               <span>${Math.round(combo.dist/1000*10)/10}km · ~${combo.rideMin}min</span>
               ${combo.overPrice>0?`<span style="background:rgba(255,159,10,.1);border:0.5px solid rgba(255,159,10,.25);border-radius:4px;padding:1px 4px;font-size:9px;color:#ff9f0a;font-weight:600">+${combo.overPrice.toFixed(2)}€</span>`:''}
-              ${combo.battPenalty?`<span style="color:#ff453a;font-size:9px;display:flex;align-items:center;gap:2px"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>batt. insuf.</span>`:''}
+              ${combo.battPenalty?`<span style="color:${combo.relaiStation?'#ff9f0a':'#ff453a'};font-size:9px;display:flex;align-items:center;gap:2px"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>${combo.relaiStation?'batt. insuf. · relais dispo':'batt. insuf.'}</span>`:''}
             </div>
             ${combo.relaiStation?`<div style="background:rgba(255,159,10,.08);border:0.5px solid rgba(255,159,10,.2);border-radius:5px;padding:2px 6px;margin-top:3px;font-size:9px;color:#ff9f0a;display:flex;align-items:center;gap:3px"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Relai suggéré : ${cleanName(combo.relaiStation.name)}</div>`:''}
           </div>
@@ -2571,6 +2580,13 @@ let _stationPopupEl=null;
 /* ═══ Rendu ligne vélo + détail complet API ═══ */
 
 /* ═══ Recommandation vélo (note + révision récente + batterie pour élec) ═══ */
+// Autonomie estimée d'un vélo élec : même hypothèse (40km à 100%) que le
+// calcul de faisabilité utilisé pour le score des itinéraires.
+const BIKE_RANGE_KM_AT_100=40;
+function battRangeKm(pct){
+  return Math.round(pct/100*BIKE_RANGE_KM_AT_100);
+}
+
 function bikeRecoScore(b){
   if(b.status!=='AVAILABLE'||b.isReserved) return -1;
   const ratingScore=(b.rating?.value??50)/100; // 0-1, défaut neutre si pas noté
@@ -2668,7 +2684,7 @@ function toggleBikeDetailLive(idx){
     `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid rgba(255,255,255,.06);font-size:10.5px"><span style="color:rgba(255,255,255,.45)">Statut</span><span style="color:#fff;font-weight:600">${b.statusLabel||b.status||'—'}</span></div>`,
   ];
   if(isElec&&b.battery?.percentage!=null){
-    essentialRows.push(`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid rgba(255,255,255,.06);font-size:10.5px"><span style="color:rgba(255,255,255,.45)">Batterie</span><span style="color:#fff;font-weight:600">${b.battery.percentage}%</span></div>`);
+    essentialRows.push(`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid rgba(255,255,255,.06);font-size:10.5px"><span style="color:rgba(255,255,255,.45)">Batterie</span><span style="color:#fff;font-weight:600">${b.battery.percentage}% (~${battRangeKm(b.battery.percentage)}km)</span></div>`);
   }
   if(b.rating?.value!=null){
     essentialRows.push(`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid rgba(255,255,255,.06);font-size:10.5px"><span style="color:rgba(255,255,255,.45)">Note</span><span style="color:#fff;font-weight:600">${Math.round(b.rating.value)}${b.rating.count?' ('+b.rating.count+' avis)':''}</span></div>`);
