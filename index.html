@@ -957,12 +957,21 @@ const TCL_STOP_SLD=`<?xml version="1.0" encoding="UTF-8"?>
 // Onglet Transports : tous les calques (bus, tram, métro/funiculaire, arrêts)
 // affichés ensemble, pas de toggle individuel — de simples tuiles image WMS,
 // aussi légères que le fond de carte, donc pas de souci à tout montrer d'un coup.
-let tclLayersGroup=null;
+let tclLayersGroup=null, tclPaneCreated=false;
 function showAllTclLayers(){
+  // Pane dédié : le fond de carte est désaturé (grayscale) via un filtre CSS
+  // sur .leaflet-tile-pane — sans pane séparé, nos calques transport (couleurs
+  // officielles TCL) hériteraient du même filtre et paraîtraient grisés eux aussi.
+  if(!tclPaneCreated){
+    const pane=map.createPane('tclPane');
+    pane.style.zIndex=350; // au-dessus des tuiles de base, sous les marqueurs
+    pane.style.filter='none';
+    tclPaneCreated=true;
+  }
   if(tclLayersGroup){ tclLayersGroup.addTo(map); return; }
   tclLayersGroup=L.layerGroup();
   const wms=(layer, extra={})=>L.tileLayer.wms('https://data.grandlyon.com/geoserver/wms',{
-    layers:layer, format:'image/png', transparent:true, version:'1.3.0', ...extra
+    layers:layer, format:'image/png', transparent:true, version:'1.3.0', pane:'tclPane', ...extra
   });
   wms('sytral:tcl_sytral.tcllignebus_2_0_0', {opacity:0.75}).addTo(tclLayersGroup);
   wms('sytral:tcl_sytral.tcllignetram_2_0_0', {opacity:0.9}).addTo(tclLayersGroup);
