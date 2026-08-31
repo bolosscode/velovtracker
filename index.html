@@ -909,8 +909,54 @@ function initMap(){
   map.on('zoomend', renderStations);
 }
 
-/* ═══ CALQUES optionnels : Relief + Radar météo ═══ */
+/* ═══ CALQUES optionnels : Relief + Radar météo + Transports TCL ═══ */
 let hillshadeLayer=null, radarLayer=null, radarRefreshTimer=null;
+let tclBusLayer=null, tclTramLayer=null, tclStopsLayer=null;
+
+// Calques image WMS GeoServer (data.grandlyon.com), publics sans authentification.
+// Rendus côté serveur en tuiles PNG transparentes — pas de téléchargement de
+// géométrie vectorielle, aussi léger que notre fond de carte.
+function toggleTclBus(on){
+  if(on){
+    if(!tclBusLayer){
+      tclBusLayer=L.tileLayer.wms('https://data.grandlyon.com/geoserver/wms',{
+        layers:'sytral:tcl_sytral.tcllignebus_2_0_0',
+        format:'image/png', transparent:true, version:'1.3.0', opacity:0.85
+      });
+    }
+    tclBusLayer.addTo(map);
+  } else if(tclBusLayer){
+    map.removeLayer(tclBusLayer);
+  }
+}
+
+function toggleTclTram(on){
+  if(on){
+    if(!tclTramLayer){
+      tclTramLayer=L.tileLayer.wms('https://data.grandlyon.com/geoserver/wms',{
+        layers:'sytral:tcl_sytral.tcllignetram_2_0_0',
+        format:'image/png', transparent:true, version:'1.3.0', opacity:0.9
+      });
+    }
+    tclTramLayer.addTo(map);
+  } else if(tclTramLayer){
+    map.removeLayer(tclTramLayer);
+  }
+}
+
+function toggleTclStops(on){
+  if(on){
+    if(!tclStopsLayer){
+      tclStopsLayer=L.tileLayer.wms('https://data.grandlyon.com/geoserver/wms',{
+        layers:'sytral:tcl_sytral.tclarret',
+        format:'image/png', transparent:true, version:'1.3.0', opacity:0.9, minZoom:14
+      });
+    }
+    tclStopsLayer.addTo(map);
+  } else if(tclStopsLayer){
+    map.removeLayer(tclStopsLayer);
+  }
+}
 
 function toggleHillshade(on){
   if(on){
@@ -1526,6 +1572,24 @@ function initPlanMap(){
         radarDot.style.cssText='position:absolute;top:0px;right:0px;width:4px;height:4px;border-radius:50%;background:transparent;box-shadow:0 0 0 1px rgba(12,12,16,.85)';
         radarBtn.appendChild(radarDot);
         row3.appendChild(radarBtn);
+
+        // Ligne 4 : transports TCL (tram, bus, arrêts) — calques image WMS,
+        // pas de vecteurs à télécharger, chacun activable indépendamment
+        const sepH3=document.createElement('div');
+        sepH3.style.cssText='width:100%;height:0.5px;background:rgba(255,255,255,.1);margin:4px 0';
+        div.appendChild(sepH3);
+
+        const row4=document.createElement('div');
+        row4.style.cssText='display:flex;align-items:center;justify-content:center;gap:4px';
+        div.appendChild(row4);
+
+        const tramIcon='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="14" rx="2"/><path d="M4 11h16M8 18l-2 3M16 18l2 3"/></svg>';
+        const busIcon='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="12" rx="2"/><circle cx="7.5" cy="19" r="1.5"/><circle cx="16.5" cy="19" r="1.5"/></svg>';
+        const stopIcon='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9" stroke-dasharray="2,2"/></svg>';
+
+        row4.appendChild(mkToggle(tramIcon, 'Tram', toggleTclTram));
+        row4.appendChild(mkToggle(busIcon, 'Bus (~10 Mo au 1er affichage)', toggleTclBus));
+        row4.appendChild(mkToggle(stopIcon, 'Arrêts', toggleTclStops));
 
         return div;
       };
