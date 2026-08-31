@@ -2025,7 +2025,12 @@ async function drawTop3Routes(){
     }
   });
   // Zoom sur le premier
-  if(routes[0]?.coords) planMap.fitBounds(L.polyline(routes[0].coords).getBounds().pad(.25),{animate:false});
+  if(routes[0]?.coords){
+    planMap.fitBounds(L.polyline(routes[0].coords).getBounds().pad(.25),{animate:false});
+    // Forcer la resynchronisation visuelle (le zoom interne peut changer sans
+    // que le rendu des tuiles suive immédiatement — bug observé sur ce déploiement)
+    setTimeout(()=>planMap.invalidateSize({pan:false}), 50);
+  }
 }
 
 async function showRoute(idx){
@@ -2123,6 +2128,7 @@ async function showRoute(idx){
       setTimeout(()=>{
         planMap.invalidateSize();
         planMap.fitBounds(L.polyline(coords).getBounds().pad(.2),{animate:false});
+        setTimeout(()=>planMap.invalidateSize({pan:false}), 50);
       }, 100);
     }
   }catch{}
