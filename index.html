@@ -340,7 +340,10 @@ function positionDropdown(inputId,ddId){
 // Carrousel de pastilles (mobile uniquement) : remplace l'ancien système
 // "1 pastille + tap pour ouvrir la liste complète" — plus aucune liste ne
 // s'ouvre sur mobile, uniquement un défilement horizontal entre pastilles.
-function renderPillCard(combo, i, isActive){
+// Une seule pastille pleine largeur par page (comme l'original) — le swipe
+// change de page via scroll natif, les points en dessous ne sont qu'un
+// indice visuel discret (pas cliquables, pas de bordure colorée).
+function renderPillPage(combo, i){
   const sc=Math.round(combo.score??0);
   const scCol=sc>=60?'#34c759':sc>=35?'#ff9f0a':'#ff453a';
   const scBg=sc>=60?'#0d2b1a':sc>=35?'#2b1a00':'#2b0a0a';
@@ -351,21 +354,22 @@ function renderPillCard(combo, i, isActive){
   const cacheKey=combo.dep.number+'_'+combo.dist;
   const cachedBikes=_comboBikesCache[cacheKey];
   const reco=cachedBikes?renderRecoBikesCompact(cachedBikes):'';
-  return `<div class="pill-card${isActive?' active':''}" data-pidx="${i}" onclick="selectComboIdx(${i})" style="scroll-snap-align:start;flex-shrink:0;width:280px;min-width:280px;box-sizing:border-box;background:rgba(255,255,255,.05);border:0.5px solid ${isActive?'rgba(52,199,89,.4)':'rgba(255,255,255,.1)'};border-radius:12px;padding:9px 10px;cursor:pointer">
-    <div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;min-width:0">
-      <div style="flex-shrink:0;width:15px;height:15px;border-radius:4px;background:rgba(255,255,255,.1);font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:700">${i+1}</div>
-      <div style="flex:1;min-width:0;font-size:10.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cleanName(combo.dep.name)} → ${cleanName(combo.arr.name)}</div>
-      <div style="flex-shrink:0;font-size:9.5px;font-weight:700;padding:1px 5px;border-radius:4px;white-space:nowrap;background:${scBg};color:${scCol}">${sc}%</div>
+  return `<div class="pill-page" data-pidx="${i}" style="scroll-snap-align:start;flex-shrink:0;width:100%;box-sizing:border-box;padding:9px 12px">
+    <div style="display:flex;align-items:center;gap:7px;min-width:0">
+      <div style="flex-shrink:0;width:18px;height:18px;border-radius:5px;background:rgba(255,255,255,.08);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center">${i+1}</div>
+      <div style="flex:1;min-width:0;font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cleanName(combo.dep.name)} → ${cleanName(combo.arr.name)}</div>
+      <div style="flex-shrink:0;display:flex;align-items:center;gap:3px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg><span style="font-size:16px;font-weight:800;color:#fff">${livePlacesDisp}</span></div>
+      <div style="flex-shrink:0;background:${scBg};border-radius:6px;padding:2px 6px"><span style="font-size:11px;font-weight:700;color:${scCol}">${sc}%</span></div>
     </div>
-    <div style="display:flex;align-items:center;gap:6px;min-width:0">
-      <span style="flex-shrink:0;font-size:9.5px;color:rgba(255,255,255,.5);white-space:nowrap">${Math.round(combo.dist/1000*10)/10}km · ~${combo.rideMin}min</span>
-      <div style="display:flex;gap:5px;margin-left:auto;flex-shrink:0">
-        <span style="display:flex;align-items:center;gap:1px;font-size:10px;font-weight:700;color:#fff;white-space:nowrap"><svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>${liveElec}</span>
-        <span style="display:flex;align-items:center;gap:1px;font-size:10px;font-weight:700;color:#fff;white-space:nowrap"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>${liveMeca}</span>
-        <span style="display:flex;align-items:center;gap:1px;font-size:10px;font-weight:700;color:#fff;white-space:nowrap"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg>${livePlacesDisp}</span>
+    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;min-width:0">
+      <span style="flex-shrink:0;font-size:10px;color:rgba(255,255,255,.5)">${Math.round(combo.dist/1000*10)/10}km · ~${combo.rideMin}min</span>
+      <div style="display:flex;align-items:center;gap:4px;margin-left:auto;flex-shrink:0">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span style="font-size:11px;font-weight:700;color:#fff">${liveElec}</span>
+        <span style="color:#38383a;font-size:10px">/</span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg><span style="font-size:11px;font-weight:700;color:#fff">${liveMeca}</span>
       </div>
     </div>
-    ${reco?`<div style="margin-top:3px">${reco}</div>`:''}
+    ${reco?`<div style="margin-top:2px">${reco}</div>`:''}
   </div>`;
 }
 
@@ -379,12 +383,12 @@ function compactPlanFloat(){
   }
   const top=window._planCombos||[];
   if(top.length){
-    const cardsHtml=top.map((combo,i)=>renderPillCard(combo,i,i===idx)).join('');
+    const pagesHtml=top.map((combo,i)=>renderPillPage(combo,i)).join('');
     const dotsHtml=top.slice(0,Math.min(top.length,8)).map((_,i)=>
-      `<div class="cdot${i===idx?' on':''}" style="width:${i===idx?'14':'5'}px" data-cidx="${i}"></div>`).join('');
+      `<div class="pdot" style="width:${i===idx?'12px':'4px'};height:4px;border-radius:2px;background:rgba(255,255,255,${i===idx?'.7':'.25'})"></div>`).join('');
     el.innerHTML=`
-      <div id="pill-carousel-track" style="display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:10px 10px 0">${cardsHtml}</div>
-      <div class="combo-dots" style="display:flex;justify-content:center;gap:5px;padding:6px 0 8px">${dotsHtml}</div>`;
+      <div id="pill-page-track" style="display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none">${pagesHtml}</div>
+      <div style="display:flex;justify-content:center;gap:4px;padding:6px 0 9px">${dotsHtml}</div>`;
   } else {
     el.innerHTML=`<div style="font-size:12px;color:rgba(255,255,255,.6);padding:10px;text-align:center">Aucun itinéraire</div>`;
   }
@@ -392,33 +396,32 @@ function compactPlanFloat(){
   document.getElementById('plan-results').style.display='none';
   el.style.display='block';
   const pf=document.getElementById('plan-float');
-  if(pf) pf.style.maxHeight='230px';
+  if(pf) pf.style.maxHeight='110px';
   initPillCarouselScroll();
 }
 
-// Détecte la pastille active pendant le scroll (même mécanisme fiable que
-// le slider desktop) et synchronise dots + prévisualisation carte
+// Détecte la page active pendant le scroll et synchronise points + carte
 function initPillCarouselScroll(){
-  const track=document.getElementById('pill-carousel-track');
+  const track=document.getElementById('pill-page-track');
   if(!track || track._scrollInit) return;
   track._scrollInit=true;
   let timer=null;
   track.addEventListener('scroll',()=>{
     clearTimeout(timer);
     timer=setTimeout(()=>{
-      const cards=[...track.querySelectorAll('.pill-card')];
-      if(!cards.length) return;
+      const pages=[...track.querySelectorAll('.pill-page')];
+      if(!pages.length) return;
       let closest=0, closestDist=Infinity;
-      cards.forEach((card,i)=>{
-        const dist=Math.abs(card.offsetLeft-track.scrollLeft);
+      pages.forEach((page,i)=>{
+        const dist=Math.abs(page.offsetLeft-track.scrollLeft);
         if(dist<closestDist){ closestDist=dist; closest=i; }
       });
       if(closest!==(window._openComboIdx??0)) selectComboIdx(closest);
     },120);
   },{passive:true});
-  // Faire défiler jusqu'à la pastille active à l'ouverture
-  const activeCard=track.querySelector('.pill-card.active');
-  if(activeCard) track.scrollTo({left:activeCard.offsetLeft, behavior:'instant'});
+  const idx=window._openComboIdx??0;
+  const activePage=track.querySelectorAll('.pill-page')[idx];
+  if(activePage) track.scrollTo({left:activePage.offsetLeft, behavior:'instant'});
 }
 function expandPlanFloat(){
   document.getElementById('plan-float-expanded').style.display='block';
@@ -1942,19 +1945,12 @@ async function selectComboIdx(idx){
 // Synchronise dots + bordure active du carrousel mobile sans tout regénérer
 // (évite de casser le scroll en cours si l'utilisateur est en train de swiper)
 function updatePillCarouselActive(idx){
-  const track=document.getElementById('pill-carousel-track');
-  if(track){
-    track.querySelectorAll('.pill-card').forEach((card,i)=>{
-      const isActive=i===idx;
-      card.classList.toggle('active',isActive);
-      card.style.borderColor=isActive?'rgba(52,199,89,.4)':'rgba(255,255,255,.1)';
-    });
-  }
   const compact=document.getElementById('plan-float-compact');
   if(compact){
-    compact.querySelectorAll('.cdot').forEach((d,i)=>{
-      d.classList.toggle('on',i===idx);
-      d.style.width=i===idx?'14px':'5px';
+    compact.querySelectorAll('.pdot').forEach((d,i)=>{
+      const isActive=i===idx;
+      d.style.width=isActive?'12px':'4px';
+      d.style.background=`rgba(255,255,255,${isActive?'.7':'.25'})`;
     });
   }
 }
