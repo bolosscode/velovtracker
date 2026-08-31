@@ -1067,6 +1067,11 @@ const LIEUX_LYON = [
   {name:'Saint-Priest', lat:45.6966, lng:4.9428, type:'📍'},
 ];
 
+// Compteur de séquence par champ : évite qu'une requête lente pour une
+// frappe intermédiaire n'écrase le résultat correct d'une frappe plus récente
+// (course entre requêtes — la cause du "ça apparaît puis disparaît").
+const _geocodeSeq={};
+
 function buildDropdown(inputId, ddId, opts){
   const input=document.getElementById(inputId), dd=document.getElementById(ddId);
 
@@ -1074,6 +1079,9 @@ function buildDropdown(inputId, ddId, opts){
     const q=input.value.trim();
     dd.innerHTML='';
     if(!q){ dd.classList.remove('open'); return; }
+
+    // Invalider toute requête de géocodage en cours pour ce champ
+    const mySeq=(_geocodeSeq[inputId]=(_geocodeSeq[inputId]||0)+1);
 
     // Stations locales (instantané)
     const stMatches=allStations
@@ -1093,25 +1101,23 @@ function buildDropdown(inputId, ddId, opts){
         el.onclick=()=>{ input.value=cleanName(st.name); dd.classList.remove('open'); opts.onStation?.(st); };
         dd.appendChild(el);
       });
-      geoResults.forEach(geo=>{
+      geoResults.forEach(feat=>{
         const el=document.createElement('div'); el.className='opt';
-        const geoType=geo.type||geo.class||'';
-        const isShop=geoType==='shop'||geoType==='office'||geoType==='company'||geoType==='commercial'||(geo.extratags?.office)||(geo.extratags?.company);
-        const icon=isShop?'🏢':'📍';
-        const typeLabel=isShop?'entreprise':'adresse';
-        const shortName=geo.display_name.split(',').slice(0,2).join(',').trim();
-        el.innerHTML=`${shortName} <span class="opt-type">${icon} ${typeLabel}</span>`;
+        const p=feat.properties;
+        const icon=p.type==='housenumber'?'📍':p.type==='street'?'🛣️':'📍';
+        const typeLabel=p.type==='housenumber'?'adresse':p.type==='street'?'rue':'lieu';
+        el.innerHTML=`${p.label} <span class="opt-type">${icon} ${typeLabel}</span>`;
         el.onclick=()=>{
-          input.value=geo.display_name.split(',').slice(0,2).join(',');
+          input.value=p.label;
           dd.classList.remove('open');
-          const pos={lat:parseFloat(geo.lat),lng:parseFloat(geo.lon)};
-          opts.onGeoPos?.(pos);
+          const [lng,lat]=feat.geometry.coordinates;
+          opts.onGeoPos?.({lat,lng});
         };
         dd.appendChild(el);
       });
       // Lieux locaux
       lieuMatches.forEach(l=>{
-        if(geoResults.some(g=>g.display_name?.includes(l.name))) return; // dédoublonner
+        if(geoResults.some(g=>g.properties?.label?.includes(l.name))) return; // dédoublonner
         const el=document.createElement('div'); el.className='opt';
         el.innerHTML=`<span style="font-size:14px">${l.type}</span><div><div style="font-weight:500">${l.name}</div><div style="font-size:11px;color:rgba(255,255,255,.4)">Lyon</div></div>`;
         el.onclick=()=>{ input.value=l.name; dd.classList.remove('open'); opts.onGeoPos?.({lat:l.lat,lng:l.lng}); };
@@ -1125,14 +1131,17 @@ function buildDropdown(inputId, ddId, opts){
 
     render(); // afficher les stations tout de suite
 
-    // Géocodage Nominatim avec debounce 400ms
+    // Géocodage via la BAN (Base Adresse Nationale), avec debounce + garde
+    // anti-course : on ignore la réponse si une frappe plus récente a eu lieu
+    // entre-temps, même si cette réponse-là revient en premier.
     clearTimeout(_nominatimDebounce[inputId]);
     if(q.length>=3){
       _nominatimDebounce[inputId]=setTimeout(async()=>{
         try{
-          const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q+', Lyon, France')}&limit=6&addressdetails=1&extratags=1`);
-          const data=await r.json();
-          render(data);
+          const r=await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&lat=45.75&lon=4.83&limit=6`);
+          const d=await r.json();
+          if(_geocodeSeq[inputId]!==mySeq) return; // réponse périmée, on l'ignore
+          render(d.features||[]);
         }catch{}
       },200);
     }
