@@ -2335,11 +2335,17 @@ async function showComboCourbes(combo, targetEl=null){
 
 /* ═══ INIT ════════════════════════════════════════════ */
 function initRanges(){
-  const lbDate=document.getElementById('lb-date'); if(lbDate&&!lbDate.value) lbDate.value=new Date().toISOString().slice(0,10);
+  // Le jour courant (N) n'a que des stats partielles (journée pas terminée),
+  // pas comparables aux jours complets — on l'exclut du sélecteur de date.
+  const yesterday=new Date(); yesterday.setDate(yesterday.getDate()-1);
+  const yesterdayStr=yesterday.toISOString().slice(0,10);
+  const lbDate=document.getElementById('lb-date');
+  if(lbDate){
+    lbDate.max=yesterdayStr;
+    lbDate.value=yesterdayStr;
+  }
   const lbMonth=document.getElementById('lb-month'); if(lbMonth&&!lbMonth.value) lbMonth.value=new Date().toISOString().slice(0,7);
   onLbViewChange();
-  const now=new Date();
-  document.getElementById('lb-date').value=now.toISOString().slice(0,10);
 }
 
 
