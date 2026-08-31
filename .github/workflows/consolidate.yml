@@ -35,7 +35,8 @@ jobs:
         run: |
           python - << 'PYEOF'
           import os, subprocess, sys
-          from datetime import date, timedelta
+          from datetime import date, datetime, timedelta
+          from zoneinfo import ZoneInfo
           from pathlib import Path
 
           out_dir = Path("data/history")
@@ -44,35 +45,39 @@ jobs:
           input_date = os.environ.get("INPUT_DATE", "").strip()
 
           if input_date:
-            dates_to_run = [date.fromisoformat(input_date)]
+              dates_to_run = [date.fromisoformat(input_date)]
           else:
-            start = date(2025, 1, 29)
-            yesterday = date.today() - timedelta(days=1)
-            dates_to_run = []
-            d = start
-            while d <= yesterday:
-              exists = (out_dir / f"{d}.json").exists() or (out_dir / f"{d}.json.gz").exists()
-              if not exists:
-                dates_to_run.append(d)
-              d += timedelta(days=1)
+              start = date(2025, 1, 29)
+              # Fuseau français explicite : le runner GitHub Actions tourne en
+              # UTC, et près de minuit UTC "hier" calculé naivement peut être
+              # faux d'un jour par rapport à l'heure française réelle (c'est
+              # ce qui causait des jours manquants silencieux).
+              yesterday = datetime.now(ZoneInfo("Europe/Paris")).date() - timedelta(days=1)
+              dates_to_run = []
+              d = start
+              while d <= yesterday:
+                  exists = (out_dir / f"{d}.json").exists() or (out_dir / f"{d}.json.gz").exists()
+                  if not exists:
+                      dates_to_run.append(d)
+                  d += timedelta(days=1)
 
           if not dates_to_run:
-            print("Tous les jours sont deja consolides")
-            sys.exit(0)
+              print("Tous les jours sont deja consolides")
+              sys.exit(0)
 
           print(f"{len(dates_to_run)} jour(s) a consolider : {dates_to_run[0]} -> {dates_to_run[-1]}")
 
           errors = []
           for target_date in dates_to_run:
-            print(f"=== {target_date} ===", flush=True)
-            cmd = [sys.executable, "consolidate.py", "--date", str(target_date), "--out", str(out_dir)]
-            result = subprocess.run(cmd)
-            if result.returncode != 0:
-              errors.append(target_date)
+              print(f"=== {target_date} ===", flush=True)
+              cmd = [sys.executable, "consolidate.py", "--date", str(target_date), "--out", str(out_dir)]
+              result = subprocess.run(cmd)
+              if result.returncode != 0:
+                  errors.append(target_date)
 
           if errors:
-            print(f"{len(errors)} erreur(s) : {errors}", flush=True)
-            sys.exit(1)
+              print(f"{len(errors)} erreur(s) : {errors}", flush=True)
+              sys.exit(1)
           PYEOF
 
       - name: Commit & push
