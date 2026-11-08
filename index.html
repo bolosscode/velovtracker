@@ -20,6 +20,28 @@
 <script src="https://cdn.jsdelivr.net/npm/@maplibre/maplibre-gl-leaflet@0.1.4/leaflet-maplibre-gl.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+/* ── Popup station : colonnes alignées (icône | jauge | % | ★ | score | avis) ── */
+.sp-head{display:flex;flex-wrap:wrap;align-items:center;gap:2px 9px;margin-bottom:6px;padding-bottom:6px;border-bottom:.5px solid rgba(255,255,255,.1)}
+.sp-name{font-size:14px;font-weight:700;color:#fff;letter-spacing:.2px;line-height:1.2}
+.sp-cnt{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:700;color:rgba(255,255,255,.75)}
+.sp-cnt span{display:flex;align-items:center;gap:3px}
+.sp-row{display:grid;grid-template-columns:12px 30px 30px 8px 20px 30px;column-gap:3px;align-items:center;font-size:12px;font-variant-numeric:tabular-nums;padding:5px 3px;min-height:28px;border-top:.5px solid rgba(255,255,255,.07);cursor:pointer;-webkit-tap-highlight-color:rgba(255,255,255,.08)}
+.sp-row:first-child{border-top:0}
+.sp-row:hover{background:rgba(255,255,255,.05)}
+.sp-row.reco{background:rgba(74,222,128,.09);border-radius:7px;border-top:0}
+.sp-row svg{display:block;flex-shrink:0}
+.sp-bar{height:5px;background:rgba(255,255,255,.14);border-radius:3px;overflow:hidden}
+.sp-bar i{display:block;height:100%;border-radius:3px}
+.sp-pct{font-weight:700;text-align:right;color:#fff}
+.sp-st{color:rgba(255,255,255,.45);font-size:10px;text-align:center}
+.sp-sc{color:rgba(255,255,255,.75);font-size:11px;text-align:right}
+.sp-nb{color:rgba(255,255,255,.4);font-size:10px;white-space:nowrap}
+.sp-none{grid-column:span 2;color:rgba(255,255,255,.3);text-align:center}
+.sp-none3{grid-column:span 3;color:rgba(255,255,255,.3);font-size:11px;text-align:center}
+.sp-flag{grid-column:span 3;color:rgba(255,255,255,.5);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stn-act{width:100%;margin-top:6px;padding:8px 6px;border-radius:9px;border:.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.12);color:#e5e5ea;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px}
+.stn-act:hover{background:rgba(255,255,255,.18)}
+@media (pointer:coarse){ .sp-row{min-height:34px} .stn-act{min-height:38px;font-size:13px} }
 @media(max-width:640px){
   #stats-layout{grid-template-columns:1fr !important}
   #stats-detail{display:block !important}
@@ -347,6 +369,17 @@ function positionDropdown(inputId,ddId){
 // Une seule pastille pleine largeur par page (comme l'original) — le swipe
 // change de page via scroll natif, les points en dessous ne sont qu'un
 // indice visuel discret (pas cliquables, pas de bordure colorée).
+// Mode instantané : plus de score, seulement une alerte si le départ risque d'être
+// vide d'après l'historique récent (moments comparables pondérés par la récence,
+// voir depProb dans computePlan). Seuil : vide dans au moins 25 % des cas.
+const EMPTY_RISK_MIN=25;
+function emptyRiskBadgeHtml(combo){
+  if((window._planMode||'now')!=='now') return '';
+  const r=combo?.emptyRisk;
+  if(r==null||r<EMPTY_RISK_MIN) return '';
+  return `<div title="Station souvent vide à cette heure (environ ${r} % des cas, historique récent)" style="display:flex;align-items:center;gap:3px;flex-shrink:0;background:rgba(255,159,10,.1);border:.5px solid rgba(255,159,10,.3);border-radius:5px;padding:2px 6px;color:#ff9f0a;font-size:10px;font-weight:600;white-space:nowrap"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Risque vide</div>`;
+}
+
 function renderPillPage(combo, i){
   const sc=Math.round(combo.score??0);
   const scCol=sc>=60?'#34c759':sc>=35?'#ff9f0a':'#ff453a';
@@ -363,7 +396,7 @@ function renderPillPage(combo, i){
       <div style="flex-shrink:0;width:18px;height:18px;border-radius:5px;background:rgba(255,255,255,.08);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center">${i+1}</div>
       <div style="flex:1;min-width:0;font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cleanName(combo.dep.name)} → ${cleanName(combo.arr.name)}</div>
       <div style="flex-shrink:0;display:flex;align-items:center;gap:3px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg><span style="font-size:16px;font-weight:800;color:#fff">${livePlacesDisp}</span></div>
-      <div style="flex-shrink:0;background:${scBg};border-radius:6px;padding:2px 6px"><span style="font-size:11px;font-weight:700;color:${scCol}">${sc}%</span></div>
+      ${isNow?emptyRiskBadgeHtml(combo):`<div style="flex-shrink:0;background:${scBg};border-radius:6px;padding:2px 6px"><span style="font-size:11px;font-weight:700;color:${scCol}">${sc}%</span></div>`}
     </div>
     <div style="display:flex;align-items:center;gap:6px;margin-top:4px;min-width:0">
       <span style="flex-shrink:0;font-size:10px;color:rgba(255,255,255,.5)">${Math.round(combo.dist/1000*10)/10}km · ~${combo.rideMin}min</span>
@@ -1862,7 +1895,8 @@ async function computePlan(){
         arr:Object.assign({},arr,{live:liveArr2||null}),
         depPct,arrPct,depProb,arrProb,
         depN:pd?.depN??null,depElecN:pd?.depElecN??null,depMecaN:pd?.depMecaN??null,arrN:pa?.arrN??null,
-        score,dist,rideMin,samples:pd?.samples??0,battPenalty,overPrice,relaiStation
+        score,dist,rideMin,samples:pd?.samples??0,battPenalty,overPrice,relaiStation,
+        emptyRisk:depProb!=null?(100-depProb):null
       });
     }
   }
@@ -1920,7 +1954,7 @@ async function computePlan(){
               <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg><span style="font-size:12px;font-weight:700;color:#fff">${dispPlaces}</span>
             </div>
           </div>
-          <div style="background:${scBg};border-radius:5px;padding:2px 7px;min-width:36px;text-align:center"><span style="font-size:11px;font-weight:700;color:${scCol}">${sc}%</span></div>
+          ${isNowMode?emptyRiskBadgeHtml(combo):`<div style="background:${scBg};border-radius:5px;padding:2px 7px;min-width:36px;text-align:center"><span style="font-size:11px;font-weight:700;color:${scCol}">${sc}%</span></div>`}
         </div>`;
       // Walk times
       const walkDepMin=planFromPos&&!planFromFixed?walkMinutes(haversine(planFromPos.lat,planFromPos.lng,combo.dep.lat,combo.dep.lng)):null;
@@ -2644,29 +2678,24 @@ function renderBikeRow(b, i, isRecommended){
   const isElec=b.type==='ELECTRICAL';
   const reserved=b.isReserved;
   const avail=b.status==='AVAILABLE';
+  const ic=isRecommended?'#4ade80':'rgba(255,255,255,.65)';
   const icon=isElec
-    ?'<svg width="9" height="9" viewBox="0 0 24 24" fill="rgba(255,255,255,.8)"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'
-    :'<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
-  let battEl='<span style="font-size:9px;color:rgba(255,255,255,.2);min-width:24px">—</span>';
+    ?`<svg width="11" height="11" viewBox="0 0 24 24" fill="${ic}"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`
+    :`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="${ic}" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`;
+  // Batterie : jauge courte + % (seuils officiels Vélo'v 60 % / 10 %). Méca : tiret.
+  let battCells='<div class="sp-none">—</div>';
   if(isElec&&b.battery?.percentage!=null){
     const pct=b.battery.percentage;
-    const col=pct>=60?'#4ade80':pct>=10?'#f59e0b':'#f87171';  // seuils officiels app Vélo'v (BATTERY.HIGH/LOW.THRESHOLD)
-    battEl=`<span style="font-size:9px;font-weight:600;color:${col};min-width:34px">${pct}%</span>`;
+    const col=pct>=60?'#4ade80':pct>=10?'#f59e0b':'#f87171';
+    battCells=`<div class="sp-bar"><i style="width:${Math.max(4,Math.min(100,pct))}%;background:${col}"></i></div><div class="sp-pct">${pct}%</div>`;
   }
-  const ratingVal=b.rating?.value;
-  const ratingCount=b.rating?.count;
-  const ratingEl=ratingVal?`<span style="font-size:8px;color:rgba(255,255,255,.55)">★ ${Math.round(ratingVal)}<span style="color:rgba(255,255,255,.25)">${ratingCount?'('+ratingCount+')':''}</span></span>`:'';
-  const reservedEl=reserved?'<span style="font-size:8px;color:rgba(255,255,255,.5)">rés.</span>':(!avail?`<span style="font-size:8px;color:rgba(255,255,255,.4)">${b.statusLabel||b.status}</span>`:'');
-  const recoBadge=isRecommended?'<span style="font-size:8px;color:#4ade80;flex-shrink:0" title="Recommandé">&#9733;</span>':'';
-  return `<div class="bike-row-live" data-idx="${i}" style="display:flex;align-items:center;gap:3px;padding:4px 3px;min-height:26px;border-bottom:0.5px solid rgba(255,255,255,.05);opacity:${reserved||!avail?'.5':'1'};cursor:pointer;-webkit-tap-highlight-color:rgba(255,255,255,.08);${isRecommended?'background:rgba(74,222,128,.06)':''}">
-    ${recoBadge}
-    <span style="display:flex;align-items:center">${icon}</span>
-    <span style="font-size:9px;color:rgba(255,255,255,.4);min-width:16px">${b.standNumber??'?'}</span>
-    ${battEl}
-    ${ratingEl}
-    <span style="font-size:9px;color:rgba(255,255,255,.28);flex:1;text-align:right">#${b.number}</span>
-    ${reservedEl}
-  </div>`;
+  // Notation en 3 colonnes fixes (★ / score / avis) pour garder l'alignement
+  let tail='<div class="sp-none3">—</div>';
+  const rv=b.rating?.value, rc=b.rating?.count;
+  if(reserved){ tail='<div class="sp-flag">réservé</div>'; }
+  else if(!avail){ tail=`<div class="sp-flag" title="${b.statusLabel||b.status}">${b.statusLabel||b.status}</div>`; }
+  else if(rv){ tail=`<div class="sp-st">★</div><div class="sp-sc">${Math.round(rv)}</div><div class="sp-nb">${rc?'('+rc+')':''}</div>`; }
+  return `<div class="bike-row-live sp-row${isRecommended?' reco':''}" data-idx="${i}"${isRecommended?' title="Recommandé"':''} style="${reserved||!avail?'opacity:.5':''}">${icon}${battCells}${tail}</div>`;
 }
 
 const BIKE_FIELD_LABELS={
@@ -2796,37 +2825,35 @@ async function showStationPopup(s, lat, lon){
     left:${pt.x}px;top:${pt.y-10}px;
     background:rgba(12,12,16,.85);backdrop-filter:blur(56px) saturate(220%) brightness(1.08);-webkit-backdrop-filter:blur(56px) saturate(220%) brightness(1.08);
     border:0.5px solid rgba(255,255,255,.18);border-radius:11px;
-    padding:7px 9px;min-width:180px;max-width:min(280px,calc(100vw - 32px));
+    padding:8px 8px;width:176px;max-width:calc(100vw - 24px);
     max-height:min(60vh,400px);display:flex;flex-direction:column;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 24px rgba(0,0,0,.4);
     pointer-events:auto;`;
 
   // Vélos live JCDecaux (chargement asynchrone) — scroll interne propre à la liste,
   // le header (nom + totaux) et le bouton "Partir d'ici" restent toujours visibles
-  const bikesHtml = `<div style="position:relative;margin-bottom:${hasDep?'3':'5'}px;flex-shrink:1">
-    <div id="stn-bikes-slot" class="no-native-scrollbar" style="font-size:10px;color:rgba(255,255,255,.35);text-align:center;padding:3px 10px 3px 0;overflow-y:auto;max-height:230px">Chargement…</div>
+  const bikesHtml = `<div style="position:relative;margin-bottom:2px;flex-shrink:1">
+    <div id="stn-bikes-slot" class="no-native-scrollbar" style="font-size:10px;color:rgba(255,255,255,.35);text-align:center;padding:0 6px 0 0;overflow-y:auto;max-height:230px">Chargement…</div>
     <div id="stn-scroll-track" style="display:none;position:absolute;top:0;right:1px;width:4px;height:100%;background:rgba(255,255,255,.1);border-radius:2px;pointer-events:none">
       <div id="stn-scroll-thumb" style="position:absolute;top:0;right:0;width:4px;background:#0a84ff;border-radius:2px;box-shadow:0 0 3px rgba(10,132,255,.6)"></div>
     </div>
   </div>`;
 
+  const BOLT='<svg width="12" height="12" viewBox="0 0 24 24" fill="#4ade80"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>';
+  const WRENCH='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
   div.innerHTML=`
-    <div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:4px">${cleanName(s.name)}</div>
-    <div style="display:flex;align-items:center;gap:9px;font-size:10.5px;color:rgba(255,255,255,.75);margin-bottom:4px;padding-bottom:4px;border-bottom:0.5px solid rgba(255,255,255,.1)">
-      <span style="display:flex;align-items:center;gap:3px">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="#4ade80"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        <span id="stn-total-elec" style="font-weight:700;color:#4ade80">${s.electrical_bikes}</span>
-      </span>
-      <span style="display:flex;align-items:center;gap:3px">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-        <span id="stn-total-meca" style="font-weight:700">${s.mechanical_bikes}</span>
+    <div class="sp-head">
+      <span class="sp-name">${cleanName(s.name)}</span>
+      <span class="sp-cnt">
+        <span>${BOLT}<span id="stn-total-elec" style="color:#4ade80">${s.electrical_bikes}</span></span>
+        <span>${WRENCH}<span id="stn-total-meca">${s.mechanical_bikes}</span></span>
       </span>
     </div>
     ${bikesHtml}
-    ${!hasDep?`<button id="stn-dep-btn" style="width:100%;padding:4px 7px;border-radius:7px;border:0.5px solid rgba(52,199,89,.3);background:rgba(52,199,89,.1);color:#fff;font-size:10px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px">
-      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Partir d'ici</button>`
-    :`<button id="stn-arr-btn" style="width:100%;padding:4px 7px;border-radius:7px;border:0.5px solid rgba(255,69,58,.3);background:rgba(255,69,58,.1);color:#ff453a;font-size:10px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px">
-      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Arriver ici</button>`}`;
+    ${!hasDep?`<button id="stn-dep-btn" class="stn-act">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Partir d'ici</button>`
+    :`<button id="stn-arr-btn" class="stn-act">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Arriver ici</button>`}`;
 
   mapEl.appendChild(div);
   _stationPopupEl=div;
@@ -2865,7 +2892,7 @@ async function showStationPopup(s, lat, lon){
       return (b.battery?.percentage||0)-(a.battery?.percentage||0);
     });
     if(!list.length){ slot.innerHTML=''; return; }
-    slot.style.textAlign='left'; slot.style.padding='0';
+    slot.style.textAlign='left'; slot.style.padding='0 6px 0 0';
     window._popupBikesList=list;
     const {bestElecId,bestMecaId}=markBestBikes(list);
     slot.innerHTML=list.map((b,i)=>renderBikeRow(b,i,b.id===bestElecId||b.id===bestMecaId)).join('');
