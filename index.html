@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="locked">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="Vélo'v"/>
-<meta name="theme-color" content="#ffffff"/>
+<meta name="theme-color" content="#0c0c10"/>
 <title>Vélo'v Lyon Analytics</title>
 <link rel="preconnect" href="https://api.cyclocity.fr" crossorigin>
 <link rel="dns-prefetch" href="https://api.cyclocity.fr">
@@ -20,17 +20,90 @@
 <script src="https://cdn.jsdelivr.net/npm/@maplibre/maplibre-gl-leaflet@0.1.4/leaflet-maplibre-gl.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+/* ── Verrouillage de l'interface + adaptation aux écrans (iPhone, Android, tablettes) ── */
+:root{--vh:100vh;--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);--sal:env(safe-area-inset-left,0px);--sar:env(safe-area-inset-right,0px)}
+@supports (height:100dvh){ :root{--vh:100dvh} }
+html,body{overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{touch-action:manipulation;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+input,textarea{-webkit-user-select:text;user-select:text}
+/* Onglet carte : la page ne bouge plus (ni rebond, ni défilement, ni barre d'adresse qui saute) */
+html.locked,html.locked body{position:fixed;inset:0;width:100%;height:100%;overflow:hidden}
+.leaflet-bottom{padding-bottom:var(--sab)} .leaflet-right{padding-right:var(--sar)} .leaflet-left{padding-left:var(--sal)}
+/* ── Roue de chargement de la page d'accueil (juste une roue) ── */
+#boot-spin{position:fixed;inset:0;z-index:99999;background:#0c0c10;display:flex;align-items:center;justify-content:center;transition:opacity .25s}
+#boot-spin.out{opacity:0;pointer-events:none}
+#boot-spin .ring{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.14);border-top-color:#fff;animation:bootspin .8s linear infinite}
+@keyframes bootspin{to{transform:rotate(360deg)}}
+/* ── Badge risque de station pleine ── */
+/* ═════════ LIQUID GLASS RÉGULIER ═════════
+   Une seule matière, partout : fond translucide uniforme, flou, filet identique sur les 4 côtés,
+   ombre sans décalage. Aucun reflet ni dégradé directionnel : pas de source de lumière.
+   Le flou n'est appliqué qu'aux conteneurs ; les capsules intérieures sont de simples aplats translucides. */
+:root{
+  --g-fill:rgba(24,26,34,.52);
+  --g-blur:blur(22px) saturate(180%);
+  --g-edge:inset 0 0 0 .5px rgba(255,255,255,.26);
+  --g-shadow:0 0 22px rgba(0,0,0,.22);
+  --g-cap:rgba(255,255,255,.14);--g-cap-key:rgba(255,255,255,.22);--g-cap-alert:rgba(255,255,255,.32);
+  --g-sub:rgba(255,255,255,.72);--g-dim:rgba(255,255,255,.55);
+}
+.glass,#plan-float,#stn-custom-popup,#bike-detail-modal,#source-panel,#meteo-ctrl,.dropdown,.leaflet-control-attribution,header,#bottom-nav{
+  background:var(--g-fill) !important;
+  -webkit-backdrop-filter:var(--g-blur) !important;backdrop-filter:var(--g-blur) !important;
+  border:none !important;box-shadow:var(--g-edge),var(--g-shadow) !important}
+#plan-float,#stn-custom-popup,#bike-detail-modal,#source-panel{border-radius:22px !important}
+.dropdown{border-radius:16px !important}
+.leaflet-control-attribution{border-radius:10px !important;margin:0 8px 8px 0 !important;padding:2px 8px !important;color:var(--g-sub) !important}
+.leaflet-control-attribution a{color:#fff !important}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .glass,#plan-float,#stn-custom-popup,#bike-detail-modal,#source-panel,#meteo-ctrl,.dropdown,.leaflet-control-attribution,header,#bottom-nav{background:rgba(24,26,34,.92) !important}
+}
+/* Boutons de zoom : gélules rondes */
+.leaflet-control-zoom.leaflet-bar{border:none !important;box-shadow:none !important;background:none !important;display:flex;flex-direction:column;gap:8px}
+.leaflet-control-zoom a{width:38px !important;height:38px !important;line-height:36px !important;border-radius:50% !important;border:none !important;margin:0 !important;font-size:20px;font-weight:300;color:#fff !important;text-align:center;
+  background:var(--g-fill) !important;-webkit-backdrop-filter:var(--g-blur);backdrop-filter:var(--g-blur);box-shadow:var(--g-edge),var(--g-shadow) !important}
+.leaflet-control-zoom a:hover{background:linear-gradient(rgba(255,255,255,.12),rgba(255,255,255,.12)),var(--g-fill) !important}
+
+/* ── Pastille de résultat (PC liste + mobile page) ── */
+.lg-cap{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 8px;border-radius:999px;font-size:10.5px;color:rgba(255,255,255,.92);white-space:nowrap;font-variant-numeric:tabular-nums;background:var(--g-cap);box-shadow:var(--g-edge)}
+.lg-cap.key{background:var(--g-cap-key);color:#fff;font-weight:700}
+.lg-cap.alert{background:var(--g-cap-alert);color:#fff;font-weight:800;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.5)}
+.lg-cap.pl{height:26px;padding:0 10px}.lg-cap.pl b{font-size:16px;font-weight:800}
+.lg-cap.rk{width:20px;padding:0;justify-content:center;font-weight:800;border-radius:7px;font-size:10.5px}
+.combo-card.selected .lg-cap.rk,.pill-page .lg-cap.rk{background:#fff;color:#111;box-shadow:none}
+.lg-pill svg{display:block;flex-shrink:0}
+.lg-r1{display:flex;align-items:center;gap:8px;min-width:0}
+.lg-tt{flex:1;min-width:0;font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lg-r2{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap}
+.lg-r2 .cnt{margin-left:auto}
+.lg-al{display:flex;align-items:center;gap:6px;margin-top:7px;flex-wrap:wrap}
+.lg-al .mr{margin-left:auto;font-size:10px;font-weight:700;color:var(--g-sub)}
+.lg-chev{display:none;justify-content:center;color:var(--g-sub);margin-top:3px;cursor:pointer;padding:2px 0}
+.lg-pill.has-exp .lg-chev{display:flex}
+.lg-pill.open .lg-chev svg{transform:rotate(180deg)}
+.lg-exp{display:none;margin-top:6px;padding-top:8px;border-top:.5px solid rgba(255,255,255,.26)}
+.lg-pill.open .lg-exp{display:block}
+.lg-extra{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.lg-extra:empty{display:none}
+.lg-bl{display:grid;grid-template-columns:12px 34px 32px 28px;column-gap:6px;row-gap:3px;align-items:center;justify-content:start;width:max-content;max-width:100%;padding:5px 9px;border-radius:12px;font-size:10px;line-height:13px;font-variant-numeric:tabular-nums;color:rgba(255,255,255,.85);background:var(--g-cap);box-shadow:var(--g-edge)}
+.lg-bl.nochg{grid-template-columns:12px 34px 28px}
+.lg-bl .nb,.lg-bl .ic{color:#fff} .lg-bl .c{color:#fff;font-weight:700;text-align:right}
+.lg-bikes:empty{display:none}
+.combo-card.lg-pill{display:block !important;padding:10px 12px 6px !important;border:none !important;border-radius:16px !important;margin-bottom:6px !important;background:rgba(255,255,255,.08) !important;box-shadow:var(--g-edge) !important}
+.combo-card.lg-pill:hover{background:rgba(255,255,255,.12) !important}
+.combo-card.lg-pill.selected{background:rgba(255,255,255,.16) !important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.6) !important}
+.pill-page.lg-pill{padding:10px 12px 2px !important}
 /* ── Popup station : colonnes alignées (icône | jauge | % | ★ | score | avis) ── */
-.sp-head{display:flex;flex-wrap:wrap;align-items:center;gap:2px 9px;margin-bottom:6px;padding-bottom:6px;border-bottom:.5px solid rgba(255,255,255,.1)}
+.sp-head{display:flex;flex-wrap:wrap;align-items:center;gap:2px 9px;margin-bottom:6px;padding-bottom:6px;border-bottom:.5px solid rgba(255,255,255,.22)}
 .sp-name{font-size:14px;font-weight:700;color:#fff;letter-spacing:.2px;line-height:1.2}
 .sp-cnt{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:700;color:rgba(255,255,255,.75)}
 .sp-cnt span{display:flex;align-items:center;gap:3px}
-.sp-row{display:grid;grid-template-columns:12px 30px 30px 8px 20px 30px;column-gap:3px;align-items:center;font-size:12px;font-variant-numeric:tabular-nums;padding:5px 3px;min-height:28px;border-top:.5px solid rgba(255,255,255,.07);cursor:pointer;-webkit-tap-highlight-color:rgba(255,255,255,.08)}
+.sp-row{display:grid;grid-template-columns:12px 30px 30px 8px 20px 30px;column-gap:3px;align-items:center;font-size:12px;font-variant-numeric:tabular-nums;padding:5px 3px;min-height:28px;border-top:.5px solid rgba(255,255,255,.18);cursor:pointer;-webkit-tap-highlight-color:rgba(255,255,255,.08)}
 .sp-row:first-child{border-top:0}
 .sp-row:hover{background:rgba(255,255,255,.05)}
-.sp-row.reco{background:rgba(74,222,128,.09);border-radius:7px;border-top:0}
+.sp-row.reco{background:var(--g-cap);box-shadow:var(--g-edge);border-radius:10px;border-top:0}
 .sp-row svg{display:block;flex-shrink:0}
-.sp-bar{height:5px;background:rgba(255,255,255,.14);border-radius:3px;overflow:hidden}
+.sp-bar{height:5px;background:rgba(255,255,255,.25);border-radius:3px;overflow:hidden}
 .sp-bar i{display:block;height:100%;border-radius:3px}
 .sp-pct{font-weight:700;text-align:right;color:#fff}
 .sp-st{color:rgba(255,255,255,.45);font-size:10px;text-align:center}
@@ -39,9 +112,16 @@
 .sp-none{grid-column:span 2;color:rgba(255,255,255,.3);text-align:center}
 .sp-none3{grid-column:span 3;color:rgba(255,255,255,.3);font-size:11px;text-align:center}
 .sp-flag{grid-column:span 3;color:rgba(255,255,255,.5);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.stn-act{width:100%;margin-top:6px;padding:8px 6px;border-radius:9px;border:.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.12);color:#e5e5ea;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px}
-.stn-act:hover{background:rgba(255,255,255,.18)}
+.stn-act{width:100%;margin-top:8px;padding:0 8px;height:34px;border-radius:999px;border:none;background:var(--g-cap-key);box-shadow:var(--g-edge);color:#fff;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px}
+.stn-act:hover{background:var(--g-cap-alert)}
 @media (pointer:coarse){ .sp-row{min-height:34px} .stn-act{min-height:38px;font-size:13px} }
+/* ── Indicateur de scroll du popup : fin, neutre, dans la gouttière, fondu aux bords ── */
+.sp-track{position:absolute;top:3px;bottom:3px;right:0;width:3px;border-radius:2px;background:rgba(255,255,255,.08);pointer-events:none;opacity:.8}
+.sp-thumb{position:absolute;left:0;right:0;top:0;border-radius:2px;background:rgba(255,255,255,.42);transition:background .2s}
+.sp-track.active .sp-thumb{background:rgba(255,255,255,.85)}
+.sp-slot.fade-top{-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 14px);mask-image:linear-gradient(to bottom,transparent 0,#000 14px)}
+.sp-slot.fade-bottom{-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 14px),transparent 100%);mask-image:linear-gradient(to bottom,#000 calc(100% - 14px),transparent 100%)}
+.sp-slot.fade-top.fade-bottom{-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 14px,#000 calc(100% - 14px),transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 14px,#000 calc(100% - 14px),transparent 100%)}
 @media(max-width:640px){
   #stats-layout{grid-template-columns:1fr !important}
   #stats-detail{display:block !important}
@@ -64,13 +144,13 @@
 }
 @media(min-width:641px){
   #bottom-nav{display:none}
-  #plan-float{width:calc(100vw / 3 - 20px) !important;right:auto !important}
+  #plan-float{width:clamp(320px,calc(100vw / 3 - 20px),480px) !important;right:auto !important}
 }
 #bottom-nav{
   position:fixed;bottom:0;left:0;right:0;z-index:300;
   background:rgba(12,12,16,.85);backdrop-filter:blur(14px);
   border-top:0.5px solid #38383a;
-  display:flex;padding:0;height:60px;
+  display:flex;padding:0 0 var(--sab) 0;height:calc(60px + var(--sab));
 }
 #bottom-nav .tab{
   flex:1;display:flex;flex-direction:column;align-items:center;
@@ -85,7 +165,7 @@
   --border:#38383a;--blue:#f5f5f7;--green:#30d158;--orange:#ff9f0a;--red:#ff453a;
   --radius:14px;--shadow:0 2px 8px rgba(0,0,0,.4);
 }
-body{background:rgba(12,12,16,.85);color:#fff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Arial,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased;letter-spacing:-0.01em;color-scheme:dark}
+body{background:rgba(12,12,16,.85);color:#fff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",system-ui,Roboto,"Segoe UI","Helvetica Neue",Arial,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased;letter-spacing:-0.01em;color-scheme:dark}
 
 header{position:sticky;top:0;z-index:300;height:56px;background:rgba(12,12,16,.85);backdrop-filter:blur(14px);border-bottom:none;display:flex;align-items:center;justify-content:space-between;padding:0 22px}
 .brand{font-weight:700;font-size:20px;color:#fff}.brand em{color:#fff;font-style:normal}
@@ -100,7 +180,7 @@ main{max-width:1500px;margin:auto;padding:20px}
 .card{background:rgba(12,12,16,.85);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
 .card-title{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:14px}
 
-#map{height:calc(100vh - 140px);border-radius:var(--radius);overflow:hidden;position:relative;z-index:1}
+#map{height:calc(var(--vh) - 140px);border-radius:var(--radius);overflow:hidden;position:relative;z-index:1}
 .map-ctrl{position:absolute;top:10px;right:10px;z-index:500;display:flex;gap:6px}
 .map-btn{padding:6px 14px;border-radius:20px;border:none;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);box-shadow:var(--shadow);font-size:12px;font-weight:600;cursor:pointer;color:rgba(255,255,255,.55);transition:all .15s}
 .map-btn.on{background:var(--blue);color:#fff}
@@ -116,9 +196,9 @@ main{max-width:1500px;margin:auto;padding:20px}
 .loc-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .search{width:100%;padding:10px 12px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);font-size:13px;outline:none;transition:border-color .15s;color:#fff;}
 .search:focus{border-color:var(--blue)}
-.dropdown{position:fixed;z-index:9999;background:rgba(12,12,16,.85);border:1px solid rgba(255,255,255,.12);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.6);display:none;max-height:240px;overflow-y:auto;min-width:280px;background:rgba(12,12,16,.85);border:0.5px solid rgba(255,255,255,.12);border-radius:10px;box-shadow:var(--shadow);display:none;z-index:100;max-height:220px;overflow-y:auto}
+.dropdown{position:fixed;z-index:9999;background:rgba(12,12,16,.85);border:1px solid rgba(255,255,255,.12);border-radius:10px;box-shadow:0 0 22px rgba(0,0,0,.22);display:none;max-height:240px;overflow-y:auto;min-width:280px;background:rgba(12,12,16,.85);border:0.5px solid rgba(255,255,255,.12);border-radius:10px;box-shadow:var(--shadow);display:none;z-index:100;max-height:220px;overflow-y:auto}
 .dropdown.open{display:block}
-.opt{padding:9px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0f0}
+.opt{padding:11px 14px;cursor:pointer;font-size:14px;border-bottom:.5px solid rgba(255,255,255,.14)}
 .opt:last-child{border-bottom:none}
 .opt:hover{background:rgba(255,255,255,.1)}
 .opt-type{font-size:10px;color:rgba(255,255,255,.4);float:right}
@@ -152,19 +232,7 @@ main{max-width:1500px;margin:auto;padding:20px}
 .search-wrap{position:relative;margin-bottom:14px}
 .search-wrap .search{padding-left:12px}
 
-/* table leaderboard */
-#lb-table{width:100%;border-collapse:collapse;font-size:13px}
-#lb-table th{text-align:left;padding:4px 7px;border-bottom:0.5px solid rgba(255,255,255,.08);font-size:10px;font-weight:600;text-transform:uppercase;color:rgba(255,255,255,.55);background:rgba(12,12,16,.85);white-space:nowrap}
-#lb-table td{padding:4px 7px;border-bottom:0.5px solid rgba(255,255,255,.08);font-variant-numeric:tabular-nums;font-size:12px}
-#lb-table tr:hover td{background:rgba(12,12,16,.85)}
-.rank-cell{font-weight:700;color:var(--blue);width:40px}
-.mv-bar{display:inline-block;height:6px;border-radius:3px;background:var(--blue);vertical-align:middle;margin-left:6px}
-.fill-pill{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
-.fill-high{background:rgba(52,199,89,.15);color:#34c759}
-.fill-med{background:rgba(255,159,10,.15);color:#ff9f0a}
-.fill-low{background:rgba(255,69,58,.15);color:#ff453a}
-
-.loader,.no-data{padding:40px;text-align:center;color:rgba(255,255,255,.4);background:rgba(12,12,16,.85);border-radius:var(--radius)}
+.loader,.no-data,.sx-empty{padding:28px 12px;text-align:center;color:var(--g-dim);font-size:14px}
 .range{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:rgba(12,12,16,.85);padding:10px;border-radius:10px;margin-bottom:14px}
 .range select,.range input{padding:8px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);font-size:13px;outline:none}
 .btn{padding:8px 18px;border-radius:10px;border:none;background:#f5f5f7;color:#1c1c1e;font-size:13px;font-weight:600;cursor:pointer}
@@ -179,11 +247,75 @@ main{max-width:1500px;margin:auto;padding:20px}
 .no-native-scrollbar{ scrollbar-width:none; -ms-overflow-style:none; }
 .no-native-scrollbar::-webkit-scrollbar{ display:none; width:0; height:0; }
 
-@media(min-width:768px){
+/* ═════════ ONGLET STATS ═════════
+   Un seul scroll (le panneau), contenu centré, liste en grille : rien ne se superpose, tout reste lisible
+   de 320 px à l'ultra-large. Cibles tactiles >= 44 px, texte >= 12 px. */
+:root{--hh:56px}
+#tab-stats{position:fixed;left:var(--sal);right:var(--sar);top:calc(var(--hh) + var(--sat));bottom:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+@media(max-width:640px){ :root{--hh:48px} #tab-stats{bottom:calc(60px + var(--sab))} }
+html:not(.locked){background:#0b0c10}
+.sx-wrap{max-width:960px;margin:0 auto;padding:12px 12px 28px}
+.sx-card{background:var(--g-fill);-webkit-backdrop-filter:var(--g-blur);backdrop-filter:var(--g-blur);box-shadow:var(--g-edge),var(--g-shadow);border-radius:20px;padding:14px;margin-bottom:12px}
+.sx-seg{display:flex;gap:3px;padding:3px;border-radius:999px;background:var(--g-cap);box-shadow:var(--g-edge)}
+.sx-seg button{flex:1;height:38px;border:none;border-radius:999px;background:transparent;color:var(--g-sub);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.sx-seg button.on{background:#fff;color:#111}
+.sx-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
+@media(min-width:720px){ .sx-grid{grid-template-columns:1fr 1fr} .sx-wide{grid-column:1/-1} }
+.sx-field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.sx-field>span{font-size:12px;font-weight:600;color:var(--g-dim)}
+.sx-field input,.sx-field select{width:100%;min-width:0;height:44px;padding:0 12px;border:none;border-radius:12px;background:var(--g-cap);box-shadow:var(--g-edge);color:#fff;font-family:inherit;font-size:16px;outline:none;color-scheme:dark;-webkit-appearance:none;appearance:none}
+.sx-field select{padding-right:34px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.sx-field input:focus,.sx-field select:focus{box-shadow:inset 0 0 0 1px rgba(255,255,255,.75)}
+.sx-field input::placeholder{color:var(--g-dim)}
+.sx-btn{margin-top:12px;width:100%;height:44px;border:none;border-radius:999px;background:#fff;color:#111;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer}
+.sx-btn:active{opacity:.85}
+@media(min-width:720px){ .sx-btn{width:auto;padding:0 32px} }
+.sx-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.sx-chips:empty{display:none}
+.sx-chip{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 12px;border-radius:999px;background:var(--g-cap);box-shadow:var(--g-edge);font-size:13px;color:#fff;white-space:nowrap}
+.sx-chip svg{display:block;flex-shrink:0}
+.sx-cap{font-size:13px;color:var(--g-dim);padding:2px 4px 10px}
+.sx-cap b{color:#fff;font-weight:600}
+.sx-rows{display:flex;flex-direction:column}
+.sx-item{border-top:.5px solid rgba(255,255,255,.14)}
+.sx-item:first-child{border-top:none}
+.sx-row{display:grid;grid-template-columns:32px minmax(0,1fr) auto;align-items:center;column-gap:12px;min-height:56px;padding:8px 6px;border-radius:12px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,255,255,.08)}
+.sx-row:hover{background:rgba(255,255,255,.06)}
+.sx-row.selected{background:rgba(255,255,255,.10)}
+.sx-rank{grid-row:1 / span 2;align-self:center;width:30px;height:30px;border-radius:9px;background:var(--g-cap);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+.sx-rank.top{background:#fff;color:#111}
+.sx-main{min-width:0;display:flex;flex-direction:column;gap:3px}
+.sx-name{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sx-sub{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--g-sub);white-space:nowrap;overflow:hidden;font-variant-numeric:tabular-nums}
+.sx-sub span{display:inline-flex;align-items:center;gap:4px}
+.sx-val{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right;min-width:3ch}
+.sx-bar{grid-column:2 / -1;height:3px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:6px}
+.sx-bar i{display:block;height:100%;width:var(--p);background:rgba(255,255,255,.75);border-radius:2px}
+.sx-more{display:block;margin:12px auto 0;height:44px;padding:0 24px;border:none;border-radius:999px;background:var(--g-cap);box-shadow:var(--g-edge);color:#fff;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
+/* détail d'une station : à l'intérieur de la liste, largeur du conteneur, sans marges négatives */
+.sx-detail{padding:6px 6px 16px}
+.sx-dhead{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.sx-dname{flex:1 1 100%;min-width:0;font-size:16px;font-weight:700}
+.sx-dtabs{position:relative;display:flex;margin:12px 0 10px;padding:3px;border-radius:999px;background:var(--g-cap);box-shadow:var(--g-edge)}
+.sx-dthumb{position:absolute;top:3px;left:3px;height:calc(100% - 6px);width:calc((100% - 6px) / 3);background:#fff;border-radius:999px;transition:transform .18s;pointer-events:none}
+.sx-dtab{position:relative;z-index:1;flex:1;text-align:center;padding:9px 4px;font-size:13px;font-weight:600;color:var(--g-sub);cursor:pointer;border-radius:999px}
+.sx-dtab.on{color:#111}
+.sx-leg{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--g-sub);margin-bottom:8px;min-height:18px}
+.sx-leg span{display:inline-flex;align-items:center;gap:6px}
+.sx-leg i{display:inline-block;width:10px;height:10px;border-radius:3px}
+.sx-chart{position:relative;width:100%;height:clamp(180px,34vw,260px)}
+.sx-dots{display:flex;justify-content:center;gap:5px;padding:10px 0 2px}
+.sx-dots i{display:inline-block;height:4px;width:6px;border-radius:2px;background:rgba(255,255,255,.3);transition:all .2s}
+.sx-dots i.on{width:16px;background:#fff}
+.sx-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:8px}
+.sx-stat{background:var(--g-cap);box-shadow:var(--g-edge);border-radius:14px;padding:10px 12px;min-width:0}
+.sx-stat-v{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.sx-stat-l{display:flex;align-items:center;gap:5px;margin-top:2px;font-size:12.5px;color:var(--g-sub)}
+@media(min-width:0px){
   body{overflow:hidden}
-  #tab-map{height:100vh !important;width:100vw !important}
+  #tab-map{height:var(--vh) !important;width:100% !important}
   .map-rel{height:100% !important}
-  main{padding:0 !important;margin:0 !important;max-width:100vw !important}
+  main{padding:0 !important;margin:0 !important;max-width:100% !important}
 }
 .station-popup .leaflet-popup-content-wrapper{background:transparent!important;box-shadow:none!important;padding:0!important;border-radius:0!important}
 .station-popup .leaflet-popup-tip-container{display:none}
@@ -191,8 +323,9 @@ main{max-width:1500px;margin:auto;padding:20px}
 </style>
 </head>
 <body>
+<div id="boot-spin" aria-hidden="true"><div class="ring"></div></div>
 
-<header style="display:flex;align-items:center;justify-content:space-between;padding:0 14px;height:38px;background:rgba(12,12,16,.85);backdrop-filter:blur(48px) saturate(200%) brightness(1.05);-webkit-backdrop-filter:blur(48px) saturate(200%) brightness(1.05);border:0.5px solid rgba(255,255,255,.14);border-radius:14px;position:absolute;top:10px;left:10px;right:10px;z-index:300;box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 4px 24px rgba(0,0,0,.4)">
+<header style="display:flex;align-items:center;justify-content:space-between;padding:0 14px;height:38px;background:rgba(12,12,16,.85);backdrop-filter:blur(48px) saturate(200%) brightness(1.05);-webkit-backdrop-filter:blur(48px) saturate(200%) brightness(1.05);border:0.5px solid rgba(255,255,255,.14);border-radius:14px;position:absolute;top:10px;left:10px;right:10px;z-index:300;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.26),0 0 22px rgba(0,0,0,.22)">
   <div style="font-size:15px;font-weight:700;color:#fff;letter-spacing:-.01em">Vélo'v</div>
   <div style="display:flex;gap:2px">
     <div class="tab on" data-tab="map" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:#fff;font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg> Carte</div>
@@ -207,7 +340,7 @@ main{max-width:1500px;margin:auto;padding:20px}
 </header>
 
 <!-- Panneau source de données -->
-<div id="source-panel" style="display:none;position:absolute;top:52px;right:10px;z-index:400;width:min(320px,calc(100% - 20px));background:rgba(12,12,16,.85);backdrop-filter:blur(56px) saturate(220%) brightness(1.08);-webkit-backdrop-filter:blur(56px) saturate(220%) brightness(1.08);border-radius:14px;border:0.5px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 24px rgba(0,0,0,.4);padding:12px 14px;font-size:11px;color:rgba(255,255,255,.85)">
+<div id="source-panel" style="display:none;position:absolute;top:52px;right:10px;z-index:400;width:min(320px,calc(100% - 20px));background:rgba(12,12,16,.85);backdrop-filter:blur(56px) saturate(220%) brightness(1.08);-webkit-backdrop-filter:blur(56px) saturate(220%) brightness(1.08);border-radius:14px;border:0.5px solid rgba(255,255,255,.18);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.26),0 0 22px rgba(0,0,0,.22);padding:12px 14px;font-size:11px;color:rgba(255,255,255,.85)">
   <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.4);margin-bottom:8px">Source des données</div>
   <div id="source-content"></div>
 </div>
@@ -221,16 +354,16 @@ main{max-width:1500px;margin:auto;padding:20px}
 
 
 <!-- ═══ CARTE ═══ -->
-<div class="panel on" id="tab-map" style="position:relative;display:flex;flex-direction:column;height:100vh;overflow:hidden">
+<div class="panel on" id="tab-map" style="position:relative;display:flex;flex-direction:column;height:var(--vh);overflow:hidden">
   <div class="map-rel" style="position:relative;flex:1;overflow:hidden">
     <div id="map" style="height:100%;width:100%"></div>
 
     <!-- Flottant glass -->
-    <div id="plan-float" style="position:absolute;top:58px;left:10px;right:10px;z-index:200;background:rgba(12,12,16,.85);backdrop-filter:blur(56px) saturate(220%) brightness(1.08);-webkit-backdrop-filter:blur(56px) saturate(220%) brightness(1.08);border-radius:16px;border:0.5px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),inset 1px 0 0 rgba(255,255,255,.1),0 8px 32px rgba(0,0,0,.35),0 2px 8px rgba(0,0,0,.2);overflow:visible;transition:max-height .3s cubic-bezier(.4,0,.2,1),opacity .2s;max-height:250px">
+    <div id="plan-float" style="position:absolute;top:calc(58px + var(--sat));left:calc(10px + var(--sal));right:calc(10px + var(--sar));z-index:200;background:rgba(12,12,16,.85);backdrop-filter:blur(56px) saturate(220%) brightness(1.08);-webkit-backdrop-filter:blur(56px) saturate(220%) brightness(1.08);border-radius:16px;border:0.5px solid rgba(255,255,255,.14);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.26),0 0 22px rgba(0,0,0,.22);overflow:visible;transition:max-height .3s cubic-bezier(.4,0,.2,1),opacity .2s;max-height:250px">
       <div id="plan-close-btn" onclick="closePlanFloat()" style="position:absolute;top:-7px;right:-7px;width:16px;height:16px;border-radius:50%;background:rgba(12,12,16,.85);border:0.5px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:201"><svg width="8" height="8" viewBox="0 0 8 8" fill="none"><line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="rgba(255,255,255,.45)" stroke-width="1.5" stroke-linecap="round"/><line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="rgba(255,255,255,.45)" stroke-width="1.5" stroke-linecap="round"/></svg></div>
       <div id="plan-float-expanded" style="padding:8px 10px">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
-          <div style="flex:1;background:rgba(255,255,255,.09);border-radius:10px;overflow:visible;border:0.5px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)">
+          <div style="flex:1;background:rgba(255,255,255,.09);border-radius:10px;overflow:visible;border:0.5px solid rgba(255,255,255,.14)">
             <div style="position:relative;display:flex;align-items:center;border-bottom:0.5px solid rgba(255,255,255,.08)">
               <input id="plan-from" class="search" type="text" placeholder="Départ…" autocomplete="off" style="background:transparent;border-radius:0;border:none;border-bottom:none;flex:1"/>
               <button id="geoloc-btn" onclick="useMyLocation()" title="Utiliser ma position" style="width:26px;height:26px;border-radius:50%;background:rgba(10,132,255,.15);border:0.5px solid rgba(10,132,255,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-right:6px;-webkit-tap-highlight-color:transparent">
@@ -248,12 +381,12 @@ main{max-width:1500px;margin:auto;padding:20px}
         <!-- Ligne 1 : now/plan + élec/méca + calculer -->
         <div style="display:flex;gap:6px;align-items:center">
           <div style="display:flex;background:rgba(255,255,255,.06);border:0.5px solid rgba(255,255,255,.06);border-radius:20px;padding:2px;position:relative;flex-shrink:0">
-            <div id="toggle-slider" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:rgba(255,255,255,.18);border:0.5px solid rgba(255,255,255,.2);border-radius:18px;transition:transform .18s;pointer-events:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.2)"></div>
+            <div id="toggle-slider" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:rgba(255,255,255,.18);border:0.5px solid rgba(255,255,255,.2);border-radius:18px;transition:transform .18s;pointer-events:none;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.26)"></div>
             <button id="btn-now" onclick="setModeNow()" style="position:relative;z-index:1;padding:5px 12px;border:none;background:transparent;color:#fff;cursor:pointer;display:flex;align-items:center"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" opacity=".35"/></svg></button>
             <button id="btn-plan" onclick="setModePlan()" style="position:relative;z-index:1;padding:5px 12px;border:none;background:transparent;color:rgba(255,255,255,.38);cursor:pointer;display:flex;align-items:center"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
           </div>
           <div style="display:flex;background:rgba(255,255,255,.06);border:0.5px solid rgba(255,255,255,.06);border-radius:20px;padding:2px;position:relative;flex-shrink:0">
-            <div id="type-slider-now" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:rgba(255,255,255,.18);border:0.5px solid rgba(255,255,255,.2);border-radius:18px;transition:transform .15s;pointer-events:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.2)"></div>
+            <div id="type-slider-now" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:50%;background:rgba(255,255,255,.18);border:0.5px solid rgba(255,255,255,.2);border-radius:18px;transition:transform .15s;pointer-events:none;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.26)"></div>
             <button onclick="setBikeType('elec')" style="position:relative;z-index:1;padding:5px 12px;border:none;background:transparent;cursor:pointer;color:#fff;display:flex;align-items:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></button>
             <button onclick="setBikeType('meca')" style="position:relative;z-index:1;padding:5px 12px;border:none;background:transparent;cursor:pointer;color:rgba(255,255,255,.38);display:flex;align-items:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></button>
           </div>
@@ -294,44 +427,40 @@ main{max-width:1500px;margin:auto;padding:20px}
   </div>
 </div>
 
-<div class="panel" id="tab-stats" style="overflow-y:auto;max-height:100vh">
-
-  <div id="spanel-stations" style="padding:10px">
-    <div class="card" style="padding:12px;margin-bottom:8px">
-      <div class="card-title" style="margin-bottom:8px;font-size:10px">Période &amp; tri</div>
-      <div class="range" style="gap:5px;padding:8px">
-        <div style="display:flex;background:rgba(255,255,255,.08);border-radius:20px;padding:2px">
-          <button onclick="onLbViewChange('day')" id="lb-pill-day" style="padding:5px 14px;border:none;background:rgba(255,255,255,.12);color:#fff;font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Jour</button>
-          <button onclick="onLbViewChange('month')" id="lb-pill-month" style="padding:5px 14px;border:none;background:transparent;color:rgba(255,255,255,.55);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Mois</button>
-          <button onclick="onLbViewChange('year')" id="lb-pill-year" style="padding:5px 14px;border:none;background:transparent;color:rgba(255,255,255,.55);font-size:12px;font-weight:600;border-radius:18px;cursor:pointer">Année</button>
-        </div>
-        <input type="hidden" id="lb-view" value="day"/>
-        <input type="date" id="lb-date"/>
-        <input type="month" id="lb-month" style="display:none;padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);font-size:13px;background:rgba(12,12,16,.85);color:#fff"/>
-        <select id="lb-year" style="display:none;padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);font-size:13px"><option value="2025">2025</option><option value="2026" selected>2026</option></select>
-        <select id="lb-sort">
-          <option value="mv">Mouvements</option>
-          <option value="rotation">Rotation</option>
-          <option value="stands">Places libres</option>
-          <option value="fill">Remplissage</option>
-        </select>
-        <input id="lb-station-search" type="text" placeholder="Station…" oninput="filterLbTable(this.value)" style="padding:7px 10px;border-radius:10px;border:0.5px solid rgba(255,255,255,.12);background:rgba(12,12,16,.85);color:#fff;font-size:13px;outline:none;min-width:0;flex:1"/>
-        <button class="btn" onclick="computeLeaderboard()">Calculer</button>
-        <span id="lb-meteo" style="font-size:12px;color:rgba(255,255,255,.55)"></span>
+<div class="panel" id="tab-stats">
+  <div id="spanel-stations" class="sx-wrap">
+    <section class="sx-card">
+      <div class="sx-seg" role="group" aria-label="Période">
+        <button id="lb-pill-day" class="on" onclick="onLbViewChange('day')">Jour</button>
+        <button id="lb-pill-month" onclick="onLbViewChange('month')">Mois</button>
+        <button id="lb-pill-year" onclick="onLbViewChange('year')">Année</button>
       </div>
-    </div>
-    <div class="card" style="padding:0;overflow:hidden">
-      <div id="lb-content" style="overflow-x:auto;max-height:70vh;overflow-y:auto">
-        <table id="lb-table" style="width:100%;border-collapse:collapse;font-size:13px">
-          <thead id="lb-head"></thead>
-          <tbody id="lb-body"></tbody>
-        </table>
+      <input type="hidden" id="lb-view" value="day"/>
+      <div class="sx-grid">
+        <label class="sx-field"><span id="lb-when-label">Date</span>
+          <input type="date" id="lb-date"/>
+          <input type="month" id="lb-month" style="display:none"/>
+          <select id="lb-year" style="display:none"><option value="2025">2025</option><option value="2026" selected>2026</option></select>
+        </label>
+        <label class="sx-field"><span>Trier par</span>
+          <select id="lb-sort">
+            <option value="mv">Mouvements</option>
+            <option value="rotation">Rotation</option>
+            <option value="stands">Places libres</option>
+            <option value="fill">Remplissage</option>
+          </select>
+        </label>
+        <label class="sx-field sx-wide"><span>Station</span>
+          <input id="lb-station-search" type="search" placeholder="Rechercher une station" autocomplete="off" oninput="filterLbTable(this.value)"/>
+        </label>
       </div>
-    </div>
+      <button class="sx-btn" onclick="computeLeaderboard()">Calculer</button>
+      <div id="lb-meteo" class="sx-chips"></div>
+    </section>
+    <section class="sx-card">
+      <div id="lb-content"><div id="lb-list" class="sx-rows"></div><div id="lb-foot"></div></div>
+    </section>
   </div>
-
-
-
 </div>
 
 </main>
@@ -369,46 +498,96 @@ function positionDropdown(inputId,ddId){
 // Une seule pastille pleine largeur par page (comme l'original) — le swipe
 // change de page via scroll natif, les points en dessous ne sont qu'un
 // indice visuel discret (pas cliquables, pas de bordure colorée).
-// Mode instantané : plus de score, seulement une alerte si le départ risque d'être
-// vide d'après l'historique récent (moments comparables pondérés par la récence,
-// voir depProb dans computePlan). Seuil : vide dans au moins 25 % des cas.
-const EMPTY_RISK_MIN=25;
-function emptyRiskBadgeHtml(combo){
-  if((window._planMode||'now')!=='now') return '';
-  const r=combo?.emptyRisk;
-  if(r==null||r<EMPTY_RISK_MIN) return '';
-  return `<div title="Station souvent vide à cette heure (environ ${r} % des cas, historique récent)" style="display:flex;align-items:center;gap:3px;flex-shrink:0;background:rgba(255,159,10,.1);border:.5px solid rgba(255,159,10,.3);border-radius:5px;padding:2px 6px;color:#ff9f0a;font-size:10px;font-weight:600;white-space:nowrap"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Risque vide</div>`;
+
+/* ═══ PASTILLE LIQUID GLASS : même composant sur PC (liste) et mobile (une page par pastille) ═══ */
+const LG={
+  bolt:'<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+  wrench:'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',
+  place:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg>',
+  walk:'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="4" r="2"/><path d="M7 21l3-7 3 2v5M10 14l-1-5 4-1 3 4 3 1M9 9L7 12"/></svg>',
+  warn:'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  chev:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transition:transform .2s"><polyline points="6 9 12 15 18 9"/></svg>'
+};
+window._pillOpen=window._pillOpen||new Set();
+
+// Alertes, par ordre de priorité : la 1re s'affiche, les autres se déplient
+function lgAlerts(combo,isNow){
+  const a=[];
+  if(isNow){ const r=combo.fullRisk; if(r!=null&&r>=FULL_RISK_MIN) a.push(`Risque de station pleine (${r}&#8239;%)`); }
+  if(combo.battPenalty) a.push('Batterie insuffisante');
+  if(combo.relaiStation) a.push('Relais : '+cleanName(combo.relaiStation.name));
+  if(combo.overPrice>0) a.push('+'+combo.overPrice.toFixed(2).replace('.',',')+' €');
+  return a;
+}
+// 3 meilleurs vélos du type cherché : icône | place sur la borne | charge | note
+function recoBikesFrame(bikes){
+  if(!bikes||!bikes.length) return '';
+  const shaped=bikes.map(b=>({
+    type:b.type==='E'?'ELECTRICAL':'MECHANICAL', status:b.status==='S'?'RESERVED':'AVAILABLE', isReserved:b.status==='S',
+    battery:b.batt!=null?{percentage:b.batt}:null, rating:b.rating!=null?{value:b.rating*20,count:b.rcount}:null,
+    lastControlDateTime:null, id:b.id, standNumber:b.borne
+  }));
+  const want=document.getElementById('plan-type')?.value||'elec';
+  const pool=want==='any'?shaped:shaped.filter(b=>b.type===(want==='elec'?'ELECTRICAL':'MECHANICAL'));
+  const picks=pool.filter(b=>bikeRecoScore(b)>0).sort((a,b)=>bikeRecoScore(b)-bikeRecoScore(a)).slice(0,3);
+  if(!picks.length) return '';
+  const hasChg=picks.some(b=>b.type==='ELECTRICAL'&&b.battery?.percentage!=null);
+  const rows=picks.map(b=>{
+    const el=b.type==='ELECTRICAL';
+    const chg=hasChg?`<span class="c">${el&&b.battery?.percentage!=null?b.battery.percentage+'%':''}</span>`:'';
+    const note=b.rating?.value!=null?'★'+Math.round(b.rating.value):'';
+    return `<span class="ic" style="${el?'':'opacity:.6'}">${el?LG.bolt:LG.wrench}</span><span class="nb">n° ${b.standNumber??'?'}</span>${chg}<span>${note}</span>`;
+  }).join('');
+  return `<div class="lg-bl${hasChg?'':' nochg'}">${rows}</div>`;
+}
+function comboPillHtml(combo,i,mobile){
+  const isNow=(window._planMode||'now')==='now';
+  const bt=document.getElementById('plan-type')?.value||'elec';
+  const live=(v,d)=>v??d;
+  const avg=v=>v!=null?'~'+Math.round(v):'?';
+  const places=isNow?live(combo.arr.live?.available_bike_stands,'?'):avg(combo.arrN);
+  const nElec=isNow?live(combo.dep.live?.electrical_bikes,0):avg(combo.depElecN);
+  const nMeca=isNow?live(combo.dep.live?.mechanical_bikes,0):avg(combo.depMecaN);
+  const sc=Math.round(combo.score??0);
+  const wd=(planFromPos&&!planFromFixed)?walkMinutes(haversine(planFromPos.lat,planFromPos.lng,combo.dep.lat,combo.dep.lng)):null;
+  const wa=(planToPos&&!planToFixed)?walkMinutes(haversine(combo.arr.lat,combo.arr.lng,planToPos.lat,planToPos.lng)):null;
+  const walk=(wd!=null&&wa!=null)?`${wd} + ${wa} min`:(wd!=null?`${wd} min`:(wa!=null?`${wa} min`:''));
+  const cnt=bt==='meca'?`${LG.wrench}${nMeca}`:bt==='any'?`${LG.bolt}${nElec}<span style="opacity:.5">/</span>${LG.wrench}${nMeca}`:`${LG.bolt}${nElec}`;
+  const alerts=lgAlerts(combo,isNow);
+  const cached=_comboBikesCache[combo.dep.number+'_'+combo.dist];
+  const frame=cached?recoBikesFrame(cached):'';
+  const extra=alerts.slice(1).map(t=>`<span class="lg-cap alert">${t}</span>`).join('');
+  const open=window._pillOpen.has(i);
+  const cls=`lg-pill${(frame||extra)?' has-exp':''}${open?' open':''}`;
+  const body=`
+    <div class="lg-r1"><span class="lg-cap rk">${i+1}</span><span class="lg-tt">${cleanName(combo.dep.name)} → ${cleanName(combo.arr.name)}</span>
+      <span class="lg-cap key pl">${LG.place}<b>${places}</b></span>
+      ${isNow?'':`<span class="lg-cap key" style="font-weight:800">${sc}%</span>`}</div>
+    <div class="lg-r2"><span class="lg-cap">${Math.round(combo.dist/1000*10)/10} km · ~${combo.rideMin} min</span>
+      ${walk?`<span class="lg-cap">${LG.walk}${walk}</span>`:''}<span class="lg-cap key cnt">${cnt}</span></div>
+    ${alerts.length?`<div class="lg-al"><span class="lg-cap alert">${LG.warn}${alerts[0]}</span>${alerts.length>1?`<span class="mr">+${alerts.length-1}</span>`:''}</div>`:''}
+    <div class="lg-chev" onclick="event.stopPropagation();togglePillOpen(${i})">${LG.chev}</div>
+    <div class="lg-exp"><div class="lg-bikes" data-pi="${i}">${frame}</div><div class="lg-extra">${extra}</div></div>`;
+  if(mobile) return `<div class="pill-page ${cls}" data-pidx="${i}" data-pi="${i}" style="scroll-snap-align:start;flex-shrink:0;width:100%;box-sizing:border-box">${body}</div>`;
+  return `<div class="combo-card ${cls}${i===0?' selected':''}" onclick="toggleComboDetail(${i},this);loadComboBikes(${i})" data-idx="${i}" data-pi="${i}">${body}</div>`;
+}
+function togglePillOpen(i){
+  if(window._pillOpen.has(i)) window._pillOpen.delete(i); else window._pillOpen.add(i);
+  document.querySelectorAll(`.lg-pill[data-pi="${i}"]`).forEach(p=>p.classList.toggle('open',window._pillOpen.has(i)));
+}
+// Les vélos arrivent en asynchrone : on met à jour l'emplacement sans toucher au reste (ni scroll, ni dépli)
+function fillPillBikes(idx){
+  const combo=window._planCombos?.[idx]; if(!combo) return;
+  const bikes=_comboBikesCache[combo.dep.number+'_'+combo.dist]; if(!bikes) return;
+  const frame=recoBikesFrame(bikes);
+  document.querySelectorAll(`.lg-pill[data-pi="${idx}"]`).forEach(p=>{
+    const slot=p.querySelector('.lg-bikes'); if(slot) slot.innerHTML=frame;
+    const hasExtra=!!p.querySelector('.lg-extra .lg-cap');
+    p.classList.toggle('has-exp',!!frame||hasExtra);
+  });
 }
 
-function renderPillPage(combo, i){
-  const sc=Math.round(combo.score??0);
-  const scCol=sc>=60?'#34c759':sc>=35?'#ff9f0a':'#ff453a';
-  const scBg=sc>=60?'#0d2b1a':sc>=35?'#2b1a00':'#2b0a0a';
-  const isNow=(window._planMode||'now')==='now';
-  const livePlacesDisp=(!isNow&&combo.arrN!=null)?'~'+Math.round(combo.arrN):(combo.arr.live?.available_bike_stands??'?');
-  const liveElec=(!isNow&&combo.depElecN!=null)?'~'+Math.round(combo.depElecN):(combo.dep.live?.electrical_bikes??0);
-  const liveMeca=(!isNow&&combo.depMecaN!=null)?'~'+Math.round(combo.depMecaN):(combo.dep.live?.mechanical_bikes??0);
-  const cacheKey=combo.dep.number+'_'+combo.dist;
-  const cachedBikes=_comboBikesCache[cacheKey];
-  const reco=cachedBikes?renderRecoBikesCompact(cachedBikes):'';
-  return `<div class="pill-page" data-pidx="${i}" style="scroll-snap-align:start;flex-shrink:0;width:100%;box-sizing:border-box;padding:9px 12px">
-    <div style="display:flex;align-items:center;gap:7px;min-width:0">
-      <div style="flex-shrink:0;width:18px;height:18px;border-radius:5px;background:rgba(255,255,255,.08);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center">${i+1}</div>
-      <div style="flex:1;min-width:0;font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cleanName(combo.dep.name)} → ${cleanName(combo.arr.name)}</div>
-      <div style="flex-shrink:0;display:flex;align-items:center;gap:3px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg><span style="font-size:16px;font-weight:800;color:#fff">${livePlacesDisp}</span></div>
-      ${isNow?emptyRiskBadgeHtml(combo):`<div style="flex-shrink:0;background:${scBg};border-radius:6px;padding:2px 6px"><span style="font-size:11px;font-weight:700;color:${scCol}">${sc}%</span></div>`}
-    </div>
-    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;min-width:0">
-      <span style="flex-shrink:0;font-size:10px;color:rgba(255,255,255,.5)">${Math.round(combo.dist/1000*10)/10}km · ~${combo.rideMin}min</span>
-      <div style="display:flex;align-items:center;gap:4px;margin-left:auto;flex-shrink:0">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span style="font-size:11px;font-weight:700;color:#fff">${liveElec}</span>
-        <span style="color:#38383a;font-size:10px">/</span>
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg><span style="font-size:11px;font-weight:700;color:#fff">${liveMeca}</span>
-      </div>
-    </div>
-    ${reco?`<div style="margin-top:2px">${reco}</div>`:''}
-  </div>`;
-}
+function renderPillPage(combo, i){ return comboPillHtml(combo,i,true); }
 
 function compactPlanFloat(){
   const idx=window._openComboIdx??0;
@@ -433,7 +612,7 @@ function compactPlanFloat(){
   document.getElementById('plan-results').style.display='none';
   el.style.display='block';
   const pf=document.getElementById('plan-float');
-  if(pf) pf.style.maxHeight='110px';
+  if(pf) pf.style.maxHeight='none';
   initPillCarouselScroll();
 }
 
@@ -658,16 +837,19 @@ document.querySelectorAll('.tab').forEach(tab=>{
     const hdr=document.querySelector('header');
     if(hdr){
       if(isMap){
-        hdr.style.position='absolute'; hdr.style.top='10px';
-        hdr.style.left='10px'; hdr.style.right='10px';
+        hdr.style.position='absolute'; hdr.style.top='calc(10px + var(--sat))';
+        hdr.style.left='calc(10px + var(--sal))'; hdr.style.right='calc(10px + var(--sar))';
+        hdr.style.paddingTop=''; hdr.style.height='';
         hdr.style.borderRadius='14px'; hdr.style.borderBottom='0.5px solid rgba(255,255,255,.12)';
       } else {
         hdr.style.position='sticky'; hdr.style.top='0';
         hdr.style.left=''; hdr.style.right='';
+        hdr.style.paddingTop='var(--sat)'; hdr.style.height='calc('+(window.innerWidth<=640?48:56)+'px + var(--sat))';
         hdr.style.borderRadius='0'; hdr.style.borderBottom='0.5px solid rgba(255,255,255,.08)';
       }
     }
-    document.body.style.overflow = isMap ? 'hidden' : 'auto';
+    document.body.style.overflow = 'hidden';
+    document.documentElement.classList.toggle('locked', isMap);
     setTimeout(()=>{ map?.invalidateSize(); planMap?.invalidateSize(); },150);
     if(target==='map'){
       setTimeout(()=>{ if(!map)initMap(); map?.invalidateSize(); renderStations(); },150);
@@ -904,6 +1086,192 @@ function getSts(snap){
       bike_stands:st.c??0,electrical_bikes:st.e??0,mechanical_bikes:st.m??0,lat:st.la,lng:st.ln};
   });
 }
+/* ═══ HISTORIQUE EN COLONNES (lecture rapide) ═════════════════════════════
+   Chaque jour est converti en tableaux numériques (Uint8) : stations x instants.
+   - conversion dans des Web Workers (l'interface ne bloque plus)
+   - stockage IndexedDB sous "col1:AAAA-MM-JJ" (lecture ~7 ms au lieu de ~50 ms)
+   - préchargement des 60 derniers jours au démarrage                          */
+function buildColsFromData(data){
+  if(!(data&&data.base&&data.deltas)) return null;
+  const base=data.base, deltas=data.deltas;
+  const idIndex=new Map(), idsArr=[];
+  const add=n=>{ if(!idIndex.has(n)){ idIndex.set(n,idsArr.length); idsArr.push(n); } };
+  (base.s||[]).forEach(s=>add(s.n));
+  for(const dl of deltas) for(const x of (dl.d||[])) add(x.n);
+  const nS=idsArr.length, nT=1+deltas.length;
+  const clamp=v=>{ v=(v==null?0:v); return v<0?0:(v>255?255:v); };
+  const B=new Uint8Array(nS*nT), S=new Uint8Array(nS*nT), C=new Uint8Array(nS*nT), E=new Uint8Array(nS*nT), M=new Uint8Array(nS*nT);
+  const cb=new Uint8Array(nS), cs=new Uint8Array(nS), cc=new Uint8Array(nS), ce=new Uint8Array(nS), cm=new Uint8Array(nS), present=new Uint8Array(nS);
+  const minArr=new Int16Array(nT), rain=new Uint8Array(nT);
+  const mm=t=>{ const d=new Date(t); return d.getHours()*60+d.getMinutes(); };
+  const rainOf=mt=>(((mt&&mt.precipitation)??0)>0.1||(mt&&mt.rain===true))?1:0;
+  const setRow=ti=>{ for(let i=0;i<nS;i++){ if(!present[i]) continue; const k=i*nT+ti; B[k]=cb[i]; S[k]=cs[i]; C[k]=cc[i]; E[k]=ce[i]; M[k]=cm[i]; } };
+  (base.s||[]).forEach(st=>{ const i=idIndex.get(st.n); present[i]=1; cb[i]=clamp(st.b); cs[i]=clamp(st.s); cc[i]=clamp(st.c); ce[i]=clamp(st.e); cm[i]=clamp(st.m); });
+  let lastMeteo=base.meteo||null;
+  minArr[0]=mm(base.t); rain[0]=rainOf(base.meteo); setRow(0);
+  for(let j=0;j<deltas.length;j++){
+    const dl=deltas[j], ti=j+1;
+    for(const x of (dl.d||[])){
+      const i=idIndex.get(x.n); present[i]=1;
+      if('b' in x) cb[i]=clamp(x.b); if('s' in x) cs[i]=clamp(x.s); if('c' in x) cc[i]=clamp(x.c);
+      if('e' in x) ce[i]=clamp(x.e); if('m' in x) cm[i]=clamp(x.m);
+    }
+    if(dl.meteo) lastMeteo=dl.meteo;
+    minArr[ti]=mm(dl.t); rain[ti]=rainOf(dl.meteo||lastMeteo); setRow(ti);
+  }
+  return {v:1, nT, nS, ids:Int32Array.from(idsArr), min:minArr, rain, b:B, s:S, c:C, e:E, m:M};
+}
+
+const COL_KEY='col1:';
+const _colMem=new Map(), _colInflight=new Map(), _colMiss=new Set();
+let _colWorkers=null; const _colQueue=[]; const _colPending=new Map(); let _colJobId=0;
+function _colPoolInit(){
+  if(_colWorkers) return _colWorkers;
+  _colWorkers=[];
+  try{
+    const src='self.onmessage=function(e){var id=e.data.id;try{var data=JSON.parse(new TextDecoder().decode(e.data.buf));var cols=('+buildColsFromData.toString()+')(data);if(!cols){self.postMessage({id:id,ok:false});return;}self.postMessage({id:id,ok:true,cols:cols},[cols.ids.buffer,cols.min.buffer,cols.rain.buffer,cols.b.buffer,cols.s.buffer,cols.c.buffer,cols.e.buffer,cols.m.buffer]);}catch(err){self.postMessage({id:id,ok:false});}};';
+    const url=URL.createObjectURL(new Blob([src],{type:'text/javascript'}));
+    const n=Math.max(2,Math.min(4,(navigator.hardwareConcurrency||4)-1));
+    for(let i=0;i<n;i++){
+      const w=new Worker(url); w.busy=false;
+      w.onmessage=ev=>{ const p=_colPending.get(ev.data.id); _colPending.delete(ev.data.id); w.busy=false; _colPump(); if(p) p(ev.data); };
+      w.onerror=()=>{ w.busy=false; };
+      _colWorkers.push(w);
+    }
+  }catch(e){ _colWorkers=[]; }
+  return _colWorkers;
+}
+function _colPump(){
+  while(_colQueue.length){
+    const w=(_colWorkers||[]).find(x=>!x.busy); if(!w) return;
+    const job=_colQueue.shift(); w.busy=true;
+    _colPending.set(job.id,job.resolve);
+    w.postMessage({id:job.id,buf:job.buf},[job.buf]);
+  }
+}
+let _netSlots=0; const _netWait=[];
+async function _netAcquire(){ if(_netSlots<8){ _netSlots++; return; } await new Promise(r=>_netWait.push(r)); _netSlots++; }
+function _netRelease(){ _netSlots--; const n=_netWait.shift(); if(n) n(); }
+async function _colFetch(date){
+  await _netAcquire();
+  let buf=null;
+  try{
+    const r=await fetch(new URL('data/history/'+date+'.json',location.href).href);
+    if(r.ok) buf=await r.arrayBuffer();
+  }catch(e){} finally{ _netRelease(); }
+  if(!buf) return null;
+  _colPoolInit();
+  if(_colWorkers&&_colWorkers.length){
+    const res=await new Promise(resolve=>{ _colQueue.push({id:++_colJobId,buf,resolve}); _colPump(); });
+    return res&&res.ok?res.cols:null;
+  }
+  try{ return buildColsFromData(JSON.parse(new TextDecoder().decode(buf))); }catch(e){ return null; }
+}
+function _colHydrate(cols){
+  if(!cols.idx){ cols.idx=new Map(); for(let i=0;i<cols.ids.length;i++) cols.idx.set(cols.ids[i],i); }
+  return cols;
+}
+// Jour d'aujourd'hui : jamais mis en cache (le fichier grossit toutes les 10 min)
+async function _loadTodayCols(){
+  try{
+    const r=await fetch('data/today.json?t='+Date.now(),{cache:'no-store'}); if(!r.ok) return null;
+    const cols=buildColsFromData(await r.json()); return cols?_colHydrate(cols):null;
+  }catch(e){ return null; }
+}
+async function loadCol(date){
+  if(date===localDateStr()) return _loadTodayCols();
+  if(_colMem.has(date)) return _colMem.get(date);
+  if(_colMiss.has(date)) return null;
+  if(_colInflight.has(date)) return _colInflight.get(date);
+  const p=(async()=>{
+    let cols=await idbGet(COL_KEY+date);
+    if(!cols||cols.v!==1){
+      cols=await _colFetch(date);
+      if(cols){ const rest={...cols}; delete rest.idx; idbSet(COL_KEY+date,rest); }
+    }
+    if(!cols){ _colMiss.add(date); return null; }
+    _colHydrate(cols); _colMem.set(date,cols); return cols;
+  })().finally(()=>_colInflight.delete(date));
+  _colInflight.set(date,p); return p;
+}
+async function loadColsMany(dates){ return Promise.all(dates.map(d=>loadCol(d).catch(()=>null))); }
+
+// Les n derniers jours complets (hier, avant-hier…), en dates locales
+function lastDays(n){
+  const out=[]; const b=new Date(); b.setHours(12,0,0,0);
+  for(let i=1;i<=n;i++){ const d=new Date(b); d.setDate(d.getDate()-i); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); out.push(d.toISOString().slice(0,10)); }
+  return out;
+}
+async function idbKeys(){
+  try{
+    const db=await openIDB();
+    return await new Promise(res=>{ const rq=db.transaction(_idbStore,'readonly').objectStore(_idbStore).getAllKeys(); rq.onsuccess=()=>res(rq.result||[]); rq.onerror=()=>res([]); });
+  }catch(e){ return []; }
+}
+const HIST_PRELOAD_DAYS=60;
+// Précharge dans IndexedDB les jours manquants. Retourne le nombre de jours à télécharger
+// (0 = déjà tout en cache). Ne charge rien en mémoire : c'est fait à la demande.
+async function preloadHistory(){
+  const conn=navigator.connection;
+  if(conn&&(conn.saveData||/^(slow-2g|2g|3g)$/.test(conn.effectiveType||''))) return {missing:0,done:Promise.resolve()};
+  const have=new Set(await idbKeys());
+  const missing=lastDays(HIST_PRELOAD_DAYS).filter(d=>!have.has(COL_KEY+d));
+  const done=(async()=>{
+    // Tout en parallèle : le sémaphore réseau (8) et le pool de workers régulent le débit
+    await Promise.all(missing.map(d=>loadCol(d).then(c=>{ if(c){ _colMem.delete(d); } }).catch(()=>null)));
+  })();
+  return {missing:missing.length,done};
+}
+
+// Probabilités par station depuis les colonnes (même résultat que l'ancien calcul sur snapshots)
+function stationProbaFromCols(allIds, daysCols, nowMinutes, isRainy, depKey){
+  const out={};
+  const fld=depKey==='electrical_bikes'?'e':depKey==='mechanical_bikes'?'m':'b';
+  allIds.forEach(num=>{
+    let depSum=0,arrSum=0,wSum=0,depHit=0,arrHit=0,samples=0,dN=0,aN=0,eN=0,mN=0;
+    daysCols.forEach((col,dayIdx)=>{
+      const si=col.idx.get(num); if(si===undefined) return;
+      const wRec=Math.exp(-dayIdx/45), base=si*col.nT, F=col[fld];
+      for(let ti=0;ti<col.nT;ti++){
+        const sm=col.min[ti]; const diff=sm-nowMinutes;
+        if(Math.abs(diff)>90) continue;
+        const cap=col.c[base+ti]; if(!cap) continue;
+        const wP=((col.rain[ti]===1)===isRainy)?1.0:0.35;
+        const w=wRec*wP*Math.exp(-(diff*diff)/450);
+        if(w<0.01) continue;
+        const depVal=F[base+ti], arrVal=col.s[base+ti];
+        depSum+=depVal/cap*100*w; arrSum+=arrVal/cap*100*w; wSum+=w;
+        if(depVal>=1) depHit+=w; if(arrVal>=1) arrHit+=w; samples++;
+        dN+=depVal*w; aN+=arrVal*w; eN+=col.e[base+ti]*w; mN+=col.m[base+ti]*w;
+      }
+    });
+    if(wSum>0) out[num]={
+      dep:Math.round(depSum/wSum), arr:Math.round(arrSum/wSum),
+      depN:Math.round(dN/wSum*10)/10, depElecN:Math.round(eN/wSum*10)/10, depMecaN:Math.round(mN/wSum*10)/10,
+      arrN:Math.round(aN/wSum*10)/10,
+      depProb:Math.round(depHit/wSum*100), arrProb:Math.round(arrHit/wSum*100), samples
+    };
+  });
+  return out;
+}
+
+// Risque de station pleine : part des moments (même jour de la semaine, 60 derniers jours,
+// heure d'arrivée ±30 min) où la station n'avait aucune borne libre.
+const FULL_RISK_MIN=50, FULL_RISK_WINDOW=30, FULL_RISK_MIN_SAMPLES=12;
+function fullRiskPct(isoCols, stationNum, arrivalMinutes){
+  let n=0, full=0;
+  for(const col of isoCols){
+    const si=col.idx.get(stationNum); if(si===undefined) continue;
+    const base=si*col.nT;
+    for(let ti=0;ti<col.nT;ti++){
+      if(Math.abs(col.min[ti]-arrivalMinutes)>FULL_RISK_WINDOW) continue;
+      if(!col.c[base+ti]) continue;
+      n++; if(col.s[base+ti]===0) full++;
+    }
+  }
+  return n>=FULL_RISK_MIN_SAMPLES?Math.round(full/n*100):null;
+}
+
 async function fetchRange(startMs,endMs){
   const days=Math.ceil((endMs-startMs)/86400e3);
   const step=days<=14?1:days<=30?1:days<=90?3:days<=180?5:10;
@@ -1226,7 +1594,7 @@ function buildStationSearch(){
       el.onclick=()=>{ input.value=cleanName(st.name); dd.classList.remove('open'); selectedStation=st; };
       dd.appendChild(el);
     });
-    positionDropdown(inputId, ddId);
+    positionDropdown('station-search','station-dd');
     dd.classList.add('open');
   });
   document.addEventListener('click',e=>{
@@ -1284,25 +1652,21 @@ async function renderCourbes(){
 }
 
 /* ═══ LEADERBOARD ═════════════════════════════════════ */
-function quickLeaderboard(){ renderLbTable(todayMv); }
+function quickLeaderboard(){ if(window._lbRows&&window._lbRows.length) renderLbList(); else computeLeaderboard(); }
 function onLbViewChange(v){
   if(v) document.getElementById('lb-view').value=v;
   else v=document.getElementById('lb-view').value||'day';
-  document.getElementById('lb-date').style.display  = v==='day'   ? '' : 'none';
-  document.getElementById('lb-month').style.display = v==='month' ? '' : 'none';
-  document.getElementById('lb-year').style.display  = v==='year'  ? '' : 'none';
-  ['day','month','year'].forEach(x=>{
-    const btn=document.getElementById('lb-pill-'+x);
-    if(!btn) return;
-    btn.style.background=x===v?'rgba(255,255,255,.12)':'transparent';
-    btn.style.color=x===v?'#fff':'var(--sub)';
-  });
+  const show=(id,on)=>{ const e=document.getElementById(id); if(e) e.style.display=on?'':'none'; };
+  show('lb-date',v==='day'); show('lb-month',v==='month'); show('lb-year',v==='year');
+  const lab=document.getElementById('lb-when-label'); if(lab) lab.textContent=v==='day'?'Date':v==='month'?'Mois':'Année';
+  ['day','month','year'].forEach(x=>document.getElementById('lb-pill-'+x)?.classList.toggle('on',x===v));
 }
 
 async function computeLeaderboard(){
   const content=document.getElementById('lb-content');
   content.innerHTML='<div class="loader">Calcul…</div>';
   const view=document.getElementById('lb-view').value;
+  if(view!=='day'){ const mt=document.getElementById('lb-meteo'); if(mt) mt.innerHTML=''; }
 
   if(view==='day'){
     const d=document.getElementById('lb-date').value;
@@ -1356,24 +1720,15 @@ async function computeLeaderboard(){
     }
     lbMvCache=cumul;
   }
-  content.innerHTML='<div style="overflow-x:auto"><table id="lb-table"><thead id="lb-head"></thead><tbody id="lb-body"></tbody></table></div>';
+  content.innerHTML='<div id="lb-list" class="sx-rows"></div><div id="lb-foot"></div>';
   renderLbTable(lbMvCache);
   if(view==='day') showDayMeteo(document.getElementById('lb-date').value);
-  const srch=document.getElementById('lb-station-search'); if(srch) srch.value='';
+  const srch=document.getElementById('lb-station-search'); if(srch) srch.value=''; window._lbQuery='';
 }
 function renderLbTable(mvData){
-  const head=document.getElementById('lb-head'), body=document.getElementById('lb-body');
-  if(!head||!body) return;
-  const view=document.getElementById('lb-view')?.value||'day';
-  const isDay=view==='day';
+  const isDay=(document.getElementById('lb-view')?.value||'day')==='day';
   const sortKey=document.getElementById('lb-sort')?.value||'mv';
-  const sortLabels={
-    mv:'Mvts', rotation:'Rotation', stands:'Places libres',
-    fill:'Remplissage', elec:'Élec', meca:'Méca', bikes:'Vélos'
-  };
-  const ctxLabel=isDay?'Stock':'Rotation';
-  head.innerHTML=`<tr><th>#</th><th>Station</th><th>${sortLabels[sortKey]||'Valeur'}</th><th>${ctxLabel}</th></tr>`;
-  const maxMv=Math.max(1,...Object.values(mvData));
+  const sortLabels={mv:'Mouvements',rotation:'Rotation',stands:'Places libres',fill:'Remplissage',elec:'Élec',meca:'Méca',bikes:'Vélos'};
   const rows=allStations.map(st=>{
     const mv=mvData[st.number]||0, fill=st.bike_stands?st.available_bikes/st.bike_stands:0, rot=st.bike_stands?mv/st.bike_stands:0;
     return {...st,mv,fill,rot};
@@ -1382,44 +1737,52 @@ function renderLbTable(mvData){
     elec:(a,b)=>b.electrical_bikes-a.electrical_bikes,meca:(a,b)=>b.mechanical_bikes-a.mechanical_bikes,
     stands:(a,b)=>b.available_bike_stands-a.available_bike_stands,fill:(a,b)=>b.fill-a.fill};
   rows.sort(sorters[sortKey]||sorters.mv);
-  const sortVal=(st)=>{
+  const numeric=st=>{
     switch(sortKey){
-      case 'mv': return st.mv;
-      case 'rotation': return (Math.round(st.rot*100)/100).toFixed(2);
-      case 'stands': return st.available_bike_stands;
-      case 'fill': return Math.round(st.fill*100)+'%';
-      case 'elec': return st.electrical_bikes;
-      case 'meca': return st.mechanical_bikes;
-      case 'bikes': return st.available_bikes;
-      default: return st.mv;
+      case 'mv': return st.mv; case 'rotation': return st.rot; case 'stands': return st.available_bike_stands;
+      case 'fill': return st.fill*100; case 'elec': return st.electrical_bikes; case 'meca': return st.mechanical_bikes;
+      case 'bikes': return st.available_bikes; default: return st.mv;
     }
   };
-  // Métrique contextuelle
-  const ctxVal=(st)=>{
-    if(isDay){
-      // Stock actuel : élec + méca
-      const e=st.electrical_bikes, m=st.mechanical_bikes;
-      return `<span style="font-size:10px;color:#0a84ff;font-weight:600">${e}</span><span style="color:rgba(255,255,255,.45);margin:0 2px">/</span><span style="font-size:10px;color:#ff9f0a;font-weight:600">${m}</span>`;
-    } else {
-      // Rotation = mvts / capacité
-      const rot=st.bike_stands>0?(st.mv/st.bike_stands).toFixed(1):'—';
-      const rotNum=parseFloat(rot);
-      const rotCol=rotNum>=2?'#34c759':rotNum>=1?'#ff9f0a':'#8e8e93';
-      return `<span style="font-size:11px;font-weight:600;color:${rotCol}">${rot}x</span>`;
+  const label=st=>{
+    switch(sortKey){
+      case 'rotation': return (Math.round(st.rot*100)/100).toFixed(2).replace('.',',');
+      case 'fill': return Math.round(st.fill*100)+' %';
+      default: return String(numeric(st));
     }
   };
-  body.innerHTML=rows.map((st,i)=>{
-    return `<tr onclick="toggleStationDetail(${st.number},this)" style="cursor:pointer" id="lb-row-${st.number}">
-      <td class="rank-cell">${i+1}</td>
-      <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500">${cleanName(st.name)}</td>
-      <td style="font-weight:600;color:#fff">${sortVal(st)}</td>
-      <td style="text-align:right">${ctxVal(st)}</td></tr>
-      <tr class="detail-row" id="lb-detail-${st.number}" style="display:none">
-        <td colspan="4" style="padding:0">
-          <div id="stats-detail-${st.number}" style="padding:14px;background:rgba(12,12,16,.85);border-bottom:0.5px solid rgba(255,255,255,.08)"></div>
-        </td>
-      </tr>`;
-  }).join('');
+  const maxV=Math.max(1,...rows.map(numeric));
+  // Jour : stock actuel ; Mois / Année : rotation (mouvements / capacité)
+  const sub=st=>isDay
+    ?`<span>${LG.bolt}${st.electrical_bikes}</span><span>${LG.wrench}${st.mechanical_bikes}</span><span>P ${st.available_bike_stands}</span>`
+    :`<span>Rotation ${st.bike_stands>0?(st.mv/st.bike_stands).toFixed(1).replace('.',','):'—'} ×</span>`;
+  window._lbRows=rows.map((st,i)=>({rank:i+1,num:st.number,name:cleanName(st.name),val:label(st),
+    pct:Math.max(0,Math.min(100,Math.round(numeric(st)/maxV*100))),sub:sub(st)}));
+  window._lbSortLabel=sortLabels[sortKey]||'Valeur';
+  window._lbShown=50;
+  renderLbList();
+}
+// Liste paginée (50 puis +50) ; une recherche affiche tous les résultats
+function renderLbList(){
+  const list=document.getElementById('lb-list'), foot=document.getElementById('lb-foot');
+  if(!list) return;
+  const esc=s=>String(s).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+  const all=window._lbRows||[];
+  const q=(window._lbQuery||'').toLowerCase().trim();
+  const rows=q?all.filter(r=>r.name.toLowerCase().includes(q)):all;
+  const shown=q?rows.length:Math.min(rows.length,window._lbShown||50);
+  const head=`<div class="sx-cap">Classement par <b>${window._lbSortLabel||'Mouvements'}</b> · ${q?rows.length+' résultat'+(rows.length>1?'s':''):all.length+' stations'}</div>`;
+  list.innerHTML=rows.length?head+rows.slice(0,shown).map(r=>`<div class="sx-item">
+      <div class="sx-row" id="lb-row-${r.num}" onclick="toggleStationDetail(${r.num},this)">
+        <span class="sx-rank${r.rank<=3?' top':''}">${r.rank}</span>
+        <span class="sx-main"><span class="sx-name">${esc(r.name)}</span><span class="sx-sub">${r.sub}</span></span>
+        <span class="sx-val">${r.val}</span>
+        <span class="sx-bar"><i style="--p:${r.pct}%"></i></span>
+      </div>
+      <div class="sx-detail" id="lb-detail-${r.num}" style="display:none"><div id="stats-detail-${r.num}"></div></div>
+    </div>`).join(''):'<div class="sx-empty">Aucune station</div>';
+  _openDetailNum=null;
+  if(foot) foot.innerHTML=(!q&&shown<rows.length)?`<button class="sx-more" onclick="window._lbShown+=50;renderLbList()">Afficher plus (${rows.length-shown} restantes)</button>`:'';
 }
 document.getElementById('lb-sort').addEventListener('change',()=>renderLbTable(Object.keys(lbMvCache).length?lbMvCache:todayMv));
 
@@ -1451,21 +1814,21 @@ async function showDayMeteo(date){
       if(temps.length){
         const tMin=Math.round(Math.min(...temps)*10)/10, tMax=Math.round(Math.max(...temps)*10)/10;
         const tAvg=Math.round(temps.reduce((a,b)=>a+b,0)/temps.length*10)/10;
-        tempStr=`${tMin}–${tMax}°C (${tAvg} moy)`;
+        tempStr=`${String(tMin).replace('.',',')}–${String(tMax).replace('.',',')} °C · moy ${String(tAvg).replace('.',',')}`;
       }
       if(winds.length){
         const wMin=Math.round(Math.min(...winds)), wMax=Math.round(Math.max(...winds));
         const wAvg=Math.round(winds.reduce((a,b)=>a+b,0)/winds.length);
-        windStr=`vent ${wMin}–${wMax} km/h (${wAvg} moy)`;
+        windStr=`Vent ${wMin}–${wMax} km/h · moy ${wAvg}`;
       }
     }
   }catch(e){ console.warn('Archive météo indisponible', e); }
 
-  const parts=[icon];
-  if(tempStr) parts.push(tempStr);
-  if(windStr) parts.push(windStr);
-  if(nMeteo) parts.push(`${rainyPct}% pluvieux`);
-  el.textContent=parts.join(' · ');
+  const chips=[icon];
+  if(tempStr) chips.push(tempStr);
+  if(windStr) chips.push(windStr);
+  if(nMeteo) chips.push(`${rainyPct} % pluvieux`);
+  el.innerHTML=chips.map(t=>`<span class="sx-chip">${t}</span>`).join('');
 }
 
 /* ═══ PLANIFIER ════════════════════════════════════════ */
@@ -1531,7 +1894,7 @@ function initPlanMap(){
       ctrl.onAdd=()=>{
         const div=L.DomUtil.create('div');
         div.id='meteo-ctrl';
-        div.style.cssText='display:flex;flex-direction:column;align-items:center;gap:0;width:72px;background:rgba(12,12,16,.85);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);border:0.5px solid rgba(255,255,255,.08);border-radius:10px;padding:6px 8px;font-size:11px;color:rgba(255,255,255,.7);margin-bottom:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)';
+        div.style.cssText='display:flex;flex-direction:column;align-items:center;gap:0;width:72px;background:rgba(12,12,16,.85);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);border:0.5px solid rgba(255,255,255,.08);border-radius:10px;padding:6px 8px;font-size:11px;color:rgba(255,255,255,.7);margin-bottom:4px;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.26)';
         L.DomEvent.disableClickPropagation(div);
 
         // Ligne 1 : icône + température (sans décimale, horloge retirée car déjà
@@ -1715,11 +2078,8 @@ async function computePlan(){
       }
     }
   }
-  for(let i=0;i<targetDates.length;i+=16){
-    const batch=targetDates.slice(i,i+16);
-    const res=await Promise.all(batch.map(dt=>fetchDay(dt).catch(()=>null)));
-    res.filter(Boolean).forEach(d=>allDays.push(d));
-  }
+  // Colonnes (cache IndexedDB + Web Workers) : l'ordre des jours est conservé (poids de récence)
+  (await loadColsMany(targetDates)).filter(Boolean).forEach(d=>allDays.push(d));
 
   // Stations proches
   // Si station fixée → station prioritaire + voisines si vide/pleine (mode now uniquement)
@@ -1776,50 +2136,10 @@ async function computePlan(){
     try{ const mo=new Date(snapMeteo._ts||0).getMonth()+1||new Date().getMonth()+1; const r=(RAIN_R[mo]||RAIN_R[1])[targetH]||-0.15; return Math.max(0.3,1.0-Math.abs(r)*2); }catch{ return 0.5; }
   }
 
-  // Calcul probas depuis l'historique
+  // Calcul probas depuis l'historique (colonnes)
   const allIds=new Set([...depStations.map(s=>s.number),...arrStations.map(s=>s.number)]);
-  const stationProba={};
-  const _depNAcc={},_arrNAcc={},_depElecAcc={},_depMecaAcc={};
   const nowMinutes=targetH*60;
-
-  allIds.forEach(num=>{
-    let depSum=0,arrSum=0,wSum=0,depHit=0,arrHit=0,samples=0;
-    allDays.forEach((snaps,dayIdx)=>{
-      const wRec=Math.exp(-dayIdx/45);
-      snaps.forEach(snap=>{
-        const snapDate=new Date(getTs(snap));
-        const snapMinutes=snapDate.getHours()*60+snapDate.getMinutes();
-        if(Math.abs(snapMinutes-nowMinutes)>90) return;
-        const sts=getSts(snap),st=sts.find(s=>s.number===num);
-        if(!st||!st.bike_stands) return;
-        const snapM=snap.meteo;
-        const snapRainy=(snapM?.precipitation??0)>0.1||snapM?.rain===true;
-        const wP=snapRainy===isRainy?1.0:0.35;
-        const diff=snapMinutes-nowMinutes;
-        const wH=Math.exp(-(diff*diff)/450);
-        const w=wRec*wP*wH;
-        if(w<0.01) return;
-        const depVal=st[depKey]||0,arrVal=st.available_bike_stands||0;
-        const elecVal=st.electrical_bikes||0,mecaVal=st.mechanical_bikes||0;
-        depSum+=depVal/st.bike_stands*100*w; arrSum+=arrVal/st.bike_stands*100*w; wSum+=w;
-        if(depVal>=1) depHit+=w; if(arrVal>=1) arrHit+=w; samples++;
-        _depNAcc[num]=(_depNAcc[num]||0)+depVal*w;
-        _arrNAcc[num]=(_arrNAcc[num]||0)+arrVal*w;
-        _depElecAcc[num]=(_depElecAcc[num]||0)+elecVal*w;
-        _depMecaAcc[num]=(_depMecaAcc[num]||0)+mecaVal*w;
-      });
-    });
-    if(wSum>0) stationProba[num]={
-      dep:Math.round(depSum/wSum), arr:Math.round(arrSum/wSum),
-      depN:Math.round((_depNAcc[num]||0)/wSum*10)/10,
-      depElecN:Math.round((_depElecAcc[num]||0)/wSum*10)/10,
-      depMecaN:Math.round((_depMecaAcc[num]||0)/wSum*10)/10,
-      arrN:Math.round((_arrNAcc[num]||0)/wSum*10)/10,
-      depProb:Math.round(depHit/wSum*100),
-      arrProb:Math.round(arrHit/wSum*100),
-      samples
-    };
-  });
+  const stationProba=stationProbaFromCols(allIds, allDays, nowMinutes, isRainy, depKey);
 
   // Générer combinaisons
   const combos=[];
@@ -1895,13 +2215,34 @@ async function computePlan(){
         arr:Object.assign({},arr,{live:liveArr2||null}),
         depPct,arrPct,depProb,arrProb,
         depN:pd?.depN??null,depElecN:pd?.depElecN??null,depMecaN:pd?.depMecaN??null,arrN:pa?.arrN??null,
-        score,dist,rideMin,samples:pd?.samples??0,battPenalty,overPrice,relaiStation,
-        emptyRisk:depProb!=null?(100-depProb):null
+        score,dist,rideMin,samples:pd?.samples??0,battPenalty,overPrice,relaiStation
       });
     }
   }
   combos.sort((a,b)=>b.score-a.score);
   const top=combos.slice(0,topN);
+
+  // Mode instantané : % de risque que la station d'ARRIVÉE soit pleine à l'heure d'arrivée,
+  // même jour de la semaine sur les 60 derniers jours (voir fullRiskPct).
+  if(isNowMode&&top.length){
+    try{
+      const nowMin=now2.getHours()*60+now2.getMinutes();
+      const colsByDow={};
+      const colsFor=async dow=>{
+        if(!colsByDow[dow]){
+          const dates=lastDays(HIST_PRELOAD_DAYS).filter(d=>new Date(d+'T12:00:00').getDay()===dow);
+          colsByDow[dow]=(await loadColsMany(dates)).filter(Boolean);
+        }
+        return colsByDow[dow];
+      };
+      for(const cb of top){
+        const walkDep=(planFromPos&&!planFromFixed)?walkMinutes(haversine(planFromPos.lat,planFromPos.lng,cb.dep.lat,cb.dep.lng)):0;
+        let arrMin=nowMin+walkDep+cb.rideMin, dow=targetDow;
+        if(arrMin>=1440){ arrMin-=1440; dow=(targetDow+1)%7; }
+        cb.fullRisk=fullRiskPct(await colsFor(dow), cb.arr.number, arrMin);
+      }
+    }catch(e){ console.warn('risque station pleine indisponible', e); }
+  }
 
   if(!top.length){
     results.innerHTML='<div class="no-data">Pas assez de données historiques pour ces stations.</div>';
@@ -1920,76 +2261,7 @@ async function computePlan(){
 
   const renderComboList=(limit)=>{
     const shown=top.slice(0,limit);
-    const html=shown.map((combo,i)=>{
-      const sc=Math.round(combo.score??0);
-      const bt=document.getElementById('plan-type')?.value||'elec';
-      const rColors=bt==='meca'?['#7a1a1a','#a82a2a','#d04444']:['#1a6b36','#2a8a4a','#3eaa62'];
-      const rColor=i<3?rColors[i]:'transparent';
-      const depCol=(combo.depProb??0)>=60?'#34c759':(combo.depProb??0)>=35?'#ff9f0a':'#ff453a';
-      const arrCol=(combo.arrProb??0)>=60?'#34c759':(combo.arrProb??0)>=35?'#ff9f0a':'#ff453a';
-      const scCol=sc>=60?'#34c759':sc>=35?'#ff9f0a':'#ff453a';
-      const scBg=sc>=60?'#0d2b1a':sc>=35?'#2b1a00':'#2b0a0a';
-      const liveElec=combo.dep.live?.electrical_bikes??0;
-      const liveMeca=combo.dep.live?.mechanical_bikes??0;
-      const livePlaces=combo.arr.live?.available_bike_stands??'?';
-      const depDist=planFromFixed?'':` · ${Math.round(combo.dep.dist||0)}m`;
-
-      // Chiffres communs aux deux modes
-      const avgElec=combo.depElecN!=null?'~'+Math.round(combo.depElecN):(isNowMode?liveElec:'?');
-      const avgMeca=combo.depMecaN!=null?'~'+Math.round(combo.depMecaN):(isNowMode?liveMeca:'?');
-      const avgPlaces=combo.arrN!=null?'~'+Math.round(combo.arrN):(isNowMode?livePlaces:'?');
-      const dispElec=isNowMode?liveElec:avgElec;
-      const dispMeca=isNowMode?liveMeca:avgMeca;
-      const dispPlaces=isNowMode?livePlaces:avgPlaces;
-      const cardBody=`
-        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0;min-width:64px">
-          <div style="display:grid;grid-template-columns:repeat(3,minmax(20px,auto));gap:4px;justify-items:end">
-            <div style="display:flex;align-items:center;gap:1px">
-              <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span style="font-size:12px;font-weight:700;color:#fff">${dispElec}</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:1px">
-              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg><span style="font-size:12px;font-weight:700;color:#fff">${dispMeca}</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:1px">
-              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg><span style="font-size:12px;font-weight:700;color:#fff">${dispPlaces}</span>
-            </div>
-          </div>
-          ${isNowMode?emptyRiskBadgeHtml(combo):`<div style="background:${scBg};border-radius:5px;padding:2px 7px;min-width:36px;text-align:center"><span style="font-size:11px;font-weight:700;color:${scCol}">${sc}%</span></div>`}
-        </div>`;
-      // Walk times
-      const walkDepMin=planFromPos&&!planFromFixed?walkMinutes(haversine(planFromPos.lat,planFromPos.lng,combo.dep.lat,combo.dep.lng)):null;
-      const walkArrMin=planToPos&&!planToFixed?walkMinutes(haversine(combo.arr.lat,combo.arr.lng,planToPos.lat,planToPos.lng)):null;
-      const walkDepHtml=walkDepMin!=null?`<div style="display:flex;align-items:center;gap:3px;margin-bottom:3px">
-        <span style="color:#0a84ff;display:flex;align-items:center">${WALK_SVG}</span>
-        <span style="font-size:9px;color:#0a84ff;font-weight:600">${walkDepMin} min</span>
-        <div style="flex:1;border-top:1.5px dashed rgba(10,132,255,.35);height:0;margin:0 3px"></div>
-        <span style="color:rgba(255,255,255,.4);display:flex;align-items:center">${BIKE_SVG}</span>
-      </div>`:'';
-      const walkArrHtml=walkArrMin!=null?`<div style="display:flex;align-items:center;gap:3px;margin-top:3px">
-        <span style="color:rgba(255,255,255,.4);display:flex;align-items:center">${BIKE_SVG}</span>
-        <div style="flex:1;border-top:1.5px dashed rgba(10,132,255,.35);height:0;margin:0 3px"></div>
-        <span style="font-size:9px;color:#0a84ff;font-weight:600">${walkArrMin} min</span>
-        <span style="color:#0a84ff;display:flex;align-items:center">${WALK_SVG}</span>
-      </div>`:'';
-      return `<div class="combo-card${i===0?' selected':''}" onclick="toggleComboDetail(${i},this);loadComboBikes(${i})" data-idx="${i}" style="display:block;padding:6px 9px;border-radius:8px;margin-bottom:4px;background:rgba(12,12,16,.85);border:0.5px solid rgba(255,255,255,.12);cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)">
-        ${walkDepHtml}
-        <div style="display:flex;align-items:center;gap:8px;padding:${walkDepMin||walkArrMin?'4px 0':0}">
-          <div style="width:3px;height:28px;border-radius:2px;background:${rColor};flex-shrink:0"></div>
-          <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.5);min-width:14px;flex-shrink:0">${i+1}</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:11px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cleanName(combo.dep.name)} → ${cleanName(combo.arr.name)}</div>
-            <div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:1px;display:flex;align-items:center;gap:4px">
-              <span>${Math.round(combo.dist/1000*10)/10}km · ~${combo.rideMin}min</span>
-              ${combo.overPrice>0?`<span style="background:rgba(255,159,10,.1);border:0.5px solid rgba(255,159,10,.25);border-radius:4px;padding:1px 4px;font-size:9px;color:#ff9f0a;font-weight:600">+${combo.overPrice.toFixed(2)}€</span>`:''}
-              ${combo.battPenalty?`<span style="color:${combo.relaiStation?'#ff9f0a':'#ff453a'};font-size:9px;display:flex;align-items:center;gap:2px"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>${combo.relaiStation?'batt. insuf. · relais dispo':'batt. insuf.'}</span>`:''}
-            </div>
-            ${combo.relaiStation?`<div style="background:rgba(255,159,10,.08);border:0.5px solid rgba(255,159,10,.2);border-radius:5px;padding:2px 6px;margin-top:3px;font-size:9px;color:#ff9f0a;display:flex;align-items:center;gap:3px"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Relai suggéré : ${cleanName(combo.relaiStation.name)}</div>`:''}
-          </div>
-          ${cardBody}
-        </div>
-        ${walkArrHtml}
-      </div>`;
-    }).join('');
+    const html=shown.map((combo,i)=>comboPillHtml(combo,i,false)).join('');
     // Desktop : liste + bouton voir plus
     if(window.innerWidth>640){
       const more=top.length>limit
@@ -2005,13 +2277,13 @@ async function computePlan(){
   const topScore=top[0]?.score??0;
   const autoLimit=topScore<30?top.length:topScore<50?Math.min(5,top.length):3;
   let _warnHtml='';
-  if(isNowMode&&depEmptyWarn) _warnHtml+=`<div style="display:flex;align-items:center;gap:6px;padding:6px 10px 4px;font-size:10px;color:#ff9f0a;background:rgba(255,159,10,.08);border-radius:8px;margin-bottom:4px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Station vide · stations voisines proposées</div>`;
-  if(isNowMode&&arrFullWarn) _warnHtml+=`<div style="display:flex;align-items:center;gap:6px;padding:6px 10px 4px;font-size:10px;color:#ff9f0a;background:rgba(255,159,10,.08);border-radius:8px;margin-bottom:4px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Station pleine · stations voisines proposées</div>`;
+  if(isNowMode&&depEmptyWarn) _warnHtml+=`<div style="display:flex;align-items:center;gap:6px;padding:6px 12px;font-size:10.5px;font-weight:800;color:#fff;background:var(--g-cap-alert);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.5);border-radius:999px;margin-bottom:6px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Station vide · stations voisines proposées</div>`;
+  if(isNowMode&&arrFullWarn) _warnHtml+=`<div style="display:flex;align-items:center;gap:6px;padding:6px 12px;font-size:10.5px;font-weight:800;color:#fff;background:var(--g-cap-alert);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.5);border-radius:999px;margin-bottom:6px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Station pleine · stations voisines proposées</div>`;
   // Input feedback
   const _fromInput=document.getElementById('plan-from');
   const _toInput=document.getElementById('plan-to');
-  if(_fromInput) _fromInput.style.color=depEmptyWarn?'#ff9f0a':'';
-  if(_toInput) _toInput.style.color=arrFullWarn?'#ff9f0a':'';
+  if(_fromInput) _fromInput.style.color='';
+  if(_toInput) _toInput.style.color='';
   results.innerHTML=_warnHtml+renderComboList(autoLimit);
   if(window.innerWidth<=640) setTimeout(initSliderSwipe,50);
   window._showMoreCombos=()=>{ results.innerHTML=renderComboList(top.length); drawTop3Routes(); loadAllComboBikes(); setTimeout(initSliderSwipe,50); };
@@ -2191,10 +2463,11 @@ async function drawTop3Routes(){
 
   // Tracer en ordre inverse (le 1er par-dessus)
   [...routes].reverse().forEach(({coords,i,combo})=>{
+    const _i=i;
     if(coords){
       L.polyline(coords,{color:'#fff',weight:weights[i]+3,opacity:.6,lineCap:'round',lineJoin:'round'}).addTo(planLayerGroup);
       const pl=L.polyline(coords,{color:colors[i],weight:weights[i],opacity:opacities[i],lineCap:'round',lineJoin:'round'}).addTo(planLayerGroup);
-      const _i=i; pl.on('click',()=>selectComboIdx(_i));
+      pl.on('click',()=>selectComboIdx(_i));
       window._comboRouteLayers[i]=pl;
       window._comboBaseStyle[i]={weight:weights[i],opacity:opacities[i]};
       // Zone de clic élargie invisible
@@ -2453,9 +2726,6 @@ async function showStationDetail(number, targetEl=null){
   await ensureChartJs();
   const st=allStations.find(s=>s.number===number);
   if(!st) return;
-  document.querySelectorAll('#lb-body tr').forEach(r=>r.style.background='');
-  const row=document.getElementById('lb-row-'+number);
-  if(row) row.style.background='rgba(255,255,255,.06)';
   const detail=targetEl || document.getElementById('stats-detail');
   const view=document.getElementById('lb-view')?.value||'day';
   const isMob=window.innerWidth<=640;
@@ -2463,23 +2733,16 @@ async function showStationDetail(number, targetEl=null){
   const oldCvs=document.getElementById('sd-combined-'+number);
   if(oldCvs){ const ex=Chart.getChart(oldCvs); if(ex) ex.destroy(); }
   detail.innerHTML=
-    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'+
-    '<div style="min-width:0"><div style="font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+cleanName(st.name)+'</div>'+
-    '<div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:2px"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="display:inline;vertical-align:-1px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'+st.electrical_bikes+' · <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="display:inline;vertical-align:-1px"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>'+st.mechanical_bikes+' · 🅿️'+st.available_bike_stands+'</div></div></div>'+
-    '<div id="sd-tabs-'+number+'" style="display:flex;background:rgba(255,255,255,.06);border:0.5px solid rgba(255,255,255,.06);border-radius:20px;padding:2px;position:relative;margin-bottom:8px">'+
-    '<div id="sd-thumb-'+number+'" style="position:absolute;top:2px;left:2px;height:calc(100% - 4px);width:33.33%;background:rgba(255,255,255,.18);border:0.5px solid rgba(255,255,255,.2);border-radius:18px;transition:transform .18s;pointer-events:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.2)"></div>'+
-    '<div class="sd-tab on" onclick="renderSDSlide(0,'+number+')" style="flex:1;text-align:center;padding:5px 4px;font-size:10px;font-weight:600;color:#fff;cursor:pointer;position:relative;z-index:1">Vélos</div>'+
-    '<div class="sd-tab" onclick="renderSDSlide(1,'+number+')" style="flex:1;text-align:center;padding:5px 4px;font-size:10px;font-weight:600;color:rgba(255,255,255,.55);cursor:pointer;position:relative;z-index:1">Mvts</div>'+
-    '<div class="sd-tab" onclick="renderSDSlide(2,'+number+')" style="flex:1;text-align:center;padding:5px 4px;font-size:10px;font-weight:600;color:rgba(255,255,255,.55);cursor:pointer;position:relative;z-index:1">Solde</div>'+
-    '</div>'+
-    '<div id="sd-legend-'+number+'" style="display:flex;gap:10px;font-size:10px;color:rgba(255,255,255,.55);margin-bottom:4px"></div>'+
-    '<div style="position:relative;height:'+(isMob?130:160)+'px;margin:0 -14px;width:calc(100% + 28px)"><canvas id="sd-combined-'+number+'" style="position:absolute;inset:0;width:100%!important;height:100%!important"></canvas></div>'+
-    '<div id="sd-dots-'+number+'" style="display:flex;justify-content:center;gap:4px;padding:6px 0 2px">'+
-    '<div style="height:3px;width:14px;border-radius:2px;background:#34c759;display:inline-block;transition:all .2s"></div>'+
-    '<div style="height:3px;width:5px;border-radius:2px;background:#38383a;display:inline-block;transition:all .2s"></div>'+
-    '<div style="height:3px;width:5px;border-radius:2px;background:#38383a;display:inline-block;transition:all .2s"></div>'+
-    '</div>'+
-    '<div id="sd-stats-row" style="display:flex;gap:8px;margin-top:6px"></div>';
+    `<div class="sx-dhead"><div class="sx-dname">${cleanName(st.name)}</div>
+       <span class="sx-chip">${LG.bolt}${st.electrical_bikes}</span><span class="sx-chip">${LG.wrench}${st.mechanical_bikes}</span><span class="sx-chip">P ${st.available_bike_stands}</span></div>
+     <div id="sd-tabs-${number}" class="sx-dtabs"><div id="sd-thumb-${number}" class="sx-dthumb"></div>
+       <div class="sd-tab sx-dtab on" onclick="renderSDSlide(0,${number})">Vélos</div>
+       <div class="sd-tab sx-dtab" onclick="renderSDSlide(1,${number})">Mouvements</div>
+       <div class="sd-tab sx-dtab" onclick="renderSDSlide(2,${number})">Solde</div></div>
+     <div id="sd-legend-${number}" class="sx-leg"></div>
+     <div class="sx-chart"><canvas id="sd-combined-${number}"></canvas></div>
+     <div id="sd-dots-${number}" class="sx-dots"><i class="on"></i><i></i><i></i></div>
+     <div id="sd-stats-row-${number}" class="sx-stats"></div>`;
 
   const d=document.getElementById('lb-date').value;
   const mth=document.getElementById('lb-month')?.value;
@@ -2596,45 +2859,47 @@ function renderSDSlide(slideIdx,number){
   if(cvs){ const ex=Chart.getChart(cvs); if(ex) ex.destroy(); }
   const tabsCont=document.getElementById('sd-tabs-'+number);
   if(tabsCont){
-    [...tabsCont.children].forEach((t,i)=>{ if(t.id&&t.id.startsWith('sd-thumb')) return; t.classList.toggle('on',i-1===slideIdx); t.style.color=i-1===slideIdx?'#f5f5f7':'var(--sub)'; });
+    [...tabsCont.querySelectorAll('.sd-tab')].forEach((t,i)=>t.classList.toggle('on',i===slideIdx));
     const thumb=document.getElementById('sd-thumb-'+number);
     if(thumb) thumb.style.transform=`translateX(${slideIdx*100}%)`;
   }
   const dotsCont=document.getElementById('sd-dots-'+number);
-  if(dotsCont) [...dotsCont.children].forEach((d,i)=>{ d.style.width=i===slideIdx?'14px':'5px'; d.style.background=i===slideIdx?'#34c759':'#38383a'; });
+  if(dotsCont) [...dotsCont.children].forEach((d,i)=>d.classList.toggle('on',i===slideIdx));
+  const W='#ffffff', G='rgba(255,255,255,.5)';
+  const sw=(col,txt)=>`<span><i style="background:${col}"></i>${txt}</span>`;
+  const box=(v,l)=>`<div class="sx-stat"><div class="sx-stat-v">${v}</div><div class="sx-stat-l">${l}</div></div>`;
   let datasets=[],legendHtml='',statsHtml='';
   if(slideIdx===0){
     datasets=[
-      {label:'Élec',data:dataElec,borderColor:'#0a84ff',backgroundColor:isLine?'#0a84ff18':'#0a84ff88',borderWidth:isLine?1.8:0,borderRadius:2,tension:0,pointRadius:0,spanGaps:true,fill:isLine},
-      {label:'Méca',data:dataMeca,borderColor:'#ff9f0a',backgroundColor:isLine?'#ff9f0a18':'#ff9f0a88',borderWidth:isLine?1.8:0,borderRadius:2,tension:0,pointRadius:0,spanGaps:true,fill:isLine}
+      {label:'Élec',data:dataElec,borderColor:W,backgroundColor:isLine?'rgba(255,255,255,.14)':'rgba(255,255,255,.85)',borderWidth:isLine?2:0,borderRadius:2,tension:0,pointRadius:0,spanGaps:true,fill:isLine},
+      {label:'Méca',data:dataMeca,borderColor:G,backgroundColor:isLine?'rgba(255,255,255,.07)':'rgba(255,255,255,.45)',borderWidth:isLine?2:0,borderRadius:2,tension:0,pointRadius:0,spanGaps:true,fill:isLine}
     ];
-    legendHtml='<span style="color:#0a84ff;font-size:10px"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="display:inline;vertical-align:-1px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Élec</span><span style="color:#ff9f0a;font-size:10px;margin-left:10px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="display:inline;vertical-align:-1px"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> Méca</span>';
-    const avgE=Math.round((dataElec.filter(Boolean).reduce((a,b)=>a+b,0)||0)/Math.max(1,dataElec.filter(Boolean).length));
-    const avgM=Math.round((dataMeca.filter(Boolean).reduce((a,b)=>a+b,0)||0)/Math.max(1,dataMeca.filter(Boolean).length));
-    statsHtml=`<div style="flex:1;background:rgba(12,12,16,.85);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#0a84ff">${avgE}</div><div style="font-size:10px;color:rgba(255,255,255,.55)"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="display:inline;vertical-align:-1px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> moy.</div></div><div style="flex:1;background:rgba(12,12,16,.85);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#ff9f0a">${avgM}</div><div style="font-size:10px;color:rgba(255,255,255,.55)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="display:inline;vertical-align:-1px"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> moy.</div></div>`;
+    legendHtml=sw(W,'Élec')+sw(G,'Méca');
+    const avg=a=>{ const v=a.filter(Boolean); return Math.round(v.reduce((x,y)=>x+y,0)/Math.max(1,v.length)); };
+    statsHtml=box(avg(dataElec),LG.bolt+' Élec · moyenne')+box(avg(dataMeca),LG.wrench+' Méca · moyenne');
   } else if(slideIdx===1){
-    datasets=[{label:'Mvts',data:dataMvts,backgroundColor:'#f5f5f755',borderColor:'#f5f5f7',borderWidth:1,borderRadius:3,spanGaps:true}];
-    legendHtml='<span style="font-size:10px;color:rgba(255,255,255,.55)">↕ Mouvements</span>';
+    datasets=[{label:'Mouvements',data:dataMvts,backgroundColor:'rgba(255,255,255,.6)',borderColor:W,borderWidth:1,borderRadius:3,spanGaps:true}];
+    legendHtml=sw(W,'Mouvements');
     const total=(dataMvts.filter(Boolean).reduce((a,b)=>a+b,0)||0);
-    const maxMvt=Math.max(...(dataMvts.filter(Boolean)||[0]));
-    statsHtml=`<div style="flex:1;background:rgba(12,12,16,.85);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:#fff">${Math.round(total)}</div><div style="font-size:10px;color:rgba(255,255,255,.55)">total</div></div><div style="flex:1;background:rgba(12,12,16,.85);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700">${maxMvt}</div><div style="font-size:10px;color:rgba(255,255,255,.55)">max</div></div>`;
+    const maxMvt=Math.max(0,...(dataMvts.filter(Boolean)));
+    statsHtml=box(Math.round(total),'Total')+box(maxMvt,'Maximum');
   } else {
-    datasets=[{label:'Solde',data:dataSolde,backgroundColor:dataSolde.map(v=>(v||0)>=0?'#34c75988':'#ff453a88'),borderColor:dataSolde.map(v=>(v||0)>=0?'#34c759':'#ff453a'),borderWidth:1,borderRadius:2,spanGaps:true}];
-    legendHtml='<span style="color:#34c759;font-size:10px">▲ Entrées</span><span style="color:#ff453a;font-size:10px;margin-left:8px">▼ Sorties</span>';
+    datasets=[{label:'Solde',data:dataSolde,backgroundColor:dataSolde.map(v=>(v||0)>=0?'rgba(255,255,255,.85)':'rgba(255,255,255,.35)'),borderColor:dataSolde.map(v=>(v||0)>=0?W:G),borderWidth:1,borderRadius:2,spanGaps:true}];
+    legendHtml=sw(W,'▲ Entrées')+sw(G,'▼ Sorties');
     const bilan=(dataSolde.filter(Boolean).reduce((a,b)=>a+b,0)||0);
-    statsHtml=`<div style="flex:1;background:rgba(12,12,16,.85);border-radius:8px;padding:7px 10px"><div style="font-size:15px;font-weight:700;color:${bilan>=0?'#34c759':'#ff453a'}">${bilan>=0?'+':''}${Math.round(bilan)}</div><div style="font-size:10px;color:rgba(255,255,255,.55)">bilan</div></div>`;
+    statsHtml=box((bilan>=0?'+':'')+Math.round(bilan),'Bilan');
   }
   const legendEl=document.getElementById('sd-legend-'+number);
-  const statsEl=document.getElementById('sd-stats-row');
+  const statsEl=document.getElementById('sd-stats-row-'+number);
   if(legendEl) legendEl.innerHTML=legendHtml;
   if(statsEl) statsEl.innerHTML=statsHtml;
   if(!cvs) return;
   const chartType=slideIdx===0?(isLine?'line':'bar'):'bar';
   window._chartSD_elec=new Chart(cvs,{type:chartType,data:{labels,datasets},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(12,12,16,.85)',titleColor:'#f5f5f7',bodyColor:'#8e8e93',padding:8,cornerRadius:8}},
-      scales:{x:{ticks:{color:'#636366',font:{size:9},maxTicksLimit:view==='day'?8:12},grid:{display:false},border:{display:false}},
-              y:{ticks:{color:'#636366',font:{size:9},maxTicksLimit:4},grid:{color:'rgba(255,255,255,.05)'},border:{display:false}}}}});
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(24,26,34,.95)',titleColor:'#fff',bodyColor:'#fff',padding:10,cornerRadius:10}},
+      scales:{x:{ticks:{color:'rgba(255,255,255,.7)',font:{size:11},maxTicksLimit:view==='day'?8:12},grid:{display:false},border:{display:false}},
+              y:{ticks:{color:'rgba(255,255,255,.7)',font:{size:11},maxTicksLimit:5},grid:{color:'rgba(255,255,255,.08)'},border:{display:false}}}}});
 }
 
 
@@ -2678,7 +2943,7 @@ function renderBikeRow(b, i, isRecommended){
   const isElec=b.type==='ELECTRICAL';
   const reserved=b.isReserved;
   const avail=b.status==='AVAILABLE';
-  const ic=isRecommended?'#4ade80':'rgba(255,255,255,.65)';
+  const ic=isRecommended?'#fff':'rgba(255,255,255,.65)';
   const icon=isElec
     ?`<svg width="11" height="11" viewBox="0 0 24 24" fill="${ic}"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`
     :`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="${ic}" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`;
@@ -2686,7 +2951,7 @@ function renderBikeRow(b, i, isRecommended){
   let battCells='<div class="sp-none">—</div>';
   if(isElec&&b.battery?.percentage!=null){
     const pct=b.battery.percentage;
-    const col=pct>=60?'#4ade80':pct>=10?'#f59e0b':'#f87171';
+    const col=pct>=60?'#fff':pct>=10?'rgba(255,255,255,.55)':'#ff6b6b';
     battCells=`<div class="sp-bar"><i style="width:${Math.max(4,Math.min(100,pct))}%;background:${col}"></i></div><div class="sp-pct">${pct}%</div>`;
   }
   // Notation en 3 colonnes fixes (★ / score / avis) pour garder l'alignement
@@ -2773,7 +3038,7 @@ function toggleBikeDetailLive(idx){
   const modal=document.createElement('div');
   modal.id='bike-detail-modal';
   modal.dataset.idx=idx;
-  modal.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:901;width:min(300px,calc(100vw - 40px));max-height:min(60vh,420px);background:rgba(12,12,16,.85);backdrop-filter:blur(56px) saturate(220%) brightness(1.08);-webkit-backdrop-filter:blur(56px) saturate(220%) brightness(1.08);border:0.5px solid rgba(255,255,255,.18);border-radius:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 16px 48px rgba(0,0,0,.5);display:flex;flex-direction:column;overflow:hidden';
+  modal.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:901;width:min(300px,calc(100vw - 40px));max-height:min(60vh,420px);background:rgba(12,12,16,.85);backdrop-filter:blur(56px) saturate(220%) brightness(1.08);-webkit-backdrop-filter:blur(56px) saturate(220%) brightness(1.08);border:0.5px solid rgba(255,255,255,.18);border-radius:16px;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.26),0 0 22px rgba(0,0,0,.22);display:flex;flex-direction:column;overflow:hidden';
   modal.addEventListener('click', e=>e.stopPropagation());
 
   modal.innerHTML=`
@@ -2825,27 +3090,25 @@ async function showStationPopup(s, lat, lon){
     left:${pt.x}px;top:${pt.y-10}px;
     background:rgba(12,12,16,.85);backdrop-filter:blur(56px) saturate(220%) brightness(1.08);-webkit-backdrop-filter:blur(56px) saturate(220%) brightness(1.08);
     border:0.5px solid rgba(255,255,255,.18);border-radius:11px;
-    padding:8px 8px;width:176px;max-width:calc(100vw - 24px);
+    padding:11px 10px 9px;width:184px;max-width:calc(100vw - 24px);
     max-height:min(60vh,400px);display:flex;flex-direction:column;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 24px rgba(0,0,0,.4);
+    box-shadow:inset 0 0 0 .5px rgba(255,255,255,.26),0 0 22px rgba(0,0,0,.22);
     pointer-events:auto;`;
 
   // Vélos live JCDecaux (chargement asynchrone) — scroll interne propre à la liste,
   // le header (nom + totaux) et le bouton "Partir d'ici" restent toujours visibles
   const bikesHtml = `<div style="position:relative;margin-bottom:2px;flex-shrink:1">
-    <div id="stn-bikes-slot" class="no-native-scrollbar" style="font-size:10px;color:rgba(255,255,255,.35);text-align:center;padding:0 6px 0 0;overflow-y:auto;max-height:230px">Chargement…</div>
-    <div id="stn-scroll-track" style="display:none;position:absolute;top:0;right:1px;width:4px;height:100%;background:rgba(255,255,255,.1);border-radius:2px;pointer-events:none">
-      <div id="stn-scroll-thumb" style="position:absolute;top:0;right:0;width:4px;background:#0a84ff;border-radius:2px;box-shadow:0 0 3px rgba(10,132,255,.6)"></div>
-    </div>
+    <div id="stn-bikes-slot" class="no-native-scrollbar sp-slot" style="font-size:10px;color:rgba(255,255,255,.35);text-align:center;padding:0 8px 0 0;overflow-y:auto;max-height:min(230px,calc(60vh - 120px))">Chargement…</div>
+    <div id="stn-scroll-track" class="sp-track" style="display:none"><div id="stn-scroll-thumb" class="sp-thumb"></div></div>
   </div>`;
 
-  const BOLT='<svg width="12" height="12" viewBox="0 0 24 24" fill="#4ade80"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>';
+  const BOLT='<svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>';
   const WRENCH='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
   div.innerHTML=`
     <div class="sp-head">
       <span class="sp-name">${cleanName(s.name)}</span>
       <span class="sp-cnt">
-        <span>${BOLT}<span id="stn-total-elec" style="color:#4ade80">${s.electrical_bikes}</span></span>
+        <span>${BOLT}<span id="stn-total-elec" style="color:#fff">${s.electrical_bikes}</span></span>
         <span>${WRENCH}<span id="stn-total-meca">${s.mechanical_bikes}</span></span>
       </span>
     </div>
@@ -2892,7 +3155,7 @@ async function showStationPopup(s, lat, lon){
       return (b.battery?.percentage||0)-(a.battery?.percentage||0);
     });
     if(!list.length){ slot.innerHTML=''; return; }
-    slot.style.textAlign='left'; slot.style.padding='0 6px 0 0';
+    slot.style.textAlign='left'; slot.style.padding='0 8px 0 0';
     window._popupBikesList=list;
     const {bestElecId,bestMecaId}=markBestBikes(list);
     slot.innerHTML=list.map((b,i)=>renderBikeRow(b,i,b.id===bestElecId||b.id===bestMecaId)).join('');
@@ -2913,16 +3176,24 @@ async function showStationPopup(s, lat, lon){
     if(track&&thumb){
       const updateThumb=()=>{
         const {scrollHeight,clientHeight,scrollTop}=slot;
-        if(scrollHeight<=clientHeight+1){ track.style.display='none'; return; }
+        if(scrollHeight<=clientHeight+1){ track.style.display='none'; slot.classList.remove('fade-top','fade-bottom'); return; }
         track.style.display='block';
-        const thumbH=Math.max(20,clientHeight*clientHeight/scrollHeight);
-        const maxThumbTop=clientHeight-thumbH;
-        const thumbTop=maxThumbTop*(scrollTop/(scrollHeight-clientHeight));
+        const trackH=track.clientHeight||clientHeight;
+        const thumbH=Math.max(20,trackH*clientHeight/scrollHeight);
+        const maxThumbTop=trackH-thumbH;
         thumb.style.height=thumbH+'px';
-        thumb.style.top=thumbTop+'px';
+        thumb.style.top=(maxThumbTop*(scrollTop/(scrollHeight-clientHeight)))+'px';
+        // Fondu aux bords : indique qu'il reste des vélos au-dessus / en dessous
+        slot.classList.toggle('fade-top',scrollTop>2);
+        slot.classList.toggle('fade-bottom',scrollTop<scrollHeight-clientHeight-2);
       };
       updateThumb();
-      slot.addEventListener('scroll', updateThumb);
+      let hideT=null;
+      slot.addEventListener('scroll', ()=>{
+        updateThumb();
+        track.classList.add('active'); clearTimeout(hideT);
+        hideT=setTimeout(()=>track.classList.remove('active'),700);
+      },{passive:true});
     }
   });
 
@@ -2997,14 +3268,7 @@ function updateSliderPosition(idx){
   if(card) track.scrollTo({left:card.offsetLeft, behavior:'smooth'});
 }
 
-function filterLbTable(q){
-  q=(q||'').toLowerCase().trim();
-  const rows=document.querySelectorAll('#lb-body tr');
-  rows.forEach(row=>{
-    const name=(row.querySelector('td:nth-child(2)')?.textContent||'').toLowerCase();
-    row.style.display=(!q||name.includes(q))?'':'none';
-  });
-}
+function filterLbTable(q){ window._lbQuery=q||''; renderLbList(); }
 
 function setModeNow(){
   const sl=document.getElementById('toggle-slider');
@@ -3211,38 +3475,6 @@ async function fetchStationBikes(stationNumber){
   }catch{ return []; }
 }
 
-// 2 vélos recommandés (1 élec + 1 méca), compacts — utilise le même score que le popup station
-function renderRecoBikesCompact(bikes){
-  if(!bikes.length) return '';
-  const toApiShape=b=>({
-    type: b.type==='E'?'ELECTRICAL':'MECHANICAL',
-    status: b.status==='S'?'RESERVED':'AVAILABLE',
-    isReserved: b.status==='S',
-    battery: b.batt!=null?{percentage:b.batt}:null,
-    rating: b.rating!=null?{value:b.rating*20,count:b.rcount}:null,
-    lastControlDateTime: null,
-    id:b.id, standNumber:b.borne,
-  });
-  const shaped=bikes.map(toApiShape);
-  const wantedType=document.getElementById('plan-type')?.value||'elec'; // 'elec' | 'meca' | 'any'
-  const pool=wantedType==='any'?shaped:shaped.filter(b=>b.type===(wantedType==='elec'?'ELECTRICAL':'MECHANICAL'));
-  const picks=pool.filter(b=>bikeRecoScore(b)>0).sort((a,b)=>bikeRecoScore(b)-bikeRecoScore(a)).slice(0,3);
-  if(!picks.length) return '';
-  const rows=picks.map(b=>{
-    const isElec=b.type==='ELECTRICAL';
-    const icon=isElec
-      ?'<svg width="8" height="8" viewBox="0 0 24 24" fill="rgba(255,255,255,.8)"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'
-      :'<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2.5" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
-    const battTxt=isElec&&b.battery?.percentage!=null?`${b.battery.percentage}%`:'';
-    const ratingTxt=b.rating?.value!=null?`★${Math.round(b.rating.value)}`:'';
-    const extra=[battTxt,ratingTxt].filter(Boolean).join(' · ');
-    return `<span style="display:inline-flex;align-items:center;gap:2px;font-size:8.5px;color:rgba(255,255,255,.5)">${icon}${b.standNumber??'?'}${extra?' · '+extra:''}</span>`;
-  }).join('<span style="color:rgba(255,255,255,.2);margin:0 2px">·</span>');
-  return `<div style="margin-top:4px;display:flex;align-items:center;gap:3px">
-    <span style="font-size:8px;color:#4ade80">★</span>${rows}
-  </div>`;
-}
-
 function loadAllComboBikes(){
   const cards=document.querySelectorAll('.combo-card[data-idx]');
   cards.forEach(card=>{
@@ -3256,31 +3488,14 @@ async function loadComboBikes(idx){
   const combo=window._planCombos?.[idx]; if(!combo) return;
   const cacheKey=combo.dep.number+'_'+combo.dist;
   if(_comboBikesCache[cacheKey]){
-    refreshPillIfNeeded(idx);
+    fillPillBikes(idx);
     return; // déjà chargé
   }
   const bikes=await fetchStationBikes(combo.dep.number);
   if(!bikes.length) return;
   _comboBikesCache[cacheKey]=bikes;
-  // Injecter dans le card actif
-  const card=document.querySelector(`.combo-card[data-idx="${idx}"]`);
-  if(card && !card.querySelector('.combo-bikes-list')){
-    const bikesList=document.createElement('div');
-    bikesList.className='combo-bikes-list';
-    bikesList.innerHTML=renderRecoBikesCompact(bikes);
-    card.appendChild(bikesList);
-  }
-  refreshPillIfNeeded(idx);
+  fillPillBikes(idx);
 }
-
-// Rafraîchit la pastille compacte si elle affiche justement cette combinaison
-// (les vélos arrivent en asynchrone, après le premier rendu de la pastille)
-function refreshPillIfNeeded(idx){
-  const pill=document.getElementById('plan-float-compact');
-  if(!pill || pill.style.display==='none') return;
-  if((window._openComboIdx??0)===idx) compactPlanFloat();
-}
-
 
 // Temps de marche : 1m ≈ 1.25min, min 1 min
 function walkMinutes(dist){ return Math.max(1, Math.round(dist/1000/5*60)); }
@@ -3320,16 +3535,32 @@ function useMyLocation(){
   );
 }
 
+function hideBootSpinner(){
+  const el=document.getElementById('boot-spin'); if(!el||el.classList.contains('out')) return;
+  const wait=Math.max(0,350-(performance.now()-(window._bootT0||0)));   // pas de flash trop court
+  setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>el.remove(),350); },wait);
+}
 async function boot(){
+  window._bootT0=performance.now();
+  // Filet de sécurité : la roue ne reste jamais plus de 8 s
+  setTimeout(hideBootSpinner,8000);
   // Démarrer le plus tôt possible, en parallèle du reste (gros payload ~10Mo)
   loadAllBikesLive();
 
   initRanges();
   allStations=await loadLatest(); window._lastStationUpdate=Date.now(); updateLiveStatus();
-  await computeMovements();
+  // La carte s'affiche sans attendre les mouvements du jour (ils arrivent ensuite)
   initMap();
   renderStations();
   initPlanMap();
+  computeMovements().then(()=>renderStations()).catch(()=>{});
+  // Historique : si beaucoup de jours manquent (1re visite), on garde la roue jusqu'à la fin
+  // (8 s max) ; sinon le préchargement se fait en arrière-plan sans rien bloquer.
+  try{
+    const {missing,done}=await preloadHistory();
+    if(missing>5) await Promise.race([done,new Promise(r=>setTimeout(r,8000))]);
+  }catch(e){ console.warn('préchargement historique', e); }
+  hideBootSpinner();
   // Note: le centrage auto au boot a été retiré (map.setView() au démarrage
   // interférait avec le premier clic dans le champ de recherche).
   // Le bouton géoloc explicite (useMyLocation) reste disponible.
