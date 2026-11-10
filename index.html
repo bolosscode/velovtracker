@@ -839,7 +839,7 @@ document.querySelectorAll('.tab').forEach(tab=>{
       if(isMap){
         hdr.style.position='absolute'; hdr.style.top='calc(10px + var(--sat))';
         hdr.style.left='calc(10px + var(--sal))'; hdr.style.right='calc(10px + var(--sar))';
-        hdr.style.paddingTop=''; hdr.style.height='';
+        hdr.style.paddingTop=''; hdr.style.height='38px';   // hauteur d'origine : sinon le header recouvre le panneau de recherche (top 58 px)
         hdr.style.borderRadius='14px'; hdr.style.borderBottom='0.5px solid rgba(255,255,255,.12)';
       } else {
         hdr.style.position='sticky'; hdr.style.top='0';
@@ -2736,9 +2736,7 @@ async function showStationDetail(number, targetEl=null){
     `<div class="sx-dhead"><div class="sx-dname">${cleanName(st.name)}</div>
        <span class="sx-chip">${LG.bolt}${st.electrical_bikes}</span><span class="sx-chip">${LG.wrench}${st.mechanical_bikes}</span><span class="sx-chip">P ${st.available_bike_stands}</span></div>
      <div id="sd-tabs-${number}" class="sx-dtabs"><div id="sd-thumb-${number}" class="sx-dthumb"></div>
-       <div class="sd-tab sx-dtab on" onclick="renderSDSlide(0,${number})">Vélos</div>
-       <div class="sd-tab sx-dtab" onclick="renderSDSlide(1,${number})">Mouvements</div>
-       <div class="sd-tab sx-dtab" onclick="renderSDSlide(2,${number})">Solde</div></div>
+       ${(view==='day'?['Vélos','Mouvements','Solde']:['Mouvements','Entrées / Sorties','Rotation']).map((t,i)=>`<div class="sd-tab sx-dtab${i===0?' on':''}" onclick="renderSDSlide(${i},${number})">${t}</div>`).join('')}</div>
      <div id="sd-legend-${number}" class="sx-leg"></div>
      <div class="sx-chart"><canvas id="sd-combined-${number}"></canvas></div>
      <div id="sd-dots-${number}" class="sx-dots"><i class="on"></i><i></i><i></i></div>
@@ -2758,7 +2756,7 @@ async function showStationDetail(number, targetEl=null){
     return result;
   }
 
-  let labels=[],dataElec=[],dataMeca=[],dataMvts=[],dataSolde=[];
+  let labels=[],dataElec=[],dataMeca=[],dataMvts=[],dataSolde=[],dataEnt=[],dataSor=[];
 
   if(view==='day'){
     if(!d) return;
@@ -2786,23 +2784,21 @@ async function showStationDetail(number, targetEl=null){
       if(ds<=today) dates.push(ds);
     }
     const loaded=await loadSnapsByDate(dates);
+    // TOTAUX par jour : mouvements, entrées, sorties (une moyenne de stock n'aurait pas de sens à cette échelle)
     for(let day=1;day<=daysInMonth;day++){
       const ds=y+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
       labels.push(day+'');
       const entry=loaded.find(x=>x.date===ds);
-      if(!entry){ dataElec.push(null);dataMeca.push(null);dataMvts.push(null);dataSolde.push(null);continue; }
-      let eSum=0,mSum=0,cnt=0,mvtsSum=0,ent=0,sor=0,prevS=null;
-      entry.snaps.forEach(snap=>{
+      let mv=0,ent=0,sor=0,prevS=null,seen=false;
+      (entry?entry.snaps:[]).forEach(snap=>{
         const st2=getSts(snap).find(x=>x.number===number); if(!st2) return;
-        eSum+=st2.electrical_bikes||0; mSum+=st2.mechanical_bikes||0; cnt++;
+        seen=true;
         const tot=(st2.electrical_bikes||0)+(st2.mechanical_bikes||0);
-        if(prevS!==null){ const dd=tot-prevS; mvtsSum+=Math.abs(dd); if(dd>0)ent+=dd; else sor+=dd; }
+        if(prevS!==null){ const dd=tot-prevS; mv+=Math.abs(dd); if(dd>0) ent+=dd; else sor+=dd; }
         prevS=tot;
       });
-      dataElec.push(cnt?Math.round(eSum/cnt):null);
-      dataMeca.push(cnt?Math.round(mSum/cnt):null);
-      dataMvts.push(Math.round(mvtsSum));
-      dataSolde.push(ent+sor);
+      if(!seen){ dataMvts.push(null); dataEnt.push(null); dataSor.push(null); continue; }
+      dataMvts.push(mv); dataEnt.push(ent); dataSor.push(sor);
     }
   } else {
     if(!yr) return;
@@ -2816,44 +2812,40 @@ async function showStationDetail(number, targetEl=null){
     const allLoadedYear=await loadSnapsByDate(allDatesYear);
     const byDate={};
     allLoadedYear.forEach(({date,snaps})=>{ byDate[date]={snaps}; });
+    // TOTAUX par mois (somme des jours disponibles)
     for(let mo=1;mo<=12;mo++){
       labels.push(MONTHS[mo-1]);
       const daysInM=new Date(yr,mo,0).getDate();
-      const mDates=[];
+      let mv=0,ent=0,sor=0,seen=false;
       for(let day=1;day<=daysInM;day++){
         const ds=yr+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
-        if(ds<=today) mDates.push(ds);
-      }
-      if(!mDates.length){ dataElec.push(null);dataMeca.push(null);dataMvts.push(null);dataSolde.push(null);continue; }
-      const loaded=mDates.map(ds=>byDate[ds]).filter(Boolean);
-      let eSum=0,mSum=0,cnt=0,mvtsT=0,soldeT=0;
-      loaded.forEach(({snaps})=>{
+        if(ds>today) break;
+        const e=byDate[ds]; if(!e) continue;
         let prevS=null;
-        snaps.forEach(snap=>{
+        e.snaps.forEach(snap=>{
           const st2=getSts(snap).find(x=>x.number===number); if(!st2) return;
-          eSum+=st2.electrical_bikes||0; mSum+=st2.mechanical_bikes||0; cnt++;
+          seen=true;
           const tot=(st2.electrical_bikes||0)+(st2.mechanical_bikes||0);
-          if(prevS!==null){ const dd=tot-prevS; mvtsT+=Math.abs(dd); soldeT+=dd; }
+          if(prevS!==null){ const dd=tot-prevS; mv+=Math.abs(dd); if(dd>0) ent+=dd; else sor+=dd; }
           prevS=tot;
         });
-      });
-      dataElec.push(cnt?Math.round(eSum/cnt):null);
-      dataMeca.push(cnt?Math.round(mSum/cnt):null);
-      dataMvts.push(Math.round(mvtsT/Math.max(1,loaded.length)));
-      dataSolde.push(Math.round(soldeT/Math.max(1,loaded.length)));
+      }
+      if(!seen){ dataMvts.push(null); dataEnt.push(null); dataSor.push(null); continue; }
+      dataMvts.push(mv); dataEnt.push(ent); dataSor.push(sor);
     }
   }
+  if(view!=='day') dataSolde=dataEnt.map((e,i)=>e==null?null:e+dataSor[i]);
 
-  window._sdData={labels,dataElec,dataMeca,dataMvts,dataSolde,number,view};
+  window._sdData={labels,dataElec,dataMeca,dataMvts,dataSolde,dataEnt,dataSor,cap:st.bike_stands||0,number,view};
   window._sdSlide=0;
   renderSDSlide(0,number);
 } // fin showStationDetail
 
 function renderSDSlide(slideIdx,number){
   window._sdSlide=slideIdx;
-  const {labels,dataElec,dataMeca,dataMvts,dataSolde,view}=window._sdData||{};
+  const {labels,dataElec,dataMeca,dataMvts,dataSolde,dataEnt,dataSor,cap,view}=window._sdData||{};
   if(!labels) return;
-  const isLine=view==='day';
+  const isDay=view==='day', isLine=isDay;
   if(window._chartSD_elec){ try{window._chartSD_elec.destroy();}catch{} window._chartSD_elec=null; }
   const cvs=document.getElementById('sd-combined-'+number);
   if(cvs){ const ex=Chart.getChart(cvs); if(ex) ex.destroy(); }
@@ -2868,38 +2860,65 @@ function renderSDSlide(slideIdx,number){
   const W='#ffffff', G='rgba(255,255,255,.5)';
   const sw=(col,txt)=>`<span><i style="background:${col}"></i>${txt}</span>`;
   const box=(v,l)=>`<div class="sx-stat"><div class="sx-stat-v">${v}</div><div class="sx-stat-l">${l}</div></div>`;
-  let datasets=[],legendHtml='',statsHtml='';
-  if(slideIdx===0){
-    datasets=[
-      {label:'Élec',data:dataElec,borderColor:W,backgroundColor:isLine?'rgba(255,255,255,.14)':'rgba(255,255,255,.85)',borderWidth:isLine?2:0,borderRadius:2,tension:0,pointRadius:0,spanGaps:true,fill:isLine},
-      {label:'Méca',data:dataMeca,borderColor:G,backgroundColor:isLine?'rgba(255,255,255,.07)':'rgba(255,255,255,.45)',borderWidth:isLine?2:0,borderRadius:2,tension:0,pointRadius:0,spanGaps:true,fill:isLine}
-    ];
-    legendHtml=sw(W,'Élec')+sw(G,'Méca');
-    const avg=a=>{ const v=a.filter(Boolean); return Math.round(v.reduce((x,y)=>x+y,0)/Math.max(1,v.length)); };
-    statsHtml=box(avg(dataElec),LG.bolt+' Élec · moyenne')+box(avg(dataMeca),LG.wrench+' Méca · moyenne');
-  } else if(slideIdx===1){
+  const sum=a=>a.reduce((x,y)=>x+(y||0),0);
+  const peak=a=>{ let bi=-1,bv=-Infinity; a.forEach((v,i)=>{ if(v!=null&&v>bv){ bv=v; bi=i; } }); return bi<0?null:{v:bv,label:labels[bi]}; };
+  const unit=view==='month'?'jour':'mois';
+  const peakTxt=p=>p?`Pic ${view==='month'?'le ':'en '}${p.label}`:'Pic';
+  let datasets=[],legendHtml='',statsHtml='',stacked=false;
+  if(isDay){
+    if(slideIdx===0){
+      datasets=[
+        {label:'Élec',data:dataElec,borderColor:W,backgroundColor:'rgba(255,255,255,.14)',borderWidth:2,tension:0,pointRadius:0,spanGaps:true,fill:true},
+        {label:'Méca',data:dataMeca,borderColor:G,backgroundColor:'rgba(255,255,255,.07)',borderWidth:2,tension:0,pointRadius:0,spanGaps:true,fill:true}
+      ];
+      legendHtml=sw(W,'Élec')+sw(G,'Méca');
+      const avg=a=>{ const v=a.filter(Boolean); return Math.round(v.reduce((x,y)=>x+y,0)/Math.max(1,v.length)); };
+      statsHtml=box(avg(dataElec),LG.bolt+' Élec · moyenne')+box(avg(dataMeca),LG.wrench+' Méca · moyenne');
+    } else if(slideIdx===1){
+      datasets=[{label:'Mouvements',data:dataMvts,backgroundColor:'rgba(255,255,255,.6)',borderColor:W,borderWidth:1,borderRadius:3,spanGaps:true}];
+      legendHtml=sw(W,'Mouvements');
+      statsHtml=box(Math.round(sum(dataMvts)),'Total')+box(Math.max(0,...dataMvts.filter(Boolean)),'Maximum');
+    } else {
+      datasets=[{label:'Solde',data:dataSolde,backgroundColor:dataSolde.map(v=>(v||0)>=0?'rgba(255,255,255,.85)':'rgba(255,255,255,.35)'),borderColor:dataSolde.map(v=>(v||0)>=0?W:G),borderWidth:1,borderRadius:2,spanGaps:true}];
+      legendHtml=sw(W,'▲ Entrées')+sw(G,'▼ Sorties');
+      const bilan=sum(dataSolde);
+      statsHtml=box((bilan>=0?'+':'')+Math.round(bilan),'Bilan');
+    }
+  } else if(slideIdx===0){
+    // Mouvements : TOTAL par jour (mois) ou par mois (année)
     datasets=[{label:'Mouvements',data:dataMvts,backgroundColor:'rgba(255,255,255,.6)',borderColor:W,borderWidth:1,borderRadius:3,spanGaps:true}];
-    legendHtml=sw(W,'Mouvements');
-    const total=(dataMvts.filter(Boolean).reduce((a,b)=>a+b,0)||0);
-    const maxMvt=Math.max(0,...(dataMvts.filter(Boolean)));
-    statsHtml=box(Math.round(total),'Total')+box(maxMvt,'Maximum');
+    legendHtml=sw(W,`Mouvements · total par ${unit}`);
+    const p=peak(dataMvts);
+    statsHtml=box(Math.round(sum(dataMvts)),'Total')+box(p?p.v:0,peakTxt(p));
+  } else if(slideIdx===1){
+    // Entrées / Sorties : sommes, empilées de part et d'autre de l'axe
+    stacked=true;
+    datasets=[
+      {label:'Entrées',data:dataEnt,backgroundColor:'rgba(255,255,255,.85)',borderColor:W,borderWidth:1,borderRadius:2,spanGaps:true},
+      {label:'Sorties',data:dataSor,backgroundColor:'rgba(255,255,255,.35)',borderColor:G,borderWidth:1,borderRadius:2,spanGaps:true}
+    ];
+    legendHtml=sw(W,`▲ Entrées · total par ${unit}`)+sw(G,`▼ Sorties · total par ${unit}`);
+    const e=sum(dataEnt), s=sum(dataSor), b=e+s;
+    statsHtml=box(Math.round(e),'Entrées')+box(Math.round(Math.abs(s)),'Sorties')+box((b>=0?'+':'')+Math.round(b),'Bilan');
   } else {
-    datasets=[{label:'Solde',data:dataSolde,backgroundColor:dataSolde.map(v=>(v||0)>=0?'rgba(255,255,255,.85)':'rgba(255,255,255,.35)'),borderColor:dataSolde.map(v=>(v||0)>=0?W:G),borderWidth:1,borderRadius:2,spanGaps:true}];
-    legendHtml=sw(W,'▲ Entrées')+sw(G,'▼ Sorties');
-    const bilan=(dataSolde.filter(Boolean).reduce((a,b)=>a+b,0)||0);
-    statsHtml=box((bilan>=0?'+':'')+Math.round(bilan),'Bilan');
+    // Rotation : mouvements ÷ capacité, pour comparer des stations de tailles différentes
+    const rot=dataMvts.map(v=>v==null||!cap?null:Math.round(v/cap*10)/10);
+    datasets=[{label:'Rotation',data:rot,backgroundColor:'rgba(255,255,255,.6)',borderColor:W,borderWidth:1,borderRadius:3,spanGaps:true}];
+    legendHtml=sw(W,`Rotation · mouvements ÷ capacité (${cap||'?'} places) · total par ${unit}`);
+    const p=peak(rot);
+    statsHtml=box((Math.round(sum(rot)*10)/10).toString().replace('.',','),'Rotation totale')+box(p?String(p.v).replace('.',','):'0',peakTxt(p));
   }
   const legendEl=document.getElementById('sd-legend-'+number);
   const statsEl=document.getElementById('sd-stats-row-'+number);
   if(legendEl) legendEl.innerHTML=legendHtml;
   if(statsEl) statsEl.innerHTML=statsHtml;
   if(!cvs) return;
-  const chartType=slideIdx===0?(isLine?'line':'bar'):'bar';
+  const chartType=(isDay&&slideIdx===0)?'line':'bar';
   window._chartSD_elec=new Chart(cvs,{type:chartType,data:{labels,datasets},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(24,26,34,.95)',titleColor:'#fff',bodyColor:'#fff',padding:10,cornerRadius:10}},
-      scales:{x:{ticks:{color:'rgba(255,255,255,.7)',font:{size:11},maxTicksLimit:view==='day'?8:12},grid:{display:false},border:{display:false}},
-              y:{ticks:{color:'rgba(255,255,255,.7)',font:{size:11},maxTicksLimit:5},grid:{color:'rgba(255,255,255,.08)'},border:{display:false}}}}});
+      scales:{x:{stacked,ticks:{color:'rgba(255,255,255,.7)',font:{size:11},maxTicksLimit:view==='day'?8:12},grid:{display:false},border:{display:false}},
+              y:{stacked,ticks:{color:'rgba(255,255,255,.7)',font:{size:11},maxTicksLimit:5},grid:{color:'rgba(255,255,255,.08)'},border:{display:false}}}}});
 }
 
 
