@@ -285,6 +285,12 @@ main{max-width:1500px;margin:auto;padding:20px}
 .bk-name .ic{display:flex;color:var(--g-sub);flex-shrink:0}
 .bk-name .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sx-sub span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis}
+/* détails : les chiffres déjà visibles sur la ligne ne sont répétés que sur grand écran */
+@media(max-width:899px){ .sx-dl .sx-chips.sx-chips-d{display:none} }
+.sx-hint:empty{display:none}
+.sx-chips .sx-tag{margin:0;height:28px;display:inline-flex;align-items:center}
+.bk-sub{flex-wrap:wrap;white-space:normal;overflow:visible;gap:2px 10px}
+.bk-sub .where{flex:1 1 100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sx-tag{font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--g-cap);box-shadow:var(--g-edge);margin-left:8px;vertical-align:middle}
 .sx-kv{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
 .sx-kv>div{background:var(--g-cap);box-shadow:var(--g-edge);border-radius:14px;padding:9px 12px;min-width:0}
@@ -314,27 +320,28 @@ html:not([data-view="map"]) #stn-custom-popup{display:none !important}
 .sx-dl,.sx-dr{min-width:0}
 .sx-dr .sx-kv{margin-top:0}
 /* ── Menus de recherche condensés (Stats, Vélos) ── */
-.sx-bar{padding:10px;border-radius:18px}
-.sx-bar .sx-ctl{gap:8px}
-.sx-bar .sx-seg{padding:2px;gap:2px}
-.sx-bar .sx-seg button{height:30px;font-size:12.5px}
+.sx-menu{padding:10px;border-radius:18px}
+.sx-menu .sx-ctl{gap:8px}
+.sx-menu .sx-seg{padding:2px;gap:2px}
+.sx-menu .sx-seg button{height:30px;font-size:12.5px}
+@media(max-width:360px){ .sx-menu .sx-seg button{font-size:11px;padding:0 2px} }   /* « Souvent pleine » tient à 320 px */
 .sx-pair{display:flex;gap:8px;min-width:0}
 .sx-pair .sx-seg.fit{flex:0 0 auto}
-.sx-pair .sx-seg.fit button{padding:0 12px}
+.sx-pair .sx-seg.fit button{flex:0 0 auto;padding:0 12px;overflow:visible;text-overflow:clip}
 .sx-grow{flex:1;min-width:0}
 .sx-find{position:relative}
 .sx-find svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--g-dim);pointer-events:none}
-.sx-bar .sx-field input{height:36px;font-size:16px;border-radius:10px}
-.sx-bar .sx-find input{padding-left:34px}
-.sx-bar #st-day-wrap{flex:0 0 150px}
-.sx-bar .sx-cap{margin:8px 0 0 !important;padding:0 2px !important;font-size:12px}
+.sx-menu .sx-field input{height:36px;font-size:16px;border-radius:10px}
+.sx-menu .sx-find input{padding-left:34px}
+.sx-menu #st-day-wrap{flex:0 0 150px}
+.sx-menu .sx-cap{margin:8px 0 0 !important;padding:0 2px !important;font-size:12px}
 @media(min-width:900px){
-  .sx-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px}                 /* la légende passe dessous si la ligne ne tient pas */
-  .sx-bar .sx-ctl{flex:1 1 auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px 10px}
-  .sx-bar .sx-ctl>.sx-field{flex:0 0 auto}
+  .sx-menu{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px}                 /* la légende passe dessous si la ligne ne tient pas */
+  .sx-menu .sx-ctl{flex:1 1 auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px 10px}
+  .sx-menu .sx-ctl>.sx-field{flex:0 0 auto}
   .sx-pair{display:contents}
-  .sx-bar .sx-ctl .sx-grow{flex:1 1 200px}
-  .sx-bar .sx-cap{margin:0 !important;white-space:nowrap;flex:0 0 auto}
+  .sx-menu .sx-ctl .sx-grow{flex:1 1 200px}
+  .sx-menu .sx-cap{margin:0 !important;white-space:nowrap;flex:0 0 auto}
 }
 .sx-more{display:block;margin:12px auto 0;height:44px;padding:0 24px;border:none;border-radius:999px;background:var(--g-cap);box-shadow:var(--g-edge);color:#fff;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
 /* détail d'une station : à l'intérieur de la liste, largeur du conteneur, sans marges négatives */
@@ -469,7 +476,7 @@ html:not([data-view="map"]) #stn-custom-popup{display:none !important}
 
 <div class="panel" id="tab-stats">
   <div id="spanel-stations" class="sx-wrap">
-    <section class="sx-card sx-bar">
+    <section class="sx-card sx-menu">
       <div class="sx-ctl">
         <div class="sx-field">
           <div class="sx-seg" id="st-period" role="group" aria-label="Période">
@@ -500,7 +507,7 @@ html:not([data-view="map"]) #stn-custom-popup{display:none !important}
 </div>
 <div class="panel" id="tab-bikes">
   <div class="sx-wrap">
-    <section class="sx-card sx-bar">
+    <section class="sx-card sx-menu">
       <div class="sx-ctl">
         <div class="sx-field">
           <div class="sx-seg" id="bk-sort" role="group" aria-label="Classer par" title="Touche deux fois le même tri pour inverser l'ordre">
@@ -1814,9 +1821,9 @@ function bkCaption(total,eligible,now){
   else if(s.sort==='rev') what=`${s.useCtl?'Dernier contrôle':'Dernière révision'} · ${first?'plus ancien':'plus récent'} d'abord`;
   else what=`Prochaine échéance · ${first?'plus en retard':'plus lointaine'} d'abord`;
   const missing=total-eligible;
-  const label={avis:'',note:'sans note suffisante',rev:'sans date',next:'sans échéance'}[s.sort];
+  const label={avis:'',note:'sous le seuil',rev:'sans date',next:'sans échéance'}[s.sort];
   const when=window._bk.loadedAt?new Date(window._bk.loadedAt).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'';
-  return `${what} · ${eligible} vélo${eligible>1?'s':''}`+(missing>0&&label?` · ${missing} ${label}`:'')+(when?` · ${when}`:'');
+  return `${what} · ${eligible} vélo${eligible>1?'s':''}`+(missing>0&&label?` · ${missing} ${label}`:'')+(when?` <span class="hs">· ${when}</span>`:'');
 }
 function renderBikes(){
   const s=window._bk, list=document.getElementById('bk-list'), foot=document.getElementById('bk-foot');
@@ -1847,7 +1854,7 @@ function renderBikes(){
     }
   };
   const subHtml=(b,m)=>{
-    const where=`<span>${esc(b.stName)} · borne ${b.borne??'?'}</span>`;
+    const where=`<span class="where">${esc(b.stName)} · borne ${b.borne??'?'}</span>`;
     let extra='';
     if(s.sort==='avis') extra=b.note!=null?`<span>Note ${Math.round(b.note)}</span>`:'';
     else if(s.sort==='note') extra=`<span>${b.avis} avis</span>`;
@@ -1861,7 +1868,7 @@ function renderBikes(){
     return `<div class="sx-item">
       <div class="sx-row" id="bk-row-${b.num}" onclick="toggleBikeRow(${b.num},this)">
         <span class="sx-rank${rank<=3?' top':''}">${rank}</span>
-        <span class="sx-main"><span class="bk-name"><span class="ic">${IC[b.type]}</span><span class="t">Vélo n° ${b.num}</span></span><span class="sx-sub">${subHtml(b,m)}</span></span>
+        <span class="sx-main"><span class="bk-name"><span class="ic">${IC[b.type]}</span><span class="t">Vélo n° ${b.num}</span></span><span class="sx-sub bk-sub">${subHtml(b,m)}</span></span>
         <span class="sx-val">${valHtml(b,m)}</span>
         <span class="sx-bar"><i style="--p:${pct}%"></i></span>
       </div>
@@ -1877,14 +1884,8 @@ function bkDetailHtml(b){
   const late=t=>t!=null&&t<now;
   const kv=(label,val,cls='')=>`<div class="${cls}"><span>${label}</span><b>${val}</b></div>`;
   const nx=bkNext(b);
-  const chips=[
-    b.note!=null?`<span class="sx-chip">Note <b>${Math.round(b.note)} /100</b></span>`:'',
-    `<span class="sx-chip">Avis <b>${b.avis}</b></span>`,
-    b.type==='E'&&b.batt!=null?`<span class="sx-chip">${LG.bolt}<b>${b.batt} %</b></span>`:'',
-    nx?`<span class="sx-chip">${nx.kind} <b>${bkDue(nx.t,now)}</b></span>`:''
-  ].join('');
-  return `<div class="sx-dl"><div class="sx-dname">Vélo n° ${b.num}<span class="sx-tag">${b.type==='E'?'Électrique':'Mécanique'}</span></div>
-    <div class="sx-chips">${chips}</div></div>
+  const chips=`<span class="sx-tag">${b.type==='E'?'Électrique':'Mécanique'}</span>`+(nx?`<span class="sx-chip">${nx.kind} <b>${bkDue(nx.t,now)}</b></span>`:'');
+  return `<div class="sx-dl"><div class="sx-chips">${chips}</div></div>
     <div class="sx-dr"><div class="sx-kv">
       ${kv("Station d'accroche",b.stName)}${kv('Borne','n° '+(b.borne??'—'))}
       ${kv('Dernière révision',dt(b.lastRev,b.raw.lastRev))}${kv('Prochaine révision',dt(b.nextReview,b.raw.nextReview,true),late(b.nextReview)?'late':'')}
@@ -1989,7 +1990,7 @@ function stCaption(){
   else when=`${s.period} derniers jours (${stFrDate(dates[0],{day:'numeric',month:'short'})} → ${stFrDate(dates[dates.length-1],{day:'numeric',month:'short'})})`;
   when=when.charAt(0).toUpperCase()+when.slice(1);
   const miss=dates.length-d.nDays;
-  return `${ST_SORTS[s.sort]} · ${when} · ${q?d.found+' résultat'+(d.found>1?'s':''):d.rows.length+' stations'}`
+  return `${when} · ${q?d.found+' résultat'+(d.found>1?'s':''):d.rows.length+' stations'}`
     +(d.closed?` · ${d.closed} sans mouvement exclue${d.closed>1?'s':''}`:'')+(miss>0?` · ${miss} j sans données`:'');
 }
 function syncStatsUI(){
@@ -2051,8 +2052,8 @@ function statsDetailHtml(r){
   const a=r.a, days=Math.max(1,a.days);
   let pk=0; for(let h=1;h<24;h++) if(a.hMv[h]>a.hMv[pk]) pk=h;
   const num=r.num;
-  return `<div class="sx-dl"><div class="sx-dname">${r.name}</div>
-      <div class="sx-chips"><span class="sx-chip">Activité <b>${stAct(r.mvDay)} /j</b></span><span class="sx-chip">Sans vélo <b>${stPct(r.empty)} %</b></span><span class="sx-chip">Sans borne <b>${stPct(r.full)} %</b></span><span class="sx-chip">Pic d'activité <b>${pk} h</b></span></div>
+  return `<div class="sx-dl">
+      <div class="sx-chips sx-chips-d"><span class="sx-chip">Activité <b>${stAct(r.mvDay)} /j</b></span><span class="sx-chip">Sans vélo <b>${stPct(r.empty)} %</b></span><span class="sx-chip">Sans borne <b>${stPct(r.full)} %</b></span><span class="sx-chip">Pic d'activité <b>${pk} h</b></span></div>
       <div id="st-hint-${num}" class="sx-hint"></div></div>
     <div class="sx-dr"><div class="sx-dtabs"><div class="sx-dthumb" id="st-thumb-${num}" style="width:calc((100% - 6px) / 2)"></div>
       <div class="sx-dtab on" onclick="statsTab(${num},0)">Activité</div><div class="sx-dtab" onclick="statsTab(${num},1)">Disponibilité</div></div>
