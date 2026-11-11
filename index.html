@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" class="locked">
+<html lang="fr" class="locked" data-view="map">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
@@ -235,12 +235,11 @@ main{max-width:1500px;margin:auto;padding:20px}
    Un seul scroll (le panneau), contenu centré, liste en grille : rien ne se superpose, tout reste lisible
    de 320 px à l'ultra-large. Cibles tactiles >= 44 px, texte >= 12 px. */
 :root{--hh:56px}
-#tab-stats,#tab-bikes{position:fixed;left:var(--sal);right:var(--sar);top:calc(var(--hh) + var(--sat));bottom:var(--sab);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+#tab-stats,#tab-bikes{position:fixed;z-index:250;left:var(--sal);right:var(--sar);top:calc(58px + var(--sat));bottom:var(--sab);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 @media(max-width:640px){ :root{--hh:48px} }
 /* 3 onglets dans le header : sur mobile seul l'onglet actif garde son libellé, la source de données est masquée */
 @media(max-width:640px){ header .tab:not(.on) .tl{display:none} header .tab{padding:6px 9px !important} .hs{display:none} }
-html:not(.locked){background:#0b0c10}
-.sx-wrap{max-width:960px;margin:0 auto;padding:12px 12px 28px}
+.sx-wrap{max-width:1680px;margin:0 auto;padding:0 10px 44px}   /* 44 px : la mention OSM de la carte reste visible en bas à droite */
 .sx-card{background:var(--g-fill);-webkit-backdrop-filter:var(--g-blur);backdrop-filter:var(--g-blur);box-shadow:var(--g-edge),var(--g-shadow);border-radius:20px;padding:14px;margin-bottom:12px}
 .sx-seg{display:flex;gap:3px;padding:3px;border-radius:999px;background:var(--g-cap);box-shadow:var(--g-edge)}
 .sx-seg button{flex:1;height:38px;border:none;border-radius:999px;background:transparent;color:var(--g-sub);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
@@ -294,6 +293,49 @@ html:not(.locked){background:#0b0c10}
 .sx-kv .late b{font-weight:800}
 .sx-go{margin-top:12px;width:100%;height:44px;border:none;border-radius:999px;background:#fff;color:#111;font-family:inherit;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
 @media(max-width:360px){ .sx-kv{grid-template-columns:1fr} }
+/* ═════════ CARTE TOUJOURS PRÉSENTE ═════════
+   Stats et Vélos sont des feuilles de verre posées sur la carte (assombrie, non cliquable) :
+   même bandeau, même matière, et le flou a enfin quelque chose à flouter. */
+#map-dim{position:fixed;inset:0;z-index:240;background:rgba(10,11,16,.45);opacity:0;pointer-events:none;transition:opacity .25s}
+html:not([data-view="map"]) #map-dim{opacity:1;pointer-events:auto}
+html:not([data-view="map"]) #plan-float,
+html:not([data-view="map"]) .leaflet-control-zoom,
+html:not([data-view="map"]) #meteo-ctrl,
+html:not([data-view="map"]) #stn-custom-popup{display:none !important}
+/* grand écran : on utilise toute la largeur — grille de plusieurs colonnes, détail sur toute la ligne */
+@media(min-width:900px){
+  .sx-rows{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,380px),1fr));gap:8px}
+  .sx-rows>.sx-cap{grid-column:1 / -1}
+  .sx-item{border-top:none;background:rgba(255,255,255,.06);box-shadow:var(--g-edge);border-radius:16px;padding:2px 6px}
+  .sx-item.open{grid-column:1 / -1}
+  .sx-detail{display:grid;grid-template-columns:minmax(240px,340px) minmax(0,1fr);column-gap:28px;align-items:start}
+  .sx-detail .sx-go{grid-column:1 / -1}
+}
+.sx-dl,.sx-dr{min-width:0}
+.sx-dr .sx-kv{margin-top:0}
+/* ── Menus de recherche condensés (Stats, Vélos) ── */
+.sx-bar{padding:10px;border-radius:18px}
+.sx-bar .sx-ctl{gap:8px}
+.sx-bar .sx-seg{padding:2px;gap:2px}
+.sx-bar .sx-seg button{height:30px;font-size:12.5px}
+.sx-pair{display:flex;gap:8px;min-width:0}
+.sx-pair .sx-seg.fit{flex:0 0 auto}
+.sx-pair .sx-seg.fit button{padding:0 12px}
+.sx-grow{flex:1;min-width:0}
+.sx-find{position:relative}
+.sx-find svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--g-dim);pointer-events:none}
+.sx-bar .sx-field input{height:36px;font-size:16px;border-radius:10px}
+.sx-bar .sx-find input{padding-left:34px}
+.sx-bar #st-day-wrap{flex:0 0 150px}
+.sx-bar .sx-cap{margin:8px 0 0 !important;padding:0 2px !important;font-size:12px}
+@media(min-width:900px){
+  .sx-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px}                 /* la légende passe dessous si la ligne ne tient pas */
+  .sx-bar .sx-ctl{flex:1 1 auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px 10px}
+  .sx-bar .sx-ctl>.sx-field{flex:0 0 auto}
+  .sx-pair{display:contents}
+  .sx-bar .sx-ctl .sx-grow{flex:1 1 200px}
+  .sx-bar .sx-cap{margin:0 !important;white-space:nowrap;flex:0 0 auto}
+}
 .sx-more{display:block;margin:12px auto 0;height:44px;padding:0 24px;border:none;border-radius:999px;background:var(--g-cap);box-shadow:var(--g-edge);color:#fff;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
 /* détail d'une station : à l'intérieur de la liste, largeur du conteneur, sans marges négatives */
 .sx-detail{padding:6px 6px 16px}
@@ -320,8 +362,9 @@ html:not(.locked){background:#0b0c10}
 </head>
 <body>
 <div id="boot-spin" aria-hidden="true"><div class="ring"></div></div>
+<div id="map-dim"></div>
 
-<header style="display:flex;align-items:center;justify-content:space-between;padding:0 14px;height:38px;background:rgba(12,12,16,.85);backdrop-filter:blur(48px) saturate(200%) brightness(1.05);-webkit-backdrop-filter:blur(48px) saturate(200%) brightness(1.05);border:0.5px solid rgba(255,255,255,.14);border-radius:14px;position:absolute;top:10px;left:10px;right:10px;z-index:300;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.26),0 0 22px rgba(0,0,0,.22)">
+<header style="display:flex;align-items:center;justify-content:space-between;padding:0 14px;height:38px;background:rgba(12,12,16,.85);backdrop-filter:blur(48px) saturate(200%) brightness(1.05);-webkit-backdrop-filter:blur(48px) saturate(200%) brightness(1.05);border:0.5px solid rgba(255,255,255,.14);border-radius:14px;position:absolute;top:calc(10px + var(--sat));left:calc(10px + var(--sal));right:calc(10px + var(--sar));z-index:300;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.26),0 0 22px rgba(0,0,0,.22)">
   <div style="font-size:15px;font-weight:700;color:#fff;letter-spacing:-.01em">Vélo'v</div>
   <div style="display:flex;gap:2px">
     <div class="tab on" data-tab="map" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:#fff;font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg><span class="tl"> Carte</span></div>
@@ -426,9 +469,9 @@ html:not(.locked){background:#0b0c10}
 
 <div class="panel" id="tab-stats">
   <div id="spanel-stations" class="sx-wrap">
-    <section class="sx-card">
+    <section class="sx-card sx-bar">
       <div class="sx-ctl">
-        <div class="sx-field"><span>Période</span>
+        <div class="sx-field">
           <div class="sx-seg" id="st-period" role="group" aria-label="Période">
             <button data-p="day" onclick="setStatsPeriod('day')">Jour</button>
             <button data-p="7" class="on" onclick="setStatsPeriod('7')">7 jours</button>
@@ -436,21 +479,19 @@ html:not(.locked){background:#0b0c10}
             <button data-p="60" onclick="setStatsPeriod('60')">60 jours</button>
           </div>
         </div>
-        <div class="sx-field" id="st-day-wrap" style="display:none"><span>Jour</span>
-          <input type="date" id="st-date" onchange="setStatsDate(this.value)"/>
-        </div>
-        <div class="sx-field"><span>Classer par</span>
+        <div class="sx-field">
           <div class="sx-seg" id="st-sort" role="group" aria-label="Classer par">
             <button data-s="act" onclick="setStatsSort('act')">Activité</button>
             <button data-s="empty" class="on" onclick="setStatsSort('empty')">Souvent vide</button>
             <button data-s="full" onclick="setStatsSort('full')">Souvent pleine</button>
           </div>
         </div>
-        <div class="sx-field"><span>Station</span>
-          <input id="st-search" type="search" placeholder="Rechercher une station" autocomplete="off" oninput="setStatsQuery(this.value)"/>
+        <div class="sx-pair">
+          <div class="sx-field" id="st-day-wrap" style="display:none"><input type="date" id="st-date" aria-label="Jour" onchange="setStatsDate(this.value)"/></div>
+          <div class="sx-field sx-grow"><div class="sx-find"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg><input id="st-search" type="search" placeholder="Rechercher une station" aria-label="Station" autocomplete="off" oninput="setStatsQuery(this.value)"/></div></div>
         </div>
       </div>
-      <div class="sx-cap" id="st-cap" style="padding-bottom:0;margin-top:12px"></div>
+      <div class="sx-cap" id="st-cap"></div>
     </section>
     <section class="sx-card">
       <div id="st-list" class="sx-rows"></div><div id="st-foot"></div>
@@ -459,28 +500,28 @@ html:not(.locked){background:#0b0c10}
 </div>
 <div class="panel" id="tab-bikes">
   <div class="sx-wrap">
-    <section class="sx-card">
+    <section class="sx-card sx-bar">
       <div class="sx-ctl">
-        <div class="sx-field"><span>Classer par <em>(touche deux fois pour inverser)</em></span>
-          <div class="sx-seg" id="bk-sort" role="group" aria-label="Classer par">
+        <div class="sx-field">
+          <div class="sx-seg" id="bk-sort" role="group" aria-label="Classer par" title="Touche deux fois le même tri pour inverser l'ordre">
             <button data-s="avis" onclick="setBikesSort('avis')">Avis</button>
             <button data-s="note" class="on" onclick="setBikesSort('note')">Note</button>
             <button data-s="rev" onclick="setBikesSort('rev')">Révision</button>
             <button data-s="next" onclick="setBikesSort('next')">Prochaine</button>
           </div>
         </div>
-        <div class="sx-field"><span>Type</span>
-          <div class="sx-seg" id="bk-type" role="group" aria-label="Type de vélo">
-            <button data-t="all" class="on" onclick="setBikesType('all')">Tous</button>
-            <button data-t="E" onclick="setBikesType('E')">Élec</button>
-            <button data-t="M" onclick="setBikesType('M')">Méca</button>
+        <div class="sx-pair">
+          <div class="sx-field">
+            <div class="sx-seg fit" id="bk-type" role="group" aria-label="Type de vélo">
+              <button data-t="all" class="on" onclick="setBikesType('all')">Tous</button>
+              <button data-t="E" onclick="setBikesType('E')">Élec</button>
+              <button data-t="M" onclick="setBikesType('M')">Méca</button>
+            </div>
           </div>
-        </div>
-        <div class="sx-field"><span>Recherche</span>
-          <input id="bk-search" type="search" placeholder="N° de vélo ou station" autocomplete="off" oninput="setBikesQuery(this.value)"/>
+          <div class="sx-field sx-grow"><div class="sx-find"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg><input id="bk-search" type="search" placeholder="N° ou station" aria-label="N° de vélo ou station" autocomplete="off" oninput="setBikesQuery(this.value)"/></div></div>
         </div>
       </div>
-      <div class="sx-cap" id="bk-cap" style="padding-bottom:0;margin-top:12px"></div>
+      <div class="sx-cap" id="bk-cap"></div>
     </section>
     <section class="sx-card">
       <div id="bk-list" class="sx-rows"></div><div id="bk-foot"></div>
@@ -869,28 +910,26 @@ document.querySelectorAll('.tab').forEach(tab=>{
     const target=tab.dataset.tab;
     const isMap = target==='map';
     document.querySelectorAll('.tab').forEach(t=>{ t.classList.remove('on'); t.style.color='rgba(255,255,255,.55)'; });
-    document.querySelectorAll('.panel').forEach(p=>{ p.classList.remove('on'); p.style.display='none'; });
     document.querySelectorAll(`.tab[data-tab="${target}"]`).forEach(t=>{ t.classList.add('on'); t.style.color='#fff'; });
-    const activePanelId = 'tab-'+target;
-    const activePanel=document.getElementById(activePanelId);
-    if(activePanel){ activePanel.classList.add('on'); activePanel.style.display=isMap?'flex':'block'; }
-    // Header : absolu sur carte, sticky sur stats
+    document.querySelectorAll('.panel').forEach(p=>{ p.classList.remove('on'); p.style.display='none'; });
+    // La carte reste TOUJOURS affichée : derrière Stats et Vélos, elle donne au verre quelque chose à flouter
+    const mapPanel=document.getElementById('tab-map');
+    if(mapPanel){ mapPanel.classList.add('on'); mapPanel.style.display='flex'; }
+    if(!isMap){
+      const ap=document.getElementById('tab-'+target);
+      if(ap){ ap.classList.add('on'); ap.style.display='block'; }
+    }
+    document.documentElement.dataset.view=target;       // le CSS masque l'interface de la carte et assombrit celle-ci hors vue Carte
+    if(!isMap){ try{ closeStationPopup(); }catch(e){} }
+    // Bandeau identique sur tous les onglets : même place, même arrondi, plus de saut au changement d'onglet
     const hdr=document.querySelector('header');
     if(hdr){
-      if(isMap){
-        hdr.style.position='absolute'; hdr.style.top='calc(10px + var(--sat))';
-        hdr.style.left='calc(10px + var(--sal))'; hdr.style.right='calc(10px + var(--sar))';
-        hdr.style.paddingTop=''; hdr.style.height='38px';   // hauteur d'origine : sinon le header recouvre le panneau de recherche (top 58 px)
-        hdr.style.borderRadius='14px'; hdr.style.borderBottom='0.5px solid rgba(255,255,255,.12)';
-      } else {
-        hdr.style.position='sticky'; hdr.style.top='0';
-        hdr.style.left=''; hdr.style.right='';
-        hdr.style.paddingTop='var(--sat)'; hdr.style.height='calc('+(window.innerWidth<=640?48:56)+'px + var(--sat))';
-        hdr.style.borderRadius='0'; hdr.style.borderBottom='0.5px solid rgba(255,255,255,.08)';
-      }
+      hdr.style.position='absolute'; hdr.style.top='calc(10px + var(--sat))';
+      hdr.style.left='calc(10px + var(--sal))'; hdr.style.right='calc(10px + var(--sar))';
+      hdr.style.paddingTop=''; hdr.style.height='38px';
+      hdr.style.borderRadius='14px'; hdr.style.borderBottom='';
     }
     document.body.style.overflow = 'hidden';
-    document.documentElement.classList.toggle('locked', isMap);
     setTimeout(()=>{ map?.invalidateSize(); planMap?.invalidateSize(); },150);
     if(target==='map'){
       setTimeout(()=>{ if(!map)initMap(); map?.invalidateSize(); renderStations(); },150);
@@ -1770,14 +1809,14 @@ function bkCaption(total,eligible,now){
   const s=window._bk;
   const first=s.dir===1;
   let what;
-  if(s.sort==='avis') what=`Classé par <b>nombre d'avis</b> · ${first?'les plus évalués':'les moins évalués'} en premier`;
-  else if(s.sort==='note') what=`Classé par <b>note</b> · vélos avec au moins ${BK_MIN_AVIS} avis · ${first?'les mieux notés':'les moins bien notés'} en premier`;
-  else if(s.sort==='rev') what=`Classé par <b>${s.useCtl?'dernier contrôle':'dernière révision'}</b> · ${first?'le plus ancien':'le plus récent'} en premier`;
-  else what=`Classé par <b>prochaine échéance</b> (contrôle ou révision) · ${first?'la plus en retard':'la plus lointaine'} en premier`;
+  if(s.sort==='avis') what=`Avis · ${first?'plus évalués':'moins évalués'} d'abord`;
+  else if(s.sort==='note') what=`Note · au moins ${BK_MIN_AVIS} avis · ${first?'meilleurs':'moins bien notés'} d'abord`;
+  else if(s.sort==='rev') what=`${s.useCtl?'Dernier contrôle':'Dernière révision'} · ${first?'plus ancien':'plus récent'} d'abord`;
+  else what=`Prochaine échéance · ${first?'plus en retard':'plus lointaine'} d'abord`;
   const missing=total-eligible;
-  const label={avis:'',note:'sans note suffisante',rev:'sans date',next:'sans échéance renseignée'}[s.sort];
+  const label={avis:'',note:'sans note suffisante',rev:'sans date',next:'sans échéance'}[s.sort];
   const when=window._bk.loadedAt?new Date(window._bk.loadedAt).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'';
-  return `${what} · ${eligible} vélo${eligible>1?'s':''}`+(missing>0&&label?` · ${missing} ${label}`:'')+(when?` · actualisé ${when}`:'');
+  return `${what} · ${eligible} vélo${eligible>1?'s':''}`+(missing>0&&label?` · ${missing} ${label}`:'')+(when?` · ${when}`:'');
 }
 function renderBikes(){
   const s=window._bk, list=document.getElementById('bk-list'), foot=document.getElementById('bk-foot');
@@ -1844,14 +1883,14 @@ function bkDetailHtml(b){
     b.type==='E'&&b.batt!=null?`<span class="sx-chip">${LG.bolt}<b>${b.batt} %</b></span>`:'',
     nx?`<span class="sx-chip">${nx.kind} <b>${bkDue(nx.t,now)}</b></span>`:''
   ].join('');
-  return `<div class="sx-dname">Vélo n° ${b.num}<span class="sx-tag">${b.type==='E'?'Électrique':'Mécanique'}</span></div>
-    <div class="sx-chips">${chips}</div>
-    <div class="sx-kv">
+  return `<div class="sx-dl"><div class="sx-dname">Vélo n° ${b.num}<span class="sx-tag">${b.type==='E'?'Électrique':'Mécanique'}</span></div>
+    <div class="sx-chips">${chips}</div></div>
+    <div class="sx-dr"><div class="sx-kv">
       ${kv("Station d'accroche",b.stName)}${kv('Borne','n° '+(b.borne??'—'))}
       ${kv('Dernière révision',dt(b.lastRev,b.raw.lastRev))}${kv('Prochaine révision',dt(b.nextReview,b.raw.nextReview,true),late(b.nextReview)?'late':'')}
       ${kv('Dernier contrôle',dt(b.lastCtl,b.raw.lastCtl))}${kv('Prochain contrôle',dt(b.nextCheck,b.raw.nextCheck,true),late(b.nextCheck)?'late':'')}
       ${kv('Dernier trajet',b.lastTrip!=null?new Date(b.lastTrip).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'—')}${kv('Statut',b.status||'—')}
-    </div>
+    </div></div>
     <button class="sx-go" onclick="bkGoStation(${b.station})">${LG.place.replace('stroke="#fff"','stroke="currentColor"')} Voir la station sur la carte</button>`;
 }
 function toggleBikeRow(num,row){
@@ -1859,9 +1898,10 @@ function toggleBikeRow(num,row){
   const was=s.open;
   document.querySelectorAll('#bk-list .sx-detail').forEach(d=>{ d.style.display='none'; });
   document.querySelectorAll('#bk-list .sx-row.selected').forEach(r=>r.classList.remove('selected'));
+  document.querySelectorAll('#bk-list .sx-item.open').forEach(i=>i.classList.remove('open'));
   if(was===num){ s.open=null; return; }
   const b=s.list.find(x=>x.num===num); if(!b) return;
-  s.open=num; row.classList.add('selected');
+  s.open=num; row.classList.add('selected'); row.closest('.sx-item')?.classList.add('open');
   det.innerHTML=bkDetailHtml(b); det.style.display='';
   det.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
@@ -1943,12 +1983,14 @@ function stFrDate(d,opt){ return new Date(d+'T12:00:00').toLocaleDateString('fr-
 function stCaption(){
   const s=window._st, d=s.data; if(!d) return '';
   const dates=d.dates||[];
+  const q=s.query.trim();
   let when;
   if(s.period==='day') when=stFrDate(dates[0],{weekday:'long',day:'numeric',month:'long'});
-  else when=`${s.period} derniers jours (du ${stFrDate(dates[0],{day:'numeric',month:'short'})} au ${stFrDate(dates[dates.length-1],{day:'numeric',month:'short'})})`;
+  else when=`${s.period} derniers jours (${stFrDate(dates[0],{day:'numeric',month:'short'})} → ${stFrDate(dates[dates.length-1],{day:'numeric',month:'short'})})`;
   when=when.charAt(0).toUpperCase()+when.slice(1);
   const miss=dates.length-d.nDays;
-  return `${when} · ${d.rows.length} stations`+(d.closed?` · ${d.closed} sans aucun mouvement (exclue${d.closed>1?'s':''})`:'')+(miss>0?` · ${miss} jour${miss>1?'s':''} sans données`:'');
+  return `${ST_SORTS[s.sort]} · ${when} · ${q?d.found+' résultat'+(d.found>1?'s':''):d.rows.length+' stations'}`
+    +(d.closed?` · ${d.closed} sans mouvement exclue${d.closed>1?'s':''}`:'')+(miss>0?` · ${miss} j sans données`:'');
 }
 function syncStatsUI(){
   const s=window._st;
@@ -1972,9 +2014,9 @@ function renderStatsList(){
   const subHtml=r=>s.sort==='act'?`Vide ${stPct(r.empty)} % · Pleine ${stPct(r.full)} %`
     :s.sort==='empty'?`Activité ${stAct(r.mvDay)} /j · Pleine ${stPct(r.full)} %`
     :`Activité ${stAct(r.mvDay)} /j · Vide ${stPct(r.empty)} %`;
+  d.found=rows.length;
   const cap=document.getElementById('st-cap'); if(cap) cap.textContent=stCaption();
-  list.innerHTML=rows.length?`<div class="sx-cap">Classé par <b>${ST_SORTS[s.sort]}</b>${q?` · ${rows.length} résultat${rows.length>1?'s':''}`:''}</div>`+
-    rows.slice(0,shown).map(({r,rank})=>`<div class="sx-item">
+  list.innerHTML=rows.length?rows.slice(0,shown).map(({r,rank})=>`<div class="sx-item">
       <div class="sx-row" id="st-row-${r.num}" onclick="toggleStatsDetail(${r.num},this)">
         <span class="sx-rank${rank<=3?' top':''}">${rank}</span>
         <span class="sx-main"><span class="sx-name">${esc(r.name)}</span><span class="sx-sub">${subHtml(r)}</span></span>
@@ -2009,22 +2051,24 @@ function statsDetailHtml(r){
   const a=r.a, days=Math.max(1,a.days);
   let pk=0; for(let h=1;h<24;h++) if(a.hMv[h]>a.hMv[pk]) pk=h;
   const num=r.num;
-  return `<div class="sx-dname">${r.name}</div>
-    <div class="sx-chips"><span class="sx-chip">Activité <b>${stAct(r.mvDay)} /j</b></span><span class="sx-chip">Sans vélo <b>${stPct(r.empty)} %</b></span><span class="sx-chip">Sans borne <b>${stPct(r.full)} %</b></span><span class="sx-chip">Pic d'activité <b>${pk} h</b></span></div>
-    <div class="sx-dtabs"><div class="sx-dthumb" id="st-thumb-${num}" style="width:calc((100% - 6px) / 2)"></div>
+  return `<div class="sx-dl"><div class="sx-dname">${r.name}</div>
+      <div class="sx-chips"><span class="sx-chip">Activité <b>${stAct(r.mvDay)} /j</b></span><span class="sx-chip">Sans vélo <b>${stPct(r.empty)} %</b></span><span class="sx-chip">Sans borne <b>${stPct(r.full)} %</b></span><span class="sx-chip">Pic d'activité <b>${pk} h</b></span></div>
+      <div id="st-hint-${num}" class="sx-hint"></div></div>
+    <div class="sx-dr"><div class="sx-dtabs"><div class="sx-dthumb" id="st-thumb-${num}" style="width:calc((100% - 6px) / 2)"></div>
       <div class="sx-dtab on" onclick="statsTab(${num},0)">Activité</div><div class="sx-dtab" onclick="statsTab(${num},1)">Disponibilité</div></div>
-    <div id="st-leg-${num}" class="sx-leg"></div>
-    <div class="sx-chart"><canvas id="st-canvas-${num}"></canvas></div>
-    <div id="st-hint-${num}" class="sx-hint"></div>`;
+      <div id="st-leg-${num}" class="sx-leg"></div>
+      <div class="sx-chart"><canvas id="st-canvas-${num}"></canvas></div></div>
+    <button class="sx-go" onclick="bkGoStation(${num})">${LG.place.replace('stroke="#fff"','stroke="currentColor"')} Voir la station sur la carte</button>`;
 }
 function toggleStatsDetail(num,row){
   const s=window._st, det=document.getElementById('st-detail-'+num); if(!det) return;
   const was=s.open;
-  document.querySelectorAll('.sx-detail').forEach(d=>{ d.style.display='none'; });
-  document.querySelectorAll('.sx-row.selected').forEach(r=>r.classList.remove('selected'));
+  document.querySelectorAll('#st-list .sx-detail').forEach(d=>{ d.style.display='none'; });
+  document.querySelectorAll('#st-list .sx-row.selected').forEach(r=>r.classList.remove('selected'));
+  document.querySelectorAll('#st-list .sx-item.open').forEach(i=>i.classList.remove('open'));
   if(_stChart){ try{_stChart.destroy();}catch{} _stChart=null; }
   if(was===num){ s.open=null; return; }
-  s.open=num; row.classList.add('selected');
+  s.open=num; row.classList.add('selected'); row.closest('.sx-item')?.classList.add('open');
   det.innerHTML=statsDetailHtml(s.data.byNum.get(num)); det.style.display='';
   statsTab(num,0);
   det.scrollIntoView({behavior:'smooth',block:'nearest'});
