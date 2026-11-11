@@ -47,7 +47,7 @@ html.locked,html.locked body{position:fixed;inset:0;width:100%;height:100%;overf
   --g-cap:rgba(255,255,255,.14);--g-cap-key:rgba(255,255,255,.22);--g-cap-alert:rgba(255,255,255,.32);
   --g-sub:rgba(255,255,255,.72);--g-dim:rgba(255,255,255,.55);
 }
-.glass,#plan-float,#stn-custom-popup,#bike-detail-modal,#source-panel,#meteo-ctrl,.dropdown,.leaflet-control-attribution,header,#bottom-nav{
+.glass,#plan-float,#stn-custom-popup,#bike-detail-modal,#source-panel,#meteo-ctrl,.dropdown,.leaflet-control-attribution,header{
   background:var(--g-fill) !important;
   -webkit-backdrop-filter:var(--g-blur) !important;backdrop-filter:var(--g-blur) !important;
   border:none !important;box-shadow:var(--g-edge),var(--g-shadow) !important}
@@ -56,7 +56,7 @@ html.locked,html.locked body{position:fixed;inset:0;width:100%;height:100%;overf
 .leaflet-control-attribution{border-radius:10px !important;margin:0 8px 8px 0 !important;padding:2px 8px !important;color:var(--g-sub) !important}
 .leaflet-control-attribution a{color:#fff !important}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  .glass,#plan-float,#stn-custom-popup,#bike-detail-modal,#source-panel,#meteo-ctrl,.dropdown,.leaflet-control-attribution,header,#bottom-nav{background:rgba(24,26,34,.92) !important}
+  .glass,#plan-float,#stn-custom-popup,#bike-detail-modal,#source-panel,#meteo-ctrl,.dropdown,.leaflet-control-attribution,header{background:rgba(24,26,34,.92) !important}
 }
 /* Boutons de zoom : gélules rondes */
 .leaflet-control-zoom.leaflet-bar{border:none !important;box-shadow:none !important;background:none !important;display:flex;flex-direction:column;gap:8px}
@@ -142,23 +142,8 @@ html.locked,html.locked body{position:fixed;inset:0;width:100%;height:100%;overf
   .combo-pct{font-size:18px}
 }
 @media(min-width:641px){
-  #bottom-nav{display:none}
   #plan-float{width:clamp(320px,calc(100vw / 3 - 20px),480px) !important;right:auto !important}
 }
-#bottom-nav{
-  position:fixed;bottom:0;left:0;right:0;z-index:300;
-  background:rgba(12,12,16,.85);backdrop-filter:blur(14px);
-  border-top:0.5px solid #38383a;
-  display:flex;padding:0 0 var(--sab) 0;height:calc(60px + var(--sab));
-}
-#bottom-nav .tab{
-  flex:1;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;gap:2px;padding:6px 0;
-  font-size:18px;font-weight:600;color:#bbb;
-  border-bottom:none;border-top:2px solid transparent;
-}
-#bottom-nav .tab span{font-size:11px;display:block;color:rgba(255,255,255,.55)}
-#bottom-nav .tab.on{color:#fff;border-top-color:rgba(255,255,255,.5)}
 :root{
   --bg:#0a0a0e;--paper:rgba(12,12,16,.85);--ink:#fff;--sub:rgba(255,255,255,.55);--dim:rgba(255,255,255,.4);
   --border:#38383a;--blue:#f5f5f7;--green:#30d158;--orange:#ff9f0a;--red:#ff453a;
@@ -250,8 +235,10 @@ main{max-width:1500px;margin:auto;padding:20px}
    Un seul scroll (le panneau), contenu centré, liste en grille : rien ne se superpose, tout reste lisible
    de 320 px à l'ultra-large. Cibles tactiles >= 44 px, texte >= 12 px. */
 :root{--hh:56px}
-#tab-stats{position:fixed;left:var(--sal);right:var(--sar);top:calc(var(--hh) + var(--sat));bottom:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
-@media(max-width:640px){ :root{--hh:48px} #tab-stats{bottom:calc(60px + var(--sab))} }
+#tab-stats,#tab-bikes{position:fixed;left:var(--sal);right:var(--sar);top:calc(var(--hh) + var(--sat));bottom:var(--sab);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+@media(max-width:640px){ :root{--hh:48px} }
+/* 3 onglets dans le header : sur mobile seul l'onglet actif garde son libellé, la source de données est masquée */
+@media(max-width:640px){ header .tab:not(.on) .tl{display:none} header .tab{padding:6px 9px !important} .hs{display:none} }
 html:not(.locked){background:#0b0c10}
 .sx-wrap{max-width:960px;margin:0 auto;padding:12px 12px 28px}
 .sx-card{background:var(--g-fill);-webkit-backdrop-filter:var(--g-blur);backdrop-filter:var(--g-blur);box-shadow:var(--g-edge),var(--g-shadow);border-radius:20px;padding:14px;margin-bottom:12px}
@@ -293,6 +280,20 @@ html:not(.locked){background:#0b0c10}
 .sx-chip b{font-weight:700}
 @media(max-width:380px){ .sx-seg button{font-size:12px;padding:0 4px} }
 .sx-seg button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* ── Onglet Vélos ── */
+.sx-field em{font-style:normal;font-weight:500;opacity:.8}
+.bk-name{display:flex;align-items:center;gap:6px;min-width:0;font-size:15px;font-weight:600}
+.bk-name .ic{display:flex;color:var(--g-sub);flex-shrink:0}
+.bk-name .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sx-sub span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.sx-tag{font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--g-cap);box-shadow:var(--g-edge);margin-left:8px;vertical-align:middle}
+.sx-kv{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.sx-kv>div{background:var(--g-cap);box-shadow:var(--g-edge);border-radius:14px;padding:9px 12px;min-width:0}
+.sx-kv span{display:block;font-size:12px;color:var(--g-sub);margin-bottom:2px}
+.sx-kv b{display:block;font-size:14px;font-weight:600;overflow-wrap:anywhere}
+.sx-kv .late b{font-weight:800}
+.sx-go{margin-top:12px;width:100%;height:44px;border:none;border-radius:999px;background:#fff;color:#111;font-family:inherit;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+@media(max-width:360px){ .sx-kv{grid-template-columns:1fr} }
 .sx-more{display:block;margin:12px auto 0;height:44px;padding:0 24px;border:none;border-radius:999px;background:var(--g-cap);box-shadow:var(--g-edge);color:#fff;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
 /* détail d'une station : à l'intérieur de la liste, largeur du conteneur, sans marges négatives */
 .sx-detail{padding:6px 6px 16px}
@@ -323,8 +324,9 @@ html:not(.locked){background:#0b0c10}
 <header style="display:flex;align-items:center;justify-content:space-between;padding:0 14px;height:38px;background:rgba(12,12,16,.85);backdrop-filter:blur(48px) saturate(200%) brightness(1.05);-webkit-backdrop-filter:blur(48px) saturate(200%) brightness(1.05);border:0.5px solid rgba(255,255,255,.14);border-radius:14px;position:absolute;top:10px;left:10px;right:10px;z-index:300;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.26),0 0 22px rgba(0,0,0,.22)">
   <div style="font-size:15px;font-weight:700;color:#fff;letter-spacing:-.01em">Vélo'v</div>
   <div style="display:flex;gap:2px">
-    <div class="tab on" data-tab="map" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:#fff;font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg> Carte</div>
-    <div class="tab" data-tab="stats" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:rgba(255,255,255,.55);font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Stats</div>
+    <div class="tab on" data-tab="map" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:#fff;font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg><span class="tl"> Carte</span></div>
+    <div class="tab" data-tab="stats" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:rgba(255,255,255,.55);font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span class="tl"> Stats</span></div>
+ <div class="tab" data-tab="bikes" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;cursor:pointer;color:rgba(255,255,255,.55);font-size:12px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5.5" cy="17" r="3.5"/><circle cx="18.5" cy="17" r="3.5"/><path d="M5.5 17l4-8h5l4 8M9.5 9L12 17"/></svg><span class="tl"> Vélos</span></div>
   </div>
   <div style="display:flex;align-items:center;gap:8px">
     <button id="refresh-btn" onclick="manualRefresh()" title="Actualiser" style="background:transparent;border:none;cursor:pointer;padding:9px;margin:-6px;display:flex;align-items:center;color:rgba(255,255,255,.5);transition:transform .3s;-webkit-tap-highlight-color:transparent">
@@ -452,6 +454,36 @@ html:not(.locked){background:#0b0c10}
     </section>
     <section class="sx-card">
       <div id="st-list" class="sx-rows"></div><div id="st-foot"></div>
+    </section>
+  </div>
+</div>
+<div class="panel" id="tab-bikes">
+  <div class="sx-wrap">
+    <section class="sx-card">
+      <div class="sx-ctl">
+        <div class="sx-field"><span>Classer par <em>(touche deux fois pour inverser)</em></span>
+          <div class="sx-seg" id="bk-sort" role="group" aria-label="Classer par">
+            <button data-s="avis" onclick="setBikesSort('avis')">Avis</button>
+            <button data-s="note" class="on" onclick="setBikesSort('note')">Note</button>
+            <button data-s="rev" onclick="setBikesSort('rev')">Révision</button>
+            <button data-s="next" onclick="setBikesSort('next')">Prochaine</button>
+          </div>
+        </div>
+        <div class="sx-field"><span>Type</span>
+          <div class="sx-seg" id="bk-type" role="group" aria-label="Type de vélo">
+            <button data-t="all" class="on" onclick="setBikesType('all')">Tous</button>
+            <button data-t="E" onclick="setBikesType('E')">Élec</button>
+            <button data-t="M" onclick="setBikesType('M')">Méca</button>
+          </div>
+        </div>
+        <div class="sx-field"><span>Recherche</span>
+          <input id="bk-search" type="search" placeholder="N° de vélo ou station" autocomplete="off" oninput="setBikesQuery(this.value)"/>
+        </div>
+      </div>
+      <div class="sx-cap" id="bk-cap" style="padding-bottom:0;margin-top:12px"></div>
+    </section>
+    <section class="sx-card">
+      <div id="bk-list" class="sx-rows"></div><div id="bk-foot"></div>
     </section>
   </div>
 </div>
@@ -722,10 +754,10 @@ function updateLiveStatus(){
   const minAgo=Math.round((Date.now()-(window._lastStationUpdate||Date.now()))/60000);
   const statusHtml = minAgo<=1
     ? '<span style="color:#30d158">● Live</span>'
-    : `<span style="color:#f59e0b">● Màj il y a ${minAgo} min</span>`;
+    : `<span style="color:#f59e0b">● <span class="hs">Màj il y a </span>${minAgo} min</span>`;
   const src = SOURCES[window._dataSource];
   const srcLabel = src ? src.label : 'Source inconnue';
-  el.innerHTML=`${statusHtml}<span style="color:rgba(255,255,255,.25)">·</span><span style="color:rgba(255,255,255,.45)">${srcLabel}</span>`;
+  el.innerHTML=`${statusHtml}<span class="hs" style="color:rgba(255,255,255,.25)">·</span><span class="hs" style="color:rgba(255,255,255,.45)">${srcLabel}</span>`;
 }
 
 /* ═══ PANNEAU SOURCE ══════════════════════════════════ */
@@ -865,6 +897,9 @@ document.querySelectorAll('.tab').forEach(tab=>{
     }
     if(target==='stats'){
       statsOpen();
+    }
+    if(target==='bikes'){
+      bikesOpen();
     }
     
     if(target==='plan') initPlanMap();
@@ -1658,6 +1693,198 @@ async function renderCourbes(){
     data:{labels,datasets:[{label:'Départs/h',data:dataFluxH,
       backgroundColor:dataFluxH.map(v=>v>5?'rgba(255,59,48,.65)':v>2?'rgba(255,159,10,.6)':'rgba(0,113,227,.5)'),borderWidth:0}]},
     options:chartOpts()});
+}
+
+/* ═══ ONGLET VÉLOS ═══════════════════════════════════════════════════════════
+   Classement des vélos actuellement accrochés à une station (même appel API que le reste de l'app,
+   rafraîchi toutes les 2 minutes) : avis, note, révision, prochaine échéance (contrôle ou révision).
+   Les dates peuvent manquer ou ne pas être au format date : chaque cas est géré sans erreur. */
+window._bk=window._bk||{sort:'note',dir:1,type:'all',query:'',shown:50,list:null,open:null,useCtl:false};
+const BK_SORTS={avis:'Avis',note:'Note',rev:'Révision',next:'Prochaine'};
+const BK_MIN_AVIS=5;
+const BK_DAY=86400000;
+// n'accepte que de vraies dates (ISO) ou des timestamps en ms : « 12 » ne doit pas devenir « 1er décembre 2001 »
+function bkIsoDate(v){
+  if(v==null||v==='') return null;
+  if(typeof v==='number') return v>1e11?v:null;
+  if(typeof v==='string'&&/^\d{4}-\d{2}-\d{2}/.test(v)){ const t=Date.parse(v); return Number.isFinite(t)?t:null; }
+  return null;
+}
+function bkNormalize(byStation){
+  const sts=new Map(allStations.map(s=>[s.number,s]));
+  const out=[];
+  byStation.forEach((arr,stNum)=>{
+    const st=sts.get(stNum);
+    for(const b of arr){
+      if(b.status==='REMOVED'||b.number==null) continue;
+      out.push({
+        num:b.number, type:b.type==='ELECTRICAL'?'E':'M',
+        station:stNum, stName:st?cleanName(st.name):'Station n° '+stNum, borne:b.standNumber,
+        batt:b.battery?.percentage??null, note:b.rating?.value??null, avis:b.rating?.count||0,
+        status:b.statusLabel||b.status||'',
+        lastRev:bkIsoDate(b.lastRevisionDateTime), lastCtl:bkIsoDate(b.lastControlDateTime),
+        nextCheck:bkIsoDate(b.nextCheck), nextReview:bkIsoDate(b.nextReview), lastTrip:bkIsoDate(b.lastTripDateTime),
+        raw:{lastRev:b.lastRevisionDateTime,lastCtl:b.lastControlDateTime,nextCheck:b.nextCheck,nextReview:b.nextReview}
+      });
+    }
+  });
+  return out;
+}
+// prochaine échéance = la plus proche entre le prochain contrôle et la prochaine révision
+function bkNext(b){
+  const c=b.nextCheck, r=b.nextReview;
+  if(c==null&&r==null) return null;
+  if(r==null||(c!=null&&c<=r)) return {t:c,kind:'Contrôle'};
+  return {t:r,kind:'Révision'};
+}
+function bkMetric(b,now){
+  const s=window._bk;
+  switch(s.sort){
+    case 'avis': return b.avis;
+    case 'note': return (b.note!=null&&b.avis>=BK_MIN_AVIS)?b.note:null;
+    case 'rev': { const t=s.useCtl?b.lastCtl:b.lastRev; return t==null?null:(now-t)/BK_DAY; }   // âge : le plus ancien en premier
+    case 'next': { const n=bkNext(b); return n?-(n.t-now)/BK_DAY:null; }                          // le plus en retard en premier
+  }
+  return null;
+}
+const bkFmt=t=>new Date(t).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
+const bkShort=t=>new Date(t).toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+// échéance à venir : « dans 9 j » ; dépassée : « en retard de 10 j »
+function bkDue(t,now){
+  const d=Math.round((t-now)/BK_DAY);
+  return d<0?`en retard de ${-d} j`:d===0?"aujourd'hui":`dans ${d} j`;
+}
+function bkRel(t,now){
+  const d=Math.round((t-now)/BK_DAY);
+  return d===0?"aujourd'hui":d>0?`dans ${d} j`:`il y a ${-d} j`;
+}
+function syncBikesUI(){
+  const s=window._bk;
+  document.querySelectorAll('#bk-sort button').forEach(b=>{
+    const on=b.dataset.s===s.sort; b.classList.toggle('on',on);
+    b.textContent=BK_SORTS[b.dataset.s]+(on?(s.dir===1?' ▼':' ▲'):'');
+  });
+  document.querySelectorAll('#bk-type button').forEach(b=>b.classList.toggle('on',b.dataset.t===s.type));
+}
+function bkCaption(total,eligible,now){
+  const s=window._bk;
+  const first=s.dir===1;
+  let what;
+  if(s.sort==='avis') what=`Classé par <b>nombre d'avis</b> · ${first?'les plus évalués':'les moins évalués'} en premier`;
+  else if(s.sort==='note') what=`Classé par <b>note</b> · vélos avec au moins ${BK_MIN_AVIS} avis · ${first?'les mieux notés':'les moins bien notés'} en premier`;
+  else if(s.sort==='rev') what=`Classé par <b>${s.useCtl?'dernier contrôle':'dernière révision'}</b> · ${first?'le plus ancien':'le plus récent'} en premier`;
+  else what=`Classé par <b>prochaine échéance</b> (contrôle ou révision) · ${first?'la plus en retard':'la plus lointaine'} en premier`;
+  const missing=total-eligible;
+  const label={avis:'',note:'sans note suffisante',rev:'sans date',next:'sans échéance renseignée'}[s.sort];
+  const when=window._bk.loadedAt?new Date(window._bk.loadedAt).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'';
+  return `${what} · ${eligible} vélo${eligible>1?'s':''}`+(missing>0&&label?` · ${missing} ${label}`:'')+(when?` · actualisé ${when}`:'');
+}
+function renderBikes(){
+  const s=window._bk, list=document.getElementById('bk-list'), foot=document.getElementById('bk-foot');
+  if(!list||!s.list) return;
+  const esc=t=>String(t).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+  const now=Date.now();
+  s.useCtl=!s.list.some(b=>b.lastRev!=null);                 // pas de date de révision dans l'API : on utilise le dernier contrôle
+  const pool=s.list.filter(b=>s.type==='all'||b.type===s.type);
+  const scored=[]; pool.forEach(b=>{ const m=bkMetric(b,now); if(m!=null) scored.push({b,m}); });
+  scored.sort((x,y)=>(y.m-x.m)*s.dir||y.b.avis-x.b.avis||x.b.num-y.b.num);
+  const q=s.query.toLowerCase().trim();
+  const ranked=scored.map((x,i)=>({...x,rank:i+1}));
+  const rows=q?ranked.filter(x=>String(x.b.num).includes(q)||x.b.stName.toLowerCase().includes(q)):ranked;
+  const shown=q?rows.length:Math.min(rows.length,s.shown);
+  const cap=document.getElementById('bk-cap'); if(cap) cap.innerHTML=bkCaption(pool.length,scored.length,now);
+  if(!scored.length){
+    const hint=s.sort==='rev'||s.sort==='next'?"L'API ne renvoie aucune date exploitable pour ce classement.":'Aucun vélo à classer.';
+    list.innerHTML=`<div class="sx-empty">${hint}</div>`; if(foot) foot.innerHTML=''; return;
+  }
+  const ms=scored.map(x=>x.m), lo=Math.min(...ms), hi=Math.max(...ms);
+  const IC={E:LG.bolt,M:LG.wrench};
+  const valHtml=(b,m)=>{
+    switch(s.sort){
+      case 'avis': return `${b.avis}<small> avis</small>`;
+      case 'note': return `${Math.round(b.note)}<small> /100</small>`;
+      case 'rev': return `${m<1?'<1':Math.round(m)}<small> j</small>`;
+      default: { const left=Math.round(-m); return `${left<0?'−'+(-left):left}<small> j</small>`; }
+    }
+  };
+  const subHtml=(b,m)=>{
+    const where=`<span>${esc(b.stName)} · borne ${b.borne??'?'}</span>`;
+    let extra='';
+    if(s.sort==='avis') extra=b.note!=null?`<span>Note ${Math.round(b.note)}</span>`:'';
+    else if(s.sort==='note') extra=`<span>${b.avis} avis</span>`;
+    else if(s.sort==='rev') extra=`<span>${bkShort(m!=null?now-m*BK_DAY:now)}</span>`;
+    else { const n=bkNext(b), left=Math.round((n.t-now)/BK_DAY); extra=`<span>${n.kind} ${left<0?'en retard de '+(-left)+' j':'dans '+left+' j'}</span>`; }
+    const bat=b.type==='E'&&b.batt!=null?`<span>${LG.bolt}${b.batt} %</span>`:'';
+    return where+extra+bat;
+  };
+  list.innerHTML=(rows.length?rows.slice(0,shown).map(({b,m,rank})=>{
+    const pct=hi===lo?100:Math.max(6,Math.round((m-lo)/(hi-lo)*100));
+    return `<div class="sx-item">
+      <div class="sx-row" id="bk-row-${b.num}" onclick="toggleBikeRow(${b.num},this)">
+        <span class="sx-rank${rank<=3?' top':''}">${rank}</span>
+        <span class="sx-main"><span class="bk-name"><span class="ic">${IC[b.type]}</span><span class="t">Vélo n° ${b.num}</span></span><span class="sx-sub">${subHtml(b,m)}</span></span>
+        <span class="sx-val">${valHtml(b,m)}</span>
+        <span class="sx-bar"><i style="--p:${pct}%"></i></span>
+      </div>
+      <div class="sx-detail" id="bk-detail-${b.num}" style="display:none"></div>
+    </div>`;
+  }).join(''):'<div class="sx-empty">Aucun vélo trouvé</div>');
+  s.open=null;
+  if(foot) foot.innerHTML=(!q&&shown<rows.length)?`<button class="sx-more" onclick="window._bk.shown+=50;renderBikes()">Afficher plus (${rows.length-shown} restants)</button>`:'';
+}
+function bkDetailHtml(b){
+  const now=Date.now();
+  const dt=(t,raw,next)=>t!=null?`${bkFmt(t)} · ${next?bkDue(t,now):bkRel(t,now)}`:(raw!=null&&raw!==''?String(raw):'—');
+  const late=t=>t!=null&&t<now;
+  const kv=(label,val,cls='')=>`<div class="${cls}"><span>${label}</span><b>${val}</b></div>`;
+  const nx=bkNext(b);
+  const chips=[
+    b.note!=null?`<span class="sx-chip">Note <b>${Math.round(b.note)} /100</b></span>`:'',
+    `<span class="sx-chip">Avis <b>${b.avis}</b></span>`,
+    b.type==='E'&&b.batt!=null?`<span class="sx-chip">${LG.bolt}<b>${b.batt} %</b></span>`:'',
+    nx?`<span class="sx-chip">${nx.kind} <b>${bkDue(nx.t,now)}</b></span>`:''
+  ].join('');
+  return `<div class="sx-dname">Vélo n° ${b.num}<span class="sx-tag">${b.type==='E'?'Électrique':'Mécanique'}</span></div>
+    <div class="sx-chips">${chips}</div>
+    <div class="sx-kv">
+      ${kv("Station d'accroche",b.stName)}${kv('Borne','n° '+(b.borne??'—'))}
+      ${kv('Dernière révision',dt(b.lastRev,b.raw.lastRev))}${kv('Prochaine révision',dt(b.nextReview,b.raw.nextReview,true),late(b.nextReview)?'late':'')}
+      ${kv('Dernier contrôle',dt(b.lastCtl,b.raw.lastCtl))}${kv('Prochain contrôle',dt(b.nextCheck,b.raw.nextCheck,true),late(b.nextCheck)?'late':'')}
+      ${kv('Dernier trajet',b.lastTrip!=null?new Date(b.lastTrip).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'—')}${kv('Statut',b.status||'—')}
+    </div>
+    <button class="sx-go" onclick="bkGoStation(${b.station})">${LG.place.replace('stroke="#fff"','stroke="currentColor"')} Voir la station sur la carte</button>`;
+}
+function toggleBikeRow(num,row){
+  const s=window._bk, det=document.getElementById('bk-detail-'+num); if(!det) return;
+  const was=s.open;
+  document.querySelectorAll('#bk-list .sx-detail').forEach(d=>{ d.style.display='none'; });
+  document.querySelectorAll('#bk-list .sx-row.selected').forEach(r=>r.classList.remove('selected'));
+  if(was===num){ s.open=null; return; }
+  const b=s.list.find(x=>x.num===num); if(!b) return;
+  s.open=num; row.classList.add('selected');
+  det.innerHTML=bkDetailHtml(b); det.style.display='';
+  det.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function bkGoStation(n){
+  const st=allStations.find(s=>s.number===n); if(!st) return;
+  document.querySelector('.tab[data-tab="map"]')?.click();
+  setTimeout(()=>{ try{ map.setView([st.lat,st.lng],17,{animate:false}); showStationPopup(st,st.lat,st.lng); }catch(e){ console.warn(e); } },250);
+}
+function setBikesSort(k){
+  const s=window._bk;
+  if(s.sort===k) s.dir*=-1; else{ s.sort=k; s.dir=1; }
+  s.shown=50; syncBikesUI(); renderBikes();
+}
+function setBikesType(t){ const s=window._bk; s.type=t; s.shown=50; syncBikesUI(); renderBikes(); }
+function setBikesQuery(q){ window._bk.query=q||''; renderBikes(); }
+async function bikesOpen(){
+  const s=window._bk, list=document.getElementById('bk-list'); if(!list) return;
+  syncBikesUI();
+  if(!s.list) list.innerHTML='<div class="loader">Chargement des vélos…</div>';
+  const by=await ensureAllBikesFresh();
+  if(!by){ list.innerHTML='<div class="sx-empty">Données vélos indisponibles (jeton absent ou expiré). Réessaie dans quelques minutes.</div>'; return; }
+  s.list=bkNormalize(by); s.loadedAt=_allBikesLoadedAt; s.shown=50;
+  renderBikes();
 }
 
 /* ═══ STATS PAR STATION ═══════════════════════════════════════════════════
